@@ -1,0 +1,13 @@
+[package]
+name = "taxonomy"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+phf = { workspace = true }
+serde = { workspace = true }
+
+[dev-dependencies]
+common = { path = "../common" }

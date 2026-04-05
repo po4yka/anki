@@ -14,7 +14,7 @@ fn main() {
         }
     }
     if env::var("RUST_LOG").is_err() {
-        env::set_var("RUST_LOG", "anki=info")
+        unsafe { env::set_var("RUST_LOG", "anki=info") }
     }
     set_global_logger(None).unwrap();
     println!("{}", SimpleServer::run());

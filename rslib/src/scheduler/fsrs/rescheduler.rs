@@ -49,7 +49,7 @@ impl Rescheduler {
             .map(|(deck_config_id, config_dues)| {
                 let due_today = config_dues
                     .iter()
-                    .filter(|(&due, _)| due <= today)
+                    .filter(|&(&due, _)| due <= today)
                     .map(|(_, &count)| count)
                     .sum();
                 (*deck_config_id, due_today)
@@ -60,7 +60,7 @@ impl Rescheduler {
         let reviewed_stats = col.storage.studied_today_by_deck(timing.next_day_at)?;
         let mut reviewed_today_by_preset: HashMap<DeckConfigId, usize> = HashMap::new();
         for (did, count) in reviewed_stats {
-            if let Some(&deck_config_id) = &did_to_dcid.get(&did) {
+            if let &Some(&deck_config_id) = &did_to_dcid.get(&did) {
                 *reviewed_today_by_preset.entry(deck_config_id).or_default() += count;
             }
         }

@@ -35,7 +35,7 @@ impl ByteBuffer {
 /// Returns an opaque pointer on success. The caller must pass this pointer to
 /// all subsequent anki_command calls and must call anki_free() when done.
 /// Returns null on error.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn anki_init(
     data: *const u8,
     len: usize,
@@ -54,7 +54,7 @@ pub extern "C" fn anki_init(
 /// the returned ByteBuffer contains a serialized BackendError message.
 ///
 /// The returned ByteBuffer must be freed with anki_free_buffer().
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn anki_command(
     backend: *mut c_void,
     service: u32,
@@ -78,7 +78,7 @@ pub extern "C" fn anki_command(
 }
 
 /// Free a Backend instance created by anki_init.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn anki_free(backend: *mut c_void) {
     if !backend.is_null() {
         unsafe { drop(Box::from_raw(backend as *mut Backend)) };
@@ -86,7 +86,7 @@ pub extern "C" fn anki_free(backend: *mut c_void) {
 }
 
 /// Free a ByteBuffer returned by anki_command.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn anki_free_buffer(buf: ByteBuffer) {
     if !buf.data.is_null() {
         unsafe {

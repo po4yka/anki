@@ -526,7 +526,7 @@ impl RenderContext<'_> {
 /// Append to last node if last node is a string, else add new node.
 fn append_str_to_nodes(nodes: &mut Vec<RenderedNode>, text: &str) {
     if let Some(RenderedNode::Text {
-        text: ref mut existing_text,
+        text: existing_text,
     }) = nodes.last_mut()
     {
         // append to existing last node

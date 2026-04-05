@@ -18,5 +18,5 @@ strum.workspace = true
 tokio.workspace = true
 
 [features]
-rustls = ["reqwest/rustls-tls", "reqwest/rustls-tls-native-roots"]
+rustls = ["reqwest/rustls"]
 native-tls = ["reqwest/native-tls"]

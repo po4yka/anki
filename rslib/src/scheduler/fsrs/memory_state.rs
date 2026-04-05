@@ -264,7 +264,7 @@ impl Collection {
         Ok(())
     }
 
-    fn create_progress_closure(&self, item_count: usize) -> Result<impl FnMut() -> Result<()>> {
+    fn create_progress_closure(&self, item_count: usize) -> Result<impl FnMut() -> Result<()> + use<>> {
         let mut progress = self.new_progress_handler::<ComputeMemoryProgress>();
         progress.update(false, |s| {
             s.total_cards = item_count as u32;

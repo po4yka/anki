@@ -1,0 +1,18 @@
+[package]
+name = "validation"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+common = { path = "../common" }
+card = { path = "../card" }
+taxonomy = { path = "../taxonomy" }
+serde = { workspace = true }
+thiserror = { workspace = true }
+regex = { workspace = true }
+
+[dev-dependencies]
+mockall = { workspace = true }
+serde_json = { workspace = true }

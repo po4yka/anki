@@ -1,0 +1,20 @@
+[package]
+name = "card"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+common = { path = "../common" }
+serde = { workspace = true }
+sha2 = { workspace = true }
+regex = { workspace = true }
+unicode-normalization = "0.1"
+thiserror = { workspace = true }
+tracing = { workspace = true }
+chrono = { workspace = true }
+rusqlite = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

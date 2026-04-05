@@ -173,10 +173,78 @@
       "started_at": "2026-04-05T05:49:20.262Z",
       "parent_mode": "none",
       "status": "running"
+    },
+    {
+      "agent_id": "ab303049564504300",
+      "agent_type": "migration-verifier",
+      "started_at": "2026-04-05T05:53:52.012Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-04-05T05:57:03.839Z",
+      "duration_ms": 191827
+    },
+    {
+      "agent_id": "a9649a22d13e86cab",
+      "agent_type": "swift-bridge",
+      "started_at": "2026-04-05T06:05:43.823Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-04-05T06:08:52.083Z",
+      "duration_ms": 188260
+    },
+    {
+      "agent_id": "a205527aef743390e",
+      "agent_type": "integrator-1",
+      "started_at": "2026-04-05T06:26:02.167Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-04-05T06:36:47.357Z",
+      "duration_ms": 645190
+    },
+    {
+      "agent_id": "aa29caae32c861c91",
+      "agent_type": "integrator-1",
+      "started_at": "2026-04-05T06:36:47.552Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-04-05T06:36:54.413Z",
+      "duration_ms": 6861
+    },
+    {
+      "agent_id": "ad3e4c1ee18a28cf0",
+      "agent_type": "integrator-2",
+      "started_at": "2026-04-05T06:37:11.621Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-04-05T06:40:34.842Z",
+      "duration_ms": 203221
+    },
+    {
+      "agent_id": "a1e345e21d44a586d",
+      "agent_type": "integrator-1",
+      "started_at": "2026-04-05T06:37:22.273Z",
+      "parent_mode": "none",
+      "status": "running"
+    },
+    {
+      "agent_id": "a707d5651585394b1",
+      "agent_type": "integrator-2",
+      "started_at": "2026-04-05T06:40:35.024Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-04-05T06:40:59.442Z",
+      "duration_ms": 24418
+    },
+    {
+      "agent_id": "a7de7cb6dff330ffb",
+      "agent_type": "integrator-2",
+      "started_at": "2026-04-05T06:40:59.629Z",
+      "parent_mode": "none",
+      "status": "running"
     }
   ],
-  "total_spawned": 20,
-  "total_completed": 17,
+  "total_spawned": 28,
+  "total_completed": 23,
   "total_failed": 0,
-  "last_updated": "2026-04-05T05:49:20.364Z"
+  "last_updated": "2026-04-05T06:40:59.732Z"
 }

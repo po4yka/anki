@@ -16,7 +16,6 @@ use fsrs::FSRS5_DEFAULT_DECAY;
 use regex::Regex;
 use rusqlite::functions::FunctionFlags;
 use rusqlite::params;
-use rusqlite::trace::TraceEvent;
 use rusqlite::Connection;
 use serde_json::Value;
 use unicase::UniCase;
@@ -51,13 +50,12 @@ pub struct SqliteStorage {
 }
 
 fn open_or_create_collection_db(path: &Path) -> Result<Connection> {
-    let db = Connection::open(path)?;
+    let mut db = Connection::open(path)?;
 
     if std::env::var("TRACESQL").is_ok() {
-        db.trace_v2(
-            rusqlite::trace::TraceEventCodes::SQLITE_TRACE_STMT,
-            Some(trace),
-        );
+        db.trace(Some(|sql: &str| {
+            println!("sql: {}", sql.trim().replace('\n', " "));
+        }));
     }
 
     db.busy_timeout(std::time::Duration::from_secs(0))?;
@@ -469,11 +467,6 @@ fn schema_version(db: &Connection) -> Result<(bool, u8)> {
     ))
 }
 
-fn trace(event: TraceEvent) {
-    if let TraceEvent::Stmt(_, sql) = event {
-        println!("sql: {}", sql.trim().replace('\n', " "));
-    }
-}
 
 impl SqliteStorage {
     pub(crate) fn open_or_create(

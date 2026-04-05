@@ -74,7 +74,7 @@ impl SortMode {
         match self {
             SortMode::NoOrder => RequiredTable::CardsOrNotes,
             SortMode::Builtin { column, .. } => column.required_table(),
-            SortMode::Custom(ref text) => {
+            SortMode::Custom(text) => {
                 if text.contains("n.") {
                     if text.contains("c.") {
                         RequiredTable::CardsAndNotes
