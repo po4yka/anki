@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"rtk ls /Users/npochaev/GitHub/anki/AnkiApp/AnkiApp/ 2>/dev/null; echo \\\"===\\\"; rtk find /Users/npochaev/GitHub/anki -maxdepth 4 -name \\\"*.xcodeproj\\\" -o -name \\\"*.xcworkspace\\\" 2>/dev/null...",
-  "error": "Exit code 1\n11:37 ./\n11:37 ../\n11:37 AnkiApp/\n12:00 AnkiApp.xcodeproj/\n11:37 AnkiAppTests/\n11:37 AnkiAppUITests/\n===",
-  "timestamp": "2026-04-05T08:03:18.107Z",
-  "retry_count": 3
-}
