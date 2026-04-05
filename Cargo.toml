@@ -126,7 +126,7 @@ pulldown-cmark = "0.13.0"
 rand = "0.9.1"
 rayon = "1.10.0"
 regex = "1.11.1"
-reqwest = { version = "0.13", default-features = false, features = ["json", "socks", "stream", "multipart", "rustls"] }
+reqwest = { version = "0.13", default-features = false, features = ["json", "query", "socks", "stream", "multipart", "rustls"] }
 rusqlite = { version = "0.32.1", features = ["trace", "functions", "collation", "bundled"] }
 rustls-pemfile = "2.2.0"
 scopeguard = "1.2.0"

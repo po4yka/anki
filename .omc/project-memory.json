@@ -260,8 +260,8 @@
   "hotPaths": [
     {
       "path": "Cargo.toml",
-      "accessCount": 43,
-      "lastAccessed": 1775370739398,
+      "accessCount": 48,
+      "lastAccessed": 1775371839473,
       "type": "file"
     },
     {

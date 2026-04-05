@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-05T06:40:59.629Z",
+  "updatedAt": "2026-04-05T06:47:00.418Z",
   "missions": [
     {
       "id": "session:1af5e7b2-c170-4b84-b671-482625cfbf21:none",
@@ -171,15 +171,15 @@
       "name": "none",
       "objective": "Session mission",
       "createdAt": "2026-04-05T05:46:17.038Z",
-      "updatedAt": "2026-04-05T06:40:59.629Z",
+      "updatedAt": "2026-04-05T06:47:00.418Z",
       "status": "running",
-      "workerCount": 17,
+      "workerCount": 18,
       "taskCounts": {
-        "total": 17,
+        "total": 18,
         "pending": 0,
         "blocked": 0,
         "inProgress": 5,
-        "completed": 12,
+        "completed": 13,
         "failed": 0
       },
       "agents": [
@@ -352,17 +352,19 @@
           "latestUpdate": null,
           "completedSummary": null,
           "updatedAt": "2026-04-05T06:40:59.629Z"
+        },
+        {
+          "name": "migration-verifier:a934b5a",
+          "role": "migration-verifier",
+          "ownership": "a934b5afb04cf5f68",
+          "status": "done",
+          "currentStep": null,
+          "latestUpdate": "completed",
+          "completedSummary": null,
+          "updatedAt": "2026-04-05T06:47:00.418Z"
         }
       ],
       "timeline": [
-        {
-          "id": "session-start:a707d5651585394b1:2026-04-05T06:40:35.024Z",
-          "at": "2026-04-05T06:40:35.024Z",
-          "kind": "update",
-          "agent": "integrator-2:a707d56",
-          "detail": "started integrator-2:a707d56",
-          "sourceKey": "session-start:a707d5651585394b1"
-        },
         {
           "id": "session-stop:a707d5651585394b1:2026-04-05T06:40:59.442Z",
           "at": "2026-04-05T06:40:59.442Z",
@@ -378,6 +380,22 @@
           "agent": "integrator-2:a7de7cb",
           "detail": "started integrator-2:a7de7cb",
           "sourceKey": "session-start:a7de7cb6dff330ffb"
+        },
+        {
+          "id": "session-start:a934b5afb04cf5f68:2026-04-05T06:43:53.625Z",
+          "at": "2026-04-05T06:43:53.625Z",
+          "kind": "update",
+          "agent": "migration-verifier:a934b5a",
+          "detail": "started migration-verifier:a934b5a",
+          "sourceKey": "session-start:a934b5afb04cf5f68"
+        },
+        {
+          "id": "session-stop:a934b5afb04cf5f68:2026-04-05T06:47:00.418Z",
+          "at": "2026-04-05T06:47:00.418Z",
+          "kind": "completion",
+          "agent": "migration-verifier:a934b5a",
+          "detail": "completed",
+          "sourceKey": "session-stop:a934b5afb04cf5f68"
         }
       ]
     }

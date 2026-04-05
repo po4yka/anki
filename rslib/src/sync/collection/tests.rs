@@ -82,7 +82,7 @@ where
     let _ = set_global_logger(None);
     // start server
     let base_folder = tempdir()?;
-    std::env::set_var("SYNC_USER1", "user:pass");
+    unsafe { std::env::set_var("SYNC_USER1", "user:pass") };
     let (addr, server_fut) = SimpleServer::make_server(SyncServerConfig {
         host: "127.0.0.1".parse().unwrap(),
         port: 0,

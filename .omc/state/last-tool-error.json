@@ -1,7 +1,7 @@
 {
   "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"rtk grep -rn \\\"rustls-tls\\\" /Users/npochaev/GitHub/anki/ --include=\\\"*.toml\\\" 2>/dev/null\",\"description\":\"Find all remaining rustls-tls references\"}",
-  "error": "Exit code 1",
-  "timestamp": "2026-04-05T06:30:12.533Z",
-  "retry_count": 2
+  "tool_input_preview": "{\"command\":\"rtk ls -d /Users/npochaev/GitHub/anki/AnkiApp/Proto/ /Users/npochaev/GitHub/anki/AnkiApp/Bridge/ /Users/npochaev/GitHub/anki/AnkiApp/*.xcodeproj 2>&1\",\"description\":\"Check AnkiApp director...",
+  "error": "Exit code 1\n(eval):1: no matches found: /Users/npochaev/GitHub/anki/AnkiApp/*.xcodeproj",
+  "timestamp": "2026-04-05T06:44:01.262Z",
+  "retry_count": 1
 }

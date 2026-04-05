@@ -241,10 +241,19 @@
       "started_at": "2026-04-05T06:40:59.629Z",
       "parent_mode": "none",
       "status": "running"
+    },
+    {
+      "agent_id": "a934b5afb04cf5f68",
+      "agent_type": "migration-verifier",
+      "started_at": "2026-04-05T06:43:53.625Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-04-05T06:47:00.418Z",
+      "duration_ms": 186793
     }
   ],
-  "total_spawned": 28,
-  "total_completed": 23,
+  "total_spawned": 29,
+  "total_completed": 24,
   "total_failed": 0,
-  "last_updated": "2026-04-05T06:40:59.732Z"
+  "last_updated": "2026-04-05T06:47:00.521Z"
 }

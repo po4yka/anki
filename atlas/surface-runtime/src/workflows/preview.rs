@@ -142,6 +142,7 @@ mod tests {
                 })
                 .collect(),
             title: title.map(ToString::to_string),
+            images: Vec::new(),
         }
     }
 
