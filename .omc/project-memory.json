@@ -325,6 +325,12 @@
       "type": "file"
     },
     {
+      "path": "rslib",
+      "accessCount": 5,
+      "lastAccessed": 1775373078752,
+      "type": "directory"
+    },
+    {
       "path": "rslib/src/backend/error.rs",
       "accessCount": 4,
       "lastAccessed": 1775368643080,
@@ -334,6 +340,18 @@
       "path": "rslib/src/services.rs",
       "accessCount": 4,
       "lastAccessed": 1775369153585,
+      "type": "file"
+    },
+    {
+      "path": "docs/migration/swift-ffi.md",
+      "accessCount": 4,
+      "lastAccessed": 1775373043067,
+      "type": "file"
+    },
+    {
+      "path": "rslib/rust_interface.rs",
+      "accessCount": 4,
+      "lastAccessed": 1775373071433,
       "type": "file"
     },
     {
@@ -349,27 +367,27 @@
       "type": "file"
     },
     {
-      "path": "rslib/rust_interface.rs",
-      "accessCount": 3,
-      "lastAccessed": 1775369097002,
-      "type": "file"
-    },
-    {
-      "path": "docs/migration/swift-ffi.md",
-      "accessCount": 3,
-      "lastAccessed": 1775369148029,
-      "type": "file"
-    },
-    {
-      "path": "rslib",
-      "accessCount": 3,
-      "lastAccessed": 1775369163322,
-      "type": "directory"
-    },
-    {
       "path": "rust-toolchain.toml",
       "accessCount": 3,
       "lastAccessed": 1775370487030,
+      "type": "file"
+    },
+    {
+      "path": "TODO.md",
+      "accessCount": 3,
+      "lastAccessed": 1775373042330,
+      "type": "file"
+    },
+    {
+      "path": "rslib/proto_gen/src/lib.rs",
+      "accessCount": 3,
+      "lastAccessed": 1775373082613,
+      "type": "file"
+    },
+    {
+      "path": "docs/migration/atlas-integration.md",
+      "accessCount": 3,
+      "lastAccessed": 1775374104661,
       "type": "file"
     },
     {
@@ -382,12 +400,6 @@
       "path": "pylib/rsbridge/Cargo.toml",
       "accessCount": 2,
       "lastAccessed": 1775364292404,
-      "type": "file"
-    },
-    {
-      "path": "rslib/proto_gen/src/lib.rs",
-      "accessCount": 2,
-      "lastAccessed": 1775364303397,
       "type": "file"
     },
     {
@@ -421,15 +433,15 @@
       "type": "file"
     },
     {
-      "path": "TODO.md",
+      "path": "docs/migration/architecture.md",
       "accessCount": 2,
-      "lastAccessed": 1775368411608,
+      "lastAccessed": 1775373043822,
       "type": "file"
     },
     {
-      "path": "docs/migration/atlas-integration.md",
+      "path": "proto/anki/backend.proto",
       "accessCount": 2,
-      "lastAccessed": 1775370258975,
+      "lastAccessed": 1775373055606,
       "type": "file"
     },
     {
@@ -442,12 +454,6 @@
       "path": "rslib/src/card_rendering/tts/other.rs",
       "accessCount": 1,
       "lastAccessed": 1775325472256,
-      "type": "file"
-    },
-    {
-      "path": "proto/anki/backend.proto",
-      "accessCount": 1,
-      "lastAccessed": 1775325476410,
       "type": "file"
     },
     {
@@ -538,12 +544,6 @@
       "path": "docs/protobuf.md",
       "accessCount": 1,
       "lastAccessed": 1775364336786,
-      "type": "file"
-    },
-    {
-      "path": "docs/migration/architecture.md",
-      "accessCount": 1,
-      "lastAccessed": 1775365262608,
       "type": "file"
     },
     {
