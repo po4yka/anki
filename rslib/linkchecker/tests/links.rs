@@ -6,7 +6,6 @@
 use std::borrow::Cow;
 use std::env;
 use std::iter;
-use std::sync::LazyLock;
 use std::time::Duration;
 
 use anki::links::help_page_link_suffix;
@@ -18,7 +17,6 @@ use linkcheck::validation::check_web;
 use linkcheck::validation::Context;
 use linkcheck::validation::Reason;
 use linkcheck::BasicContext;
-use regex::Regex;
 use reqwest::Url;
 use strum::IntoEnumIterator;
 
@@ -69,14 +67,6 @@ impl From<&'static str> for CheckableUrl {
     }
 }
 
-fn ts_help_pages() -> impl Iterator<Item = &'static str> {
-    static QUOTED_URL: LazyLock<Regex> = LazyLock::new(|| Regex::new("\"(http.+)\"").unwrap());
-
-    QUOTED_URL
-        .captures_iter(include_str!("../../../ts/lib/tslib/help-page.ts"))
-        .map(|caps| caps.get(1).unwrap().as_str())
-}
-
 #[tokio::test]
 async fn check_links() {
     if env::var("ONLINE_TESTS").is_err() {
@@ -86,8 +76,7 @@ async fn check_links() {
     let ctx = BasicContext::default();
     let result = futures::stream::iter(
         HelpPage::iter()
-            .map(CheckableUrl::from)
-            .chain(ts_help_pages().map(CheckableUrl::from)),
+            .map(CheckableUrl::from),
     )
     .map(|page| check_url(page, &ctx))
     .buffer_unordered(ctx.concurrency())

@@ -15,6 +15,7 @@ members = [
   "rslib/linkchecker",
   "rslib/process",
   "rslib/proto",
+  "rslib/proto_gen",
   "rslib/sync",
 ]
 resolver = "2"
@@ -39,6 +40,7 @@ anki_i18n = { path = "rslib/i18n" }
 anki_io = { path = "rslib/io" }
 anki_process = { path = "rslib/process" }
 anki_proto = { path = "rslib/proto" }
+anki_proto_gen = { path = "rslib/proto_gen" }
 
 # pinned
 unicase = "=2.6.0" # any changes could invalidate sqlite indexes
