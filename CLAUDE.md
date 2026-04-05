@@ -2,84 +2,118 @@
 
 ## Project Overview
 
-Anki is a spaced repetition flashcard program with a multi-layered architecture. Main components:
+Anki SwiftUI is a macOS-only spaced repetition flashcard application built
+on Anki's Rust core, enhanced with anki-atlas analytics and AI capabilities,
+and presented through a native SwiftUI interface.
 
-- Web frontend: Svelte/TypeScript in ts/
-- PyQt GUI, which embeds the web components in aqt/
-- Python library which wraps our rust Layer (pylib/, with Rust module in pylib/rsbridge)
-- Core Rust layer in rslib/
-- Protobuf definitions in proto/ that are used by the different layers to
-  talk to each other.
+This is a migration from the original multi-platform Anki (Python/Qt/Svelte)
+to a Rust + Swift architecture. See `docs/migration/` for the full migration
+plan, `ROADMAP.md` for phases, and `TODO.md` for the task checklist.
 
-## Building/checking
+### Architecture
 
-./check (check.bat) will format the code and run the main build & checks.
-Please do this as a final step before marking a task as completed.
+```
+SwiftUI App -> C-ABI FFI (bridge/) -> Rust Backend (rslib/) + Atlas Services (atlas/)
+```
+
+### Main components
+
+- Core Rust layer: `rslib/` -- collection, scheduler, sync, search, storage (SQLite)
+- Protobuf API: `proto/anki/` -- 24 .proto files defining the cross-language interface
+- Swift FFI bridge: `bridge/` -- C-ABI staticlib with protobuf serialization
+- Atlas crates: `atlas/` -- hybrid search, embeddings, LLM card generation, analytics
+- MCP server: `bins/mcp/` -- Claude Code integration via Model Context Protocol
+- CLI: `bins/cli/` -- terminal automation
+- SwiftUI app: `AnkiApp/` -- native macOS interface
+
+## Building
+
+### Rust
+```bash
+cargo check --workspace          # type check everything
+cargo build --workspace          # build all crates
+cargo test --workspace           # run all tests
+cargo build -p anki_bridge       # build Swift FFI bridge only
+```
+
+### Prerequisites
+```bash
+brew install protobuf            # required for proto compilation
+brew install swift-protobuf      # required for Swift proto types
+```
+
+### Proto regeneration
+Proto changes require rebuilding both Rust (automatic via build.rs) and
+Swift types:
+```bash
+protoc --swift_out=AnkiApp/Proto/ --proto_path=proto/ proto/anki/*.proto
+```
 
 ## Quick iteration
 
-During development, you can build/check subsections of our code:
-
-- Rust: 'cargo check'
-- Python: './tools/dmypy', and if wheel-related, './ninja wheels'
-- TypeScript/Svelte: './ninja check:svelte'
-
-Be mindful that some changes (such as modifications to .proto files) may
-need a full build with './check' first.
-
-## Build tooling
-
-'./check' and './ninja' invoke our build system, which is implemented in build/. It takes care of downloading required deps and invoking our build
-steps.
+- Rust core: `cargo check -p anki`
+- Bridge: `cargo check -p anki_bridge`
+- Atlas crates: `cargo check -p search -p indexer -p analytics`
+- Full workspace: `cargo check --workspace`
+- SwiftUI: Open `AnkiApp/AnkiApp.xcodeproj` in Xcode
 
 ## Translations
 
-ftl/ contains our Fluent translation files. We have scripts in rslib/i18n
-to auto-generate an API for Rust, TypeScript and Python so that our code can
-access the translations in a type-safe manner. Changes should be made to
-ftl/core or ftl/qt. Except for features specific to our Qt interface, prefer
-the core module. When adding new strings, confirm the appropriate ftl file
-first, and try to match the existing style.
+`ftl/core/` contains Fluent translation files. `rslib/i18n` auto-generates
+a type-safe Rust API. When adding new strings, add to `ftl/core/` and match
+the existing style.
 
 ## Protobuf and IPC
 
-Our build scripts use the .proto files to define our Rust library's
-non-Rust API. pylib/rsbridge exposes that API, and _backend.py exposes
-snake_case methods for each protobuf RPC that call into the API.
-Similar tooling creates a @generated/backend TypeScript module for
-communicating with the Rust backend (which happens over POST requests).
+The 24 .proto files in `proto/anki/` define the Rust backend's API. The
+`bridge/` crate exposes this API to Swift via C-ABI functions:
+- `anki_init(bytes, len)` -- create Backend from protobuf BackendInit
+- `anki_command(backend, service, method, bytes, len)` -- RPC dispatch
+- `anki_free(backend)` -- release Backend
+
+Swift uses `swift-protobuf` generated types to serialize/deserialize
+requests and responses.
 
 ## Fixing errors
 
-When dealing with build errors or failing tests, invoke 'check' or one
-of the quick iteration commands regularly. This helps verify your changes
-are correct. To locate other instances of a problem, run the check again -
-don't attempt to grep the codebase.
-
-## Ignores
-
-The files in out/ are auto-generated. Mostly you should ignore that folder,
-though you may sometimes find it useful to view out/{pylib/anki,qt/_aqt,ts/lib/generated} when dealing with cross-language communication or our other generated sourcecode.
-
-## Launcher/installer
-
-The code for our launcher is in qt/launcher, with separate code for each
-platform.
+Run `cargo check --workspace` regularly during development. For proto-related
+errors, do a `cargo clean` first then rebuild. For Swift build errors, ensure
+the Rust staticlib is built before Xcode compiles.
 
 ## Rust dependencies
 
-Prefer adding to the root workspace, and using dep.workspace = true in the individual Rust project.
+Prefer adding to the root workspace `Cargo.toml` and using
+`dep.workspace = true` in individual crate `Cargo.toml` files.
 
 ## Rust utilities
 
-rslib/{process,io} contain some helpers for file and process operations,
-which provide better error messages/context and some ergonomics. Use them
-when possible.
+`rslib/{process,io}` contain helpers for file and process operations with
+better error context. Use them when possible.
 
 ## Rust error handling
 
-in rslib, use error/mod.rs's AnkiError/Result and snafu. In our other Rust modules, prefer anyhow + additional context where appropriate. Unwrapping
-in build scripts/tests is fine.
+- In `rslib/`: use `error/mod.rs` AnkiError/Result and snafu
+- In `atlas/` library crates: use `thiserror` for typed errors
+- In `bins/`: use `anyhow` with context
+- Unwrapping in build scripts and tests is fine
+
+## Atlas crates conventions
+
+- All types must be `Send + Sync`
+- Trait-based DI at external boundaries
+- `#[cfg_attr(test, mockall::automock)]` on traits
+- Newtype pattern for domain IDs: `pub struct NoteId(pub i64)`
+- `#[instrument]` on public async functions for tracing
+- `Arc<T>` for shared state, never `Rc<T>`
+- No `unwrap()` or `expect()` in library crates
+
+## Migration docs
+
+- `docs/migration/architecture.md` -- target system architecture
+- `docs/migration/stripping-guide.md` -- what to remove/modify
+- `docs/migration/build-migration.md` -- cargo build migration
+- `docs/migration/swift-ffi.md` -- Swift FFI bridge design
+- `docs/migration/atlas-integration.md` -- atlas crate integration
 
 ## Individual preferences
 
