@@ -5,9 +5,9 @@ enum SidebarItem: String, CaseIterable, Identifiable {
     case browse = "Browse"
     case stats = "Statistics"
     case sync = "Sync"
-    case atlasSearch = "Smart Search"
+    case atlasSearch = "Search+"
     case analytics = "Analytics"
-    case generator = "Card Generator"
+    case generator = "Generator"
     case obsidian = "Obsidian"
 
     var id: String { rawValue }
@@ -24,19 +24,40 @@ enum SidebarItem: String, CaseIterable, Identifiable {
         case .obsidian: "doc.text.magnifyingglass"
         }
     }
+
+    var isAtlas: Bool {
+        switch self {
+        case .atlasSearch, .analytics, .generator, .obsidian: true
+        default: false
+        }
+    }
 }
 
 struct SidebarView: View {
     @Environment(AppState.self) private var appState
 
+    private let ankiItems: [SidebarItem] = [.decks, .browse, .stats, .sync]
+    private let atlasItems: [SidebarItem] = [.atlasSearch, .analytics, .generator, .obsidian]
+
     var body: some View {
         @Bindable var appState = appState
-        List(SidebarItem.allCases, selection: $appState.selectedSidebarItem) { item in
-            Label(item.rawValue, systemImage: item.systemImage)
-                .tag(item)
+        List(selection: $appState.selectedSidebarItem) {
+            Section("Anki") {
+                ForEach(ankiItems) { item in
+                    Label(item.rawValue, systemImage: item.systemImage)
+                        .tag(item)
+                }
+            }
+            Section("Atlas") {
+                ForEach(atlasItems) { item in
+                    Label(item.rawValue, systemImage: item.systemImage)
+                        .tag(item)
+                }
+            }
         }
         .navigationTitle("Anki")
         .listStyle(.sidebar)
+        .animation(.default, value: appState.selectedSidebarItem)
     }
 }
 

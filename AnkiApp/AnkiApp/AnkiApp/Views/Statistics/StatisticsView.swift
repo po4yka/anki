@@ -8,9 +8,21 @@ struct StatisticsView: View {
     var body: some View {
         Group {
             if let model {
-                if model.isLoading {
+                if !appState.isCollectionOpen {
+                    ContentUnavailableView {
+                        Label("No Collection Open", systemImage: "folder.badge.plus")
+                    } description: {
+                        Text("Open a collection from Preferences to view statistics.")
+                    } actions: {
+                        Button("Open Preferences") {
+                            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                } else if model.isLoading {
                     ProgressView("Loading statistics...")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .animation(.default, value: model.isLoading)
                 } else {
                     TabView {
                         ReviewChart(model: model)

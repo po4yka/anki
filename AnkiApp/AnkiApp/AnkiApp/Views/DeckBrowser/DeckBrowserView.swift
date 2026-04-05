@@ -8,22 +8,46 @@ struct DeckBrowserView: View {
     var body: some View {
         Group {
             if let model {
-                List {
-                    ForEach(model.deckTree?.children ?? [], id: \.deckID) { node in
-                        DeckNodeView(node: node, model: model)
+                if model.isLoading {
+                    ProgressView("Loading decks...")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .animation(.default, value: model.isLoading)
+                } else if !appState.isCollectionOpen {
+                    ContentUnavailableView {
+                        Label("No Collection Open", systemImage: "folder.badge.plus")
+                    } description: {
+                        Text("Open a collection from Preferences to get started.")
+                    } actions: {
+                        Button("Open Preferences") {
+                            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                        }
+                        .buttonStyle(.borderedProminent)
                     }
-                }
-                .navigationTitle("Decks")
-                .toolbar {
-                    ToolbarItem {
-                        Button("Add Note") {
-                            // TODO: open add-note window
+                } else if model.deckTree?.children.isEmpty ?? true {
+                    ContentUnavailableView(
+                        "No Decks",
+                        systemImage: "rectangle.stack",
+                        description: Text("Create a deck to get started.")
+                    )
+                } else {
+                    List {
+                        ForEach(model.deckTree?.children ?? [], id: \.deckID) { node in
+                            DeckNodeView(node: node, model: model)
                         }
                     }
-                }
-                .sheet(isPresented: $showingReviewer) {
-                    ReviewerView()
-                        .environment(appState)
+                    .navigationTitle("Decks")
+                    .toolbar {
+                        ToolbarItem {
+                            Button("Add Note") {
+                                // TODO: open add-note window
+                            }
+                            .keyboardShortcut("n", modifiers: .command)
+                        }
+                    }
+                    .sheet(isPresented: $showingReviewer) {
+                        ReviewerView()
+                            .environment(appState)
+                    }
                 }
             } else {
                 ProgressView("Loading decks...")

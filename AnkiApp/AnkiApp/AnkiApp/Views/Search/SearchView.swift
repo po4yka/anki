@@ -7,22 +7,44 @@ struct SearchView: View {
     var body: some View {
         Group {
             if let model {
-                VStack(spacing: 0) {
-                    SearchBar(model: model)
-                        .padding()
+                if !appState.isCollectionOpen {
+                    ContentUnavailableView {
+                        Label("No Collection Open", systemImage: "folder.badge.plus")
+                    } description: {
+                        Text("Open a collection from Preferences to search notes.")
+                    } actions: {
+                        Button("Open Preferences") {
+                            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                } else {
+                    VStack(spacing: 0) {
+                        SearchBar(model: model)
+                            .padding()
 
-                    Divider()
+                        Divider()
 
-                    List(model.cardIds, id: \.self) { cardId in
-                        if let row = model.rows[cardId] {
-                            SearchResultRow(row: row)
+                        if model.cardIds.isEmpty && !model.isSearching {
+                            ContentUnavailableView(
+                                "Search Notes",
+                                systemImage: "magnifyingglass",
+                                description: Text("Enter a query above and press Return to search.")
+                            )
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                         } else {
-                            ProgressView()
-                                .onAppear { Task { await model.loadRow(id: cardId) } }
+                            List(model.cardIds, id: \.self) { cardId in
+                                if let row = model.rows[cardId] {
+                                    SearchResultRow(row: row)
+                                } else {
+                                    ProgressView()
+                                        .onAppear { Task { await model.loadRow(id: cardId) } }
+                                }
+                            }
                         }
                     }
+                    .navigationTitle("Browse")
                 }
-                .navigationTitle("Browse")
             } else {
                 ProgressView("Loading...")
             }
@@ -49,6 +71,7 @@ private struct SearchBar: View {
                 .foregroundStyle(.secondary)
             TextField("Search notes...", text: $model.query)
                 .textFieldStyle(.plain)
+                .keyboardShortcut("f", modifiers: .command)
                 .onSubmit {
                     Task { await model.search() }
                 }

@@ -7,6 +7,7 @@ struct ContentView: View {
         @Bindable var appState = appState
         NavigationSplitView {
             SidebarView()
+                .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 250)
         } detail: {
             DetailRouter()
         }
