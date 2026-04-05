@@ -3,16 +3,20 @@
 
 mod rust_interface;
 
-use std::fs;
-
 use anki_proto_gen::descriptors_path;
 use anyhow::Result;
 use prost_reflect::DescriptorPool;
 
 fn main() -> Result<()> {
-    println!("cargo:rerun-if-changed=../out/buildhash");
-    let buildhash = fs::read_to_string("../out/buildhash").unwrap_or_default();
+    let buildhash = std::process::Command::new("git")
+        .args(["rev-parse", "--short", "HEAD"])
+        .output()
+        .ok()
+        .and_then(|o| String::from_utf8(o.stdout).ok())
+        .unwrap_or_default();
+    let buildhash = buildhash.trim();
     println!("cargo:rustc-env=BUILDHASH={buildhash}");
+    println!("cargo:rerun-if-changed=../.git/HEAD");
 
     let descriptors_path = descriptors_path();
     println!("cargo:rerun-if-changed={}", descriptors_path.display());

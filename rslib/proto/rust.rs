@@ -15,7 +15,6 @@ use anyhow::Result;
 use prost_reflect::DescriptorPool;
 
 pub fn write_rust_protos(descriptors_path: PathBuf) -> Result<DescriptorPool> {
-    set_protoc_path();
     let proto_dir = PathBuf::from("../../proto");
     let paths = gather_proto_paths(&proto_dir)?;
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
@@ -90,16 +89,4 @@ fn gather_proto_paths(proto_dir: &Path) -> Result<Vec<PathBuf>> {
     }
     paths.sort();
     Ok(paths)
-}
-
-/// Set PROTOC to the custom path provided by PROTOC_BINARY, or add .exe to
-/// the standard path if on Windows.
-fn set_protoc_path() {
-    if let Ok(custom_protoc) = env::var("PROTOC_BINARY") {
-        env::set_var("PROTOC", custom_protoc);
-    } else if let Ok(bundled_protoc) = env::var("PROTOC") {
-        if cfg!(windows) && !bundled_protoc.ends_with(".exe") {
-            env::set_var("PROTOC", format!("{bundled_protoc}.exe"));
-        }
-    }
 }

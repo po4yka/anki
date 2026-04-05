@@ -5,10 +5,6 @@ use anki_proto::card_rendering::all_tts_voices_response::TtsVoice;
 
 use crate::prelude::*;
 
-#[cfg(windows)]
-#[path = "windows.rs"]
-mod inner;
-#[cfg(not(windows))]
 #[path = "other.rs"]
 mod inner;
 
