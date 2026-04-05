@@ -28,6 +28,7 @@ members = [
   "atlas/validation",
   "bins/cli",
   "bins/mcp",
+  "atlas_bridge",
   "bridge",
   "ftl",
   "qt/launcher",
