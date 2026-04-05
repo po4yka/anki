@@ -15,4 +15,7 @@ ByteBuffer anki_command(void *backend, uint32_t service, uint32_t method,
 void anki_free(void *backend);
 void anki_free_buffer(ByteBuffer buf);
 
+// Atlas bridge
+#include "AtlasBridge.h"
+
 #endif

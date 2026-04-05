@@ -10,6 +10,8 @@ final class AppState {
     var error: AnkiError? = nil
 
     let service: AnkiService
+    var atlasService: AtlasService? = nil
+    var isAtlasAvailable: Bool { atlasService != nil }
 
     init() {
         do {

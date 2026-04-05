@@ -1,0 +1,17 @@
+import Foundation
+import Observation
+
+// TODO: Knowledge graph requires KG infrastructure (knowledge_graph crate + kg_repo).
+// Implement after atlas_bridge exposes kg_see_also and kg_topic_neighborhood methods.
+@Observable
+@MainActor
+final class KnowledgeGraphModel {
+    var isLoading: Bool = false
+    var error: String? = nil
+
+    private let atlas: AtlasService
+
+    init(atlas: AtlasService) {
+        self.atlas = atlas
+    }
+}

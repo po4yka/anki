@@ -13,6 +13,14 @@ struct DetailRouter: View {
             StatisticsView()
         case .sync:
             SyncView()
+        case .atlasSearch:
+            AtlasSearchView()
+        case .analytics:
+            AnalyticsDashboardView()
+        case .generator:
+            CardGeneratorView()
+        case .obsidian:
+            VaultBrowserView()
         }
     }
 }

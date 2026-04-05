@@ -5,6 +5,10 @@ enum SidebarItem: String, CaseIterable, Identifiable {
     case browse = "Browse"
     case stats = "Statistics"
     case sync = "Sync"
+    case atlasSearch = "Smart Search"
+    case analytics = "Analytics"
+    case generator = "Card Generator"
+    case obsidian = "Obsidian"
 
     var id: String { rawValue }
 
@@ -14,6 +18,10 @@ enum SidebarItem: String, CaseIterable, Identifiable {
         case .browse: "magnifyingglass"
         case .stats: "chart.bar"
         case .sync: "arrow.triangle.2.circlepath"
+        case .atlasSearch: "sparkle.magnifyingglass"
+        case .analytics: "brain.head.profile"
+        case .generator: "wand.and.stars"
+        case .obsidian: "doc.text.magnifyingglass"
         }
     }
 }
