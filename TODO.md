@@ -15,7 +15,7 @@ one work session. Check off items as completed.
 - [x] Write `docs/migration/atlas-integration.md`
 - [x] Write `ROADMAP.md`
 - [x] Write `TODO.md` (this file)
-- [ ] Update `CLAUDE.md` for new project shape
+- [x] Update `CLAUDE.md` for new project shape
 
 ---
 
@@ -25,62 +25,62 @@ one work session. Check off items as completed.
 - [ ] `git checkout -b swiftui-migration`
 
 ### 1b. Bulk directory removals
-- [ ] Delete `qt/aqt/` (PyQt GUI)
-- [ ] Delete `ts/` (Svelte/TypeScript frontend)
-- [ ] Delete `pylib/` (Python library + PyO3 bridge)
-- [ ] Delete `python/` (Python utilities)
-- [ ] Delete `tools/` except `tools/minilints`
-- [ ] Delete `.github/` (CI workflows)
-- [ ] Delete `.buildkite/` (CI config)
-- [ ] Delete `.idea.dist/` (IntelliJ config)
-- [ ] Delete `.vscode.dist/` (VS Code config)
-- [ ] Delete `.cursor/` (Cursor IDE config)
+- [x] Delete `qt/aqt/` (PyQt GUI)
+- [x] Delete `ts/` (Svelte/TypeScript frontend)
+- [x] Delete `pylib/` (Python library + PyO3 bridge)
+- [x] Delete `python/` (Python utilities)
+- [x] Delete `tools/` except `tools/minilints`
+- [x] Delete `.github/` (CI workflows)
+- [x] Delete `.buildkite/` (CI config)
+- [x] Delete `.idea.dist/` (IntelliJ config)
+- [x] Delete `.vscode.dist/` (VS Code config)
+- [x] Delete `.cursor/` (Cursor IDE config)
 
 ### 1c. Root file removals
-- [ ] Delete `package.json`
-- [ ] Delete `yarn.lock`, `.yarnrc.yml`, `yarn`, `yarn.bat`
-- [ ] Delete `pyproject.toml`, `uv.lock`, `.python-version`
-- [ ] Delete `.mypy.ini`, `.ruff.toml`
-- [ ] Delete `.eslintrc.cjs`, `.prettierrc`, `.dprint.json`
-- [ ] Delete `.readthedocs.yaml`, `.dockerignore`
-- [ ] Delete `run.bat`
+- [x] Delete `package.json`
+- [x] Delete `yarn.lock`, `.yarnrc.yml`, `yarn`, `yarn.bat`
+- [x] Delete `pyproject.toml`, `uv.lock`, `.python-version`
+- [x] Delete `.mypy.ini`, `.ruff.toml`
+- [x] Delete `.eslintrc.cjs`, `.prettierrc`, `.dprint.json`
+- [x] Delete `.readthedocs.yaml`, `.dockerignore`
+- [x] Delete `run.bat`
 
 ### 1d. Partial directory cleanups
-- [ ] Remove `qt/launcher/src/platform/windows.rs`
-- [ ] Remove `qt/launcher/src/platform/unix.rs`
-- [ ] Remove `qt/launcher/src/bin/` (Windows binaries)
-- [ ] Remove `qt/icons/`, `qt/release/`, `qt/tests/`, `qt/tools/`
-- [ ] Remove `docs/windows.md`, `docs/linux.md`
+- [x] Remove `qt/launcher/src/platform/windows.rs`
+- [x] Remove `qt/launcher/src/platform/unix.rs`
+- [x] Remove `qt/launcher/src/bin/` (Windows binaries)
+- [x] Remove `qt/icons/`, `qt/release/`, `qt/tests/`, `qt/tools/`
+- [x] Remove `docs/windows.md`, `docs/linux.md`
 
 ### 1e. Codegen cleanup
-- [ ] Delete `rslib/proto/python.rs`
-- [ ] Delete `rslib/proto/typescript.rs`
-- [ ] Edit `rslib/proto/build.rs` -- remove python/typescript calls and mod declarations
-- [ ] Delete `rslib/i18n/python.rs` (if exists)
-- [ ] Delete `rslib/i18n/typescript.rs` (if exists)
-- [ ] Edit `rslib/i18n/build.rs` -- remove python/typescript calls (if applicable)
+- [x] Delete `rslib/proto/python.rs`
+- [x] Delete `rslib/proto/typescript.rs`
+- [x] Edit `rslib/proto/build.rs` -- remove python/typescript calls and mod declarations
+- [x] Delete `rslib/i18n/python.rs` (if exists)
+- [x] Delete `rslib/i18n/typescript.rs` (if exists)
+- [x] Edit `rslib/i18n/build.rs` -- remove python/typescript calls (if applicable)
 
 ### 1f. Windows-specific Rust removal
-- [ ] Delete `rslib/src/card_rendering/tts/windows.rs`
-- [ ] Delete `rslib/src/error/windows.rs`
-- [ ] Edit `rslib/src/card_rendering/tts/mod.rs` -- remove `#[cfg(windows)]` branch
-- [ ] Edit `rslib/src/error/mod.rs` -- remove `WindowsError` variant
-- [ ] Edit `rslib/src/backend/error.rs` -- remove Windows error handling
+- [x] Delete `rslib/src/card_rendering/tts/windows.rs`
+- [x] Delete `rslib/src/error/windows.rs`
+- [x] Edit `rslib/src/card_rendering/tts/mod.rs` -- remove `#[cfg(windows)]` branch
+- [x] Edit `rslib/src/error/mod.rs` -- remove `WindowsError` variant
+- [x] Edit `rslib/src/backend/error.rs` -- remove Windows error handling
 
 ### 1g. Build system migration
-- [ ] Install protoc: `brew install protobuf`
-- [ ] Edit `.cargo/config.toml` -- remove DESCRIPTORS_BIN, PROTOC, STRINGS_*, PYO3_NO_PYTHON, Windows rustflags
-- [ ] Edit `rslib/proto/rust.rs` -- remove `set_protoc_path()` function
-- [ ] Edit `rslib/build.rs` -- replace `out/buildhash` with `git rev-parse --short HEAD`
+- [x] Install protoc: `brew install protobuf`
+- [x] Edit `.cargo/config.toml` -- remove DESCRIPTORS_BIN, PROTOC, STRINGS_*, PYO3_NO_PYTHON, Windows rustflags
+- [x] Edit `rslib/proto/rust.rs` -- remove `set_protoc_path()` function
+- [x] Edit `rslib/build.rs` -- replace `out/buildhash` with `git rev-parse --short HEAD`
 
 ### 1h. Workspace cleanup
-- [ ] Edit root `Cargo.toml` -- remove non-Rust workspace members (build/*, pylib/rsbridge, tools/minilints)
-- [ ] Edit root `Cargo.toml` -- remove Windows deps (winapi, windows, widestring, embed-resource, junction, libc-stdhandle)
-- [ ] Edit root `Cargo.toml` -- remove `pyo3` dependency
+- [x] Edit root `Cargo.toml` -- remove non-Rust workspace members (build/*, pylib/rsbridge, tools/minilints)
+- [x] Edit root `Cargo.toml` -- remove Windows deps (winapi, windows, widestring, embed-resource, junction, libc-stdhandle)
+- [x] Edit root `Cargo.toml` -- remove `pyo3` dependency
 - [ ] Edit `qt/launcher/Cargo.toml` -- remove Windows/Linux platform configs
 
 ### 1i. Validation
-- [ ] Run `cargo check --workspace`
+- [x] Run `cargo check --workspace`
 - [ ] Run `cargo test --workspace`
 - [ ] Grep for stale references: `grep -r "pylib\|aqt\|rsbridge\|pyo3" rslib/ --include="*.rs"`
 - [ ] Commit: "strip non-Rust code for macOS-only SwiftUI build"
