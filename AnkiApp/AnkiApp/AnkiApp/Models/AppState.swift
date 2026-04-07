@@ -6,6 +6,7 @@ import Observation
 final class AppState {
     var isCollectionOpen: Bool = false
     var collectionPath: String = ""
+    var mediaFolderURL: URL? = nil
     var selectedSidebarItem: SidebarItem = .decks
     var error: AnkiError? = nil
 
@@ -27,6 +28,7 @@ final class AppState {
         do {
             try await service.openCollection(path: path, mediaFolder: mediaFolder, mediaDb: mediaDb)
             collectionPath = path
+            mediaFolderURL = URL(fileURLWithPath: mediaFolder, isDirectory: true)
             isCollectionOpen = true
             self.error = nil
         } catch let e as AnkiError {

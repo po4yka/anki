@@ -63,6 +63,7 @@ enum NotesMethod {
     static let getNote: UInt32 = 6
     static let removeNotes: UInt32 = 7
     static let noteFieldsCheck: UInt32 = 11
+    static let clozeNumbersInNote: UInt32 = 8
     static let cardsOfNote: UInt32 = 12
 }
 

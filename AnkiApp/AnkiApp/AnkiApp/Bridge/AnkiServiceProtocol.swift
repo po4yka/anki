@@ -24,4 +24,9 @@ protocol AnkiServiceProtocol: Sendable {
     func allTags() async throws -> Anki_Generic_StringList
     func getCard(id: Int64) async throws -> Anki_Cards_Card
     func updateNotes(notes: [Anki_Notes_Note]) async throws -> Anki_Collection_OpChanges
+    func getUndoStatus() async throws -> Anki_Collection_UndoStatus
+    func undo() async throws -> Anki_Collection_OpChangesAfterUndo
+    func redo() async throws -> Anki_Collection_OpChangesAfterUndo
+    func extractAvTags(text: String, questionSide: Bool) async throws -> Anki_CardRendering_ExtractAvTagsResponse
+    func clozeNumbersInNote(note: Anki_Notes_Note) async throws -> Anki_Notes_ClozeNumbersInNoteResponse
 }

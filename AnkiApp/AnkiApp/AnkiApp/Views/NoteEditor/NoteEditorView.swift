@@ -4,6 +4,7 @@ struct NoteEditorView: View {
     @Environment(AppState.self) private var appState
     @State private var model: NoteEditorModel?
     @Environment(\.dismiss) private var dismiss
+    var noteId: Int64? = nil
 
     var body: some View {
         Group {
@@ -45,15 +46,21 @@ struct NoteEditorView: View {
                         .disabled(model.isSaving)
                     }
                 }
-                .navigationTitle("Add Note")
+                .navigationTitle(noteId != nil ? "Edit Note" : "Add Note")
             } else {
                 ProgressView("Loading...")
             }
         }
         .onAppear {
             if model == nil {
-                model = NoteEditorModel(service: appState.service)
-                Task { await model?.load() }
+                let m = NoteEditorModel(service: appState.service)
+                model = m
+                Task {
+                    await m.load()
+                    if let noteId {
+                        await m.loadNote(id: noteId)
+                    }
+                }
             }
         }
         .frame(minWidth: 500, minHeight: 400)

@@ -1,9 +1,12 @@
 import SwiftUI
+import AVFoundation
 
 struct ReviewerView: View {
     @Environment(AppState.self) private var appState
     @State private var model: ReviewerModel?
     @State private var showingAnswer = false
+    @State private var audioPlayer: AVPlayer?
+    @State private var editingNoteId: Int64? = nil
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -15,11 +18,46 @@ struct ReviewerView: View {
                     }
                 } else {
                     VStack(spacing: 0) {
-                        ReviewProgress(
-                            newCount: model.queuedCards?.newCount ?? 0,
-                            learnCount: model.queuedCards?.learningCount ?? 0,
-                            reviewCount: model.queuedCards?.reviewCount ?? 0
-                        )
+                        HStack {
+                            ReviewProgress(
+                                newCount: model.queuedCards?.newCount ?? 0,
+                                learnCount: model.queuedCards?.learningCount ?? 0,
+                                reviewCount: model.queuedCards?.reviewCount ?? 0
+                            )
+
+                            Spacer()
+
+                            if let undoLabel = model.undoLabel {
+                                Button {
+                                    Task { await model.undoLastAnswer() }
+                                } label: {
+                                    Image(systemName: "arrow.uturn.backward")
+                                }
+                                .buttonStyle(.borderless)
+                                .help(undoLabel)
+                                .keyboardShortcut("z", modifiers: .command)
+                            }
+
+                            Button {
+                                if let noteId = model.queuedCards?.cards.first?.card.noteID {
+                                    editingNoteId = noteId
+                                }
+                            } label: {
+                                Image(systemName: "pencil.circle")
+                            }
+                            .buttonStyle(.borderless)
+                            .help("Edit Note")
+
+                            if !model.currentAvTags.isEmpty {
+                                Button {
+                                    replayAudio()
+                                } label: {
+                                    Image(systemName: "speaker.wave.2")
+                                }
+                                .buttonStyle(.borderless)
+                                .help("Replay Audio")
+                            }
+                        }
                         .padding(.horizontal)
                         .padding(.top, 8)
 
@@ -29,7 +67,10 @@ struct ReviewerView: View {
                             CardWebView(
                                 html: cardHTML,
                                 css: "",
-                                baseURL: nil
+                                baseURL: appState.mediaFolderURL,
+                                onPlayAudio: { filename in
+                                    playAudioFile(filename)
+                                }
                             )
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                         } else {
@@ -86,6 +127,14 @@ struct ReviewerView: View {
             }
         }
         .frame(minWidth: 600, minHeight: 500)
+        .sheet(item: Binding(
+            get: { editingNoteId.map { ReviewEditNoteItem(noteId: $0) } },
+            set: { editingNoteId = $0?.noteId }
+        )) { item in
+            NavigationStack {
+                NoteEditorView(noteId: item.noteId)
+            }
+        }
     }
 
     private var cardHTML: String {
@@ -96,6 +145,28 @@ struct ReviewerView: View {
             return node.replacement.currentText
         }.joined()
     }
+
+    private func playAudioFile(_ filename: String) {
+        guard let mediaFolder = appState.mediaFolderURL else { return }
+        let fileURL = mediaFolder.appendingPathComponent(filename)
+        audioPlayer = AVPlayer(url: fileURL)
+        audioPlayer?.play()
+    }
+
+    private func replayAudio() {
+        guard let model else { return }
+        for tag in model.currentAvTags {
+            if case .soundOrVideo(let filename) = tag.value {
+                playAudioFile(filename)
+                return
+            }
+        }
+    }
+}
+
+private struct ReviewEditNoteItem: Identifiable {
+    let noteId: Int64
+    var id: Int64 { noteId }
 }
 
 #Preview {

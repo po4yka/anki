@@ -6,6 +6,8 @@ import Observation
 final class ReviewerModel {
     var queuedCards: Anki_Scheduler_QueuedCards? = nil
     var currentCardHTML: Anki_CardRendering_RenderCardResponse? = nil
+    var currentAvTags: [Anki_CardRendering_AVTag] = []
+    var undoLabel: String? = nil
     var isLoading: Bool = false
     var error: AnkiError? = nil
 
@@ -22,11 +24,29 @@ final class ReviewerModel {
             queuedCards = try await service.getQueuedCards(fetchLimit: 1)
             if let cardId = queuedCards?.cards.first?.card.id {
                 currentCardHTML = try await service.renderExistingCard(cardId: cardId)
+                await extractAvTags()
             }
             error = nil
         } catch let e as AnkiError {
             error = e
         } catch {}
+    }
+
+    private func extractAvTags() async {
+        guard let rendered = currentCardHTML else {
+            currentAvTags = []
+            return
+        }
+        let text = rendered.answerNodes.map { node -> String in
+            if !node.text.isEmpty { return node.text }
+            return node.replacement.currentText
+        }.joined()
+        do {
+            let response = try await service.extractAvTags(text: text, questionSide: false)
+            currentAvTags = response.avTags
+        } catch {
+            currentAvTags = []
+        }
     }
 
     func answerCard(
@@ -46,8 +66,28 @@ final class ReviewerModel {
                 millisecondsTaken: 0
             )
             await loadQueue()
+            await refreshUndoStatus()
         } catch let e as AnkiError {
             error = e
         } catch {}
+    }
+
+    func undoLastAnswer() async {
+        do {
+            _ = try await service.undo()
+            await loadQueue()
+            await refreshUndoStatus()
+        } catch let e as AnkiError {
+            error = e
+        } catch {}
+    }
+
+    private func refreshUndoStatus() async {
+        do {
+            let status = try await service.getUndoStatus()
+            undoLabel = status.undo.isEmpty ? nil : status.undo
+        } catch {
+            undoLabel = nil
+        }
     }
 }

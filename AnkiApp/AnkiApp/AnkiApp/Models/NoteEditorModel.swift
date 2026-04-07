@@ -14,6 +14,7 @@ final class NoteEditorModel {
     var isSaving: Bool = false
     var isLoading: Bool = false
     var error: AnkiError? = nil
+    var editingNoteId: Int64? = nil
     var selectedDeckId: Int64 = 0
     var deckTree: Anki_Decks_DeckTreeNode? = nil
     var selectedNotetypeId: Int64 = 0
@@ -53,7 +54,20 @@ final class NoteEditorModel {
         isLoading = true
         defer { isLoading = false }
         do {
-            note = try await service.getNote(id: id)
+            let loadedNote = try await service.getNote(id: id)
+            note = loadedNote
+            editingNoteId = id
+            selectedNotetypeId = loadedNote.notetypeID
+            await loadNotetype()
+            // Find the deck from the first card of this note
+            let cards = try await service.searchCards(
+                search: "nid:\(id)",
+                order: Anki_Search_SortOrder()
+            )
+            if let firstCardId = cards.ids.first {
+                let card = try await service.getCard(id: firstCardId)
+                selectedDeckId = card.deckID
+            }
             error = nil
         } catch let e as AnkiError {
             error = e
@@ -76,7 +90,11 @@ final class NoteEditorModel {
         guard var noteToSave = note else { return }
         noteToSave.notetypeID = selectedNotetypeId
         noteToSave.tags = tags
-        await addNote(note: noteToSave, deckId: selectedDeckId)
+        if editingNoteId != nil {
+            await updateNote(note: noteToSave)
+        } else {
+            await addNote(note: noteToSave, deckId: selectedDeckId)
+        }
     }
 
     func loadDecks() async {
@@ -115,6 +133,17 @@ final class NoteEditorModel {
         defer { isSaving = false }
         do {
             _ = try await service.addNote(note: note, deckId: deckId)
+            error = nil
+        } catch let e as AnkiError {
+            error = e
+        } catch {}
+    }
+
+    func updateNote(note: Anki_Notes_Note) async {
+        isSaving = true
+        defer { isSaving = false }
+        do {
+            _ = try await service.updateNotes(notes: [note])
             error = nil
         } catch let e as AnkiError {
             error = e

@@ -179,4 +179,50 @@ actor AnkiService: AnkiServiceProtocol {
             input: req
         )
     }
+
+    func getUndoStatus() async throws -> Anki_Collection_UndoStatus {
+        let req = Anki_Generic_Empty()
+        return try backend.command(
+            service: ServiceIndex.collection,
+            method: CollectionMethod.getUndoStatus,
+            input: req
+        )
+    }
+
+    func undo() async throws -> Anki_Collection_OpChangesAfterUndo {
+        let req = Anki_Generic_Empty()
+        return try backend.command(
+            service: ServiceIndex.collection,
+            method: CollectionMethod.undo,
+            input: req
+        )
+    }
+
+    func redo() async throws -> Anki_Collection_OpChangesAfterUndo {
+        let req = Anki_Generic_Empty()
+        return try backend.command(
+            service: ServiceIndex.collection,
+            method: CollectionMethod.redo,
+            input: req
+        )
+    }
+
+    func extractAvTags(text: String, questionSide: Bool) async throws -> Anki_CardRendering_ExtractAvTagsResponse {
+        var req = Anki_CardRendering_ExtractAvTagsRequest()
+        req.text = text
+        req.questionSide = questionSide
+        return try backend.command(
+            service: ServiceIndex.cardRendering,
+            method: CardRenderingMethod.extractAvTags,
+            input: req
+        )
+    }
+
+    func clozeNumbersInNote(note: Anki_Notes_Note) async throws -> Anki_Notes_ClozeNumbersInNoteResponse {
+        return try backend.command(
+            service: ServiceIndex.notes,
+            method: NotesMethod.clozeNumbersInNote,
+            input: note
+        )
+    }
 }
