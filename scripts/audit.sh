@@ -72,6 +72,71 @@ else
     warn "AnkiApp/ directory not found -- skipping Swift checks"
 fi
 
+# --- SwiftLint ---
+section "SwiftLint"
+
+if command -v swiftlint >/dev/null 2>&1; then
+    if [ -d "AnkiApp/" ]; then
+        SWIFTLINT_OUT=$(swiftlint lint --config .swiftlint.yml --quiet 2>&1 || true)
+        SWIFTLINT_ERRORS=$(echo "$SWIFTLINT_OUT" | grep -c ': error:' 2>/dev/null || echo "0")
+        SWIFTLINT_WARNS=$(echo "$SWIFTLINT_OUT" | grep -c ': warning:' 2>/dev/null || echo "0")
+        if [ "$SWIFTLINT_ERRORS" -gt 0 ]; then
+            fail "swiftlint found $SWIFTLINT_ERRORS error(s) and $SWIFTLINT_WARNS warning(s)"
+            echo "$SWIFTLINT_OUT" | grep ': error:' | head -20
+        elif [ "$SWIFTLINT_WARNS" -gt 0 ]; then
+            warn "swiftlint found $SWIFTLINT_WARNS warning(s)"
+            echo "$SWIFTLINT_OUT" | grep ': warning:' | head -20
+        else
+            pass "swiftlint clean"
+        fi
+    else
+        warn "AnkiApp/ directory not found -- skipping swiftlint"
+    fi
+else
+    warn "swiftlint not installed -- skipping"
+fi
+
+# --- SwiftFormat ---
+section "SwiftFormat"
+
+if command -v swiftformat >/dev/null 2>&1; then
+    if [ -d "AnkiApp/" ]; then
+        SWIFTFORMAT_OUT=$(swiftformat --config .swiftformat --lint AnkiApp/AnkiApp/AnkiApp --exclude AnkiApp/AnkiApp/AnkiApp/Proto 2>&1 || true)
+        SWIFTFORMAT_ISSUES=$(echo "$SWIFTFORMAT_OUT" | grep -c 'would have been formatted' 2>/dev/null || echo "0")
+        if [ "$SWIFTFORMAT_ISSUES" -gt 0 ]; then
+            fail "swiftformat found $SWIFTFORMAT_ISSUES file(s) with formatting issues"
+            echo "$SWIFTFORMAT_OUT" | grep 'would have been formatted' | head -20
+        else
+            pass "swiftformat clean"
+        fi
+    else
+        warn "AnkiApp/ directory not found -- skipping swiftformat"
+    fi
+else
+    warn "swiftformat not installed -- skipping"
+fi
+
+# --- cargo deny ---
+section "Cargo Deny"
+
+if command -v cargo-deny >/dev/null 2>&1 || cargo deny --version >/dev/null 2>&1; then
+    if cargo deny check >/dev/null 2>&1; then
+        pass "cargo deny clean"
+    else
+        DENY_OUT=$(cargo deny check 2>&1 || true)
+        DENY_ERRORS=$(echo "$DENY_OUT" | grep -c 'error\[' 2>/dev/null || echo "0")
+        DENY_WARNS=$(echo "$DENY_OUT" | grep -c 'warning\[' 2>/dev/null || echo "0")
+        if [ "$DENY_ERRORS" -gt 0 ]; then
+            fail "cargo deny found $DENY_ERRORS error(s)"
+            echo "$DENY_OUT" | grep 'error\[' | head -10
+        else
+            warn "cargo deny found $DENY_WARNS warning(s)"
+        fi
+    fi
+else
+    warn "cargo-deny not installed -- skipping (install with: cargo install cargo-deny)"
+fi
+
 # --- Proto checks ---
 section "Proto"
 

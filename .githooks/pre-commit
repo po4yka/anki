@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pre-commit hook: runs Rust formatting and linting checks.
+# Pre-commit hook: runs formatting, linting, and security checks.
 # Install: git config core.hooksPath .githooks
 # Bypass: SKIP_HOOKS=1 git commit -m "..."
 
@@ -22,10 +22,27 @@ cargo clippy --workspace -- -D warnings || {
     exit 1
 }
 
-# SwiftLint (optional, non-blocking)
+echo "[pre-commit] Running cargo deny check advisories..."
+if command -v cargo-deny &>/dev/null || cargo deny --version &>/dev/null 2>&1; then
+    cargo deny check advisories || echo "[pre-commit] cargo deny found advisories (non-blocking)"
+else
+    echo "[pre-commit] cargo deny not installed, skipping advisory check"
+fi
+
 if command -v swiftlint &>/dev/null; then
-    echo "[pre-commit] Running swiftlint..."
-    swiftlint lint --quiet AnkiApp/ || echo "[pre-commit] swiftlint warnings found (non-blocking)"
+    echo "[pre-commit] Running swiftlint --strict..."
+    swiftlint --strict || {
+        echo "[pre-commit] swiftlint failed."
+        exit 1
+    }
+fi
+
+if command -v swiftformat &>/dev/null; then
+    echo "[pre-commit] Running swiftformat --lint..."
+    swiftformat --lint . || {
+        echo "[pre-commit] swiftformat lint failed."
+        exit 1
+    }
 fi
 
 echo "[pre-commit] All checks passed."

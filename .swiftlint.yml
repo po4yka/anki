@@ -1,0 +1,41 @@
+included:
+  - AnkiApp/AnkiApp/AnkiApp
+
+excluded:
+  - AnkiApp/AnkiApp/AnkiApp/Proto
+
+disabled_rules:
+  - trailing_whitespace
+  - line_length
+
+opt_in_rules:
+  - force_unwrapping
+  - implicitly_unwrapped_optional
+  - empty_count
+  - closure_spacing
+  - first_where
+  - last_where
+  - modifier_order
+  - redundant_nil_coalescing
+  - sorted_first_last
+  - unused_import
+  - vertical_whitespace_closing_braces
+
+custom_rules:
+  no_observable_object:
+    name: "No ObservableObject"
+    regex: "ObservableObject"
+    message: "Use @Observable instead of ObservableObject."
+    severity: warning
+
+  no_combine_import:
+    name: "No Combine Import"
+    regex: "import Combine"
+    message: "Prefer async/await over Combine."
+    severity: warning
+
+  no_xctest:
+    name: "No XCTest"
+    regex: "import XCTest"
+    message: "Prefer Swift Testing over XCTest."
+    severity: warning

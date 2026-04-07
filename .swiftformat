@@ -1,0 +1,7 @@
+--swiftversion 6.0
+--indent 4
+--indentcase true
+--maxwidth 120
+--semicolons never
+--self remove
+--exclude AnkiApp/AnkiApp/AnkiApp/Proto
