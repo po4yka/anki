@@ -12,18 +12,22 @@ Git tags mark sync boundaries: `upstream-sync/YYYY-MM-DD`
 
 ---
 
-## Pending Review
+## Sync History
 
-No sync has been performed yet. Run `/sync-status` to see what upstream has changed
-since the fork diverged, then `/sync-upstream` to begin reviewing commits.
+## Sync 2026-04-07
+Upstream ref: ankitects/anki@64386cab63 (upstream/main as of 2026-04-07)
+Divergence base: 922953acf4638435b5daf5c6657eacaa957c72e6 (2026-04-03)
+Tag: upstream-sync/2026-04-07
 
-The fork diverged from upstream after the last shared commit in the original
-ankitects/anki history. The initial sync will establish the baseline tag
-`upstream-sync/initial`.
+### Applied
+_(none — no commits touched rslib/, proto/, ftl/, or root Cargo.toml)_
+
+### Skipped
+- `c7679305` Add a standardized pull request template (#4655) (reason: GitHub infra only, `.github/pull_request_template.md`)
+- `447795bbb` Add pre-commit for automated pre-push checks (#4660) (reason: upstream uses Python/ninja toolchain; fork uses `.githooks/`)
+- `64386cab6` fix: clipboard image paste produces [sound:] tag instead of `<img>` (#4668) (reason: `qt/aqt/editor.py` — Python/Qt UI, stripped from this fork)
 
 ---
-
-## Sync History
 
 <!-- Entries added here after each sync, newest first. Format:
 
