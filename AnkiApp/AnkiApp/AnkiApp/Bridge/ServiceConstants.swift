@@ -45,6 +45,10 @@ enum SchedulerMethod {
     static let setDueDate: UInt32 = 19
     static let getSchedulingStates: UInt32 = 20
     static let describeNextStates: UInt32 = 21
+    static let emptyFilteredDeck: UInt32 = 15
+    static let rebuildFilteredDeck: UInt32 = 16
+    static let customStudy: UInt32 = 27
+    static let customStudyDefaults: UInt32 = 28
 }
 
 enum DecksMethod {
@@ -106,19 +110,34 @@ enum TagsMethod {
 }
 
 enum NotetypesMethod {
+    static let addNotetype: UInt32 = 0
+    static let updateNotetype: UInt32 = 1
+    static let removeNotetype: UInt32 = 2
     static let getNotetype: UInt32 = 6
+    static let getNotetypeNamesAndCounts: UInt32 = 7
     static let getNotetypeNames: UInt32 = 8
     static let getFieldNames: UInt32 = 16
 }
 
+enum ImageOcclusionMethod {
+    static let getImageForOcclusion: UInt32 = 0
+    static let addImageOcclusionNote: UInt32 = 4
+    static let updateImageOcclusionNote: UInt32 = 5
+}
+
 enum ImportExportMethod {
     static let importAnkiPackage: UInt32 = 0
+    static let getCsvMetadata: UInt32 = 2
+    static let importCsv: UInt32 = 3
     static let exportAnkiPackage: UInt32 = 4
 }
 
 enum MediaMethod {
     static let checkMedia: UInt32 = 0
     static let addMediaFile: UInt32 = 1
+    static let trashMediaFiles: UInt32 = 2
+    static let emptyTrash: UInt32 = 3
+    static let restoreTrash: UInt32 = 4
 }
 
 enum DeckConfigMethod {

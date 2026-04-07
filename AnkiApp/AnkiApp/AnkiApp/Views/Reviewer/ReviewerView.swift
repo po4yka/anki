@@ -13,7 +13,7 @@ struct ReviewerView: View {
         Group {
             if let model {
                 if model.queuedCards?.cards.isEmpty ?? true, !model.isLoading {
-                    CongratsView {
+                    CongratsView(deckId: model.lastDeckId) {
                         dismiss()
                     }
                 } else {

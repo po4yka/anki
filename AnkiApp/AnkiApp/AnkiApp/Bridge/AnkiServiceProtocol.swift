@@ -57,4 +57,21 @@ protocol AnkiServiceProtocol: Sendable {
     func setFlag(cardIds: [Int64], flag: UInt32) async throws -> Anki_Collection_OpChangesWithCount
     func importAnkiPackage(path: String, options: Anki_ImportExport_ImportAnkiPackageOptions) async throws -> Anki_ImportExport_ImportResponse
     func exportAnkiPackage(outPath: String, options: Anki_ImportExport_ExportAnkiPackageOptions, limit: Anki_ImportExport_ExportLimit) async throws -> UInt32
+    func getCsvMetadata(path: String, delimiter: Anki_ImportExport_CsvMetadata.Delimiter?, notetypeId: Int64?, deckId: Int64?, isHtml: Bool?) async throws -> Anki_ImportExport_CsvMetadata
+    func importCsv(path: String, metadata: Anki_ImportExport_CsvMetadata) async throws -> Anki_ImportExport_ImportResponse
+    func checkMedia() async throws -> Anki_Media_CheckMediaResponse
+    func trashMediaFiles(filenames: [String]) async throws
+    func emptyTrash() async throws
+    func restoreTrash() async throws
+    func addNotetype(notetype: Anki_Notetypes_Notetype) async throws -> Anki_Collection_OpChangesWithId
+    func updateNotetype(notetype: Anki_Notetypes_Notetype) async throws -> Anki_Collection_OpChanges
+    func removeNotetype(id: Int64) async throws -> Anki_Collection_OpChanges
+    func getNotetypeNamesAndCounts() async throws -> Anki_Notetypes_NotetypeUseCounts
+    func getImageForOcclusion(path: String) async throws -> Anki_ImageOcclusion_GetImageForOcclusionResponse
+    func addImageOcclusionNote(request: Anki_ImageOcclusion_AddImageOcclusionNoteRequest) async throws -> Anki_Collection_OpChanges
+    func updateImageOcclusionNote(request: Anki_ImageOcclusion_UpdateImageOcclusionNoteRequest) async throws -> Anki_Collection_OpChanges
+    func customStudy(request: Anki_Scheduler_CustomStudyRequest) async throws -> Anki_Collection_OpChanges
+    func customStudyDefaults(deckId: Int64) async throws -> Anki_Scheduler_CustomStudyDefaultsResponse
+    func emptyFilteredDeck(deckId: Int64) async throws -> Anki_Collection_OpChanges
+    func rebuildFilteredDeck(deckId: Int64) async throws -> Anki_Collection_OpChangesWithCount
 }

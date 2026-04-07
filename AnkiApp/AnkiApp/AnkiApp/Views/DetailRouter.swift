@@ -9,6 +9,10 @@ struct DetailRouter: View {
             DeckBrowserView()
         case .browse:
             SearchView()
+        case .notetypes:
+            NotetypeListView()
+        case .imageOcclusion:
+            ImageOcclusionView()
         case .stats:
             StatisticsView()
         case .importPkg:

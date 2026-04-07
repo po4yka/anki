@@ -10,6 +10,32 @@ struct AnkiApp: App {
                 .environment(appState)
         }
         .commands {
+            CommandGroup(replacing: .undoRedo) {
+                Button(appState.undoStatus?.undo.isEmpty == false
+                       ? "Undo \(appState.undoStatus!.undo)" : "Undo") {
+                    Task {
+                        do {
+                            _ = try await appState.service.undo()
+                            await appState.refreshUndoStatus()
+                        } catch {}
+                    }
+                }
+                .keyboardShortcut("z", modifiers: .command)
+                .disabled(appState.undoStatus?.undo.isEmpty ?? true)
+
+                Button(appState.undoStatus?.redo.isEmpty == false
+                       ? "Redo \(appState.undoStatus!.redo)" : "Redo") {
+                    Task {
+                        do {
+                            _ = try await appState.service.redo()
+                            await appState.refreshUndoStatus()
+                        } catch {}
+                    }
+                }
+                .keyboardShortcut("z", modifiers: [.command, .shift])
+                .disabled(appState.undoStatus?.redo.isEmpty ?? true)
+            }
+
             CommandGroup(after: .newItem) {
                 Button("Add Note") {
                     // TODO: open add-note window

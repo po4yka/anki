@@ -9,6 +9,7 @@ final class AppState {
     var mediaFolderURL: URL? = nil
     var selectedSidebarItem: SidebarItem = .decks
     var error: AnkiError? = nil
+    var undoStatus: Anki_Collection_UndoStatus?
 
     let service: AnkiService
     var atlasService: AtlasService? = nil
@@ -31,9 +32,18 @@ final class AppState {
             mediaFolderURL = URL(fileURLWithPath: mediaFolder, isDirectory: true)
             isCollectionOpen = true
             self.error = nil
+            await refreshUndoStatus()
         } catch let e as AnkiError {
             self.error = e
         } catch {}
+    }
+
+    func refreshUndoStatus() async {
+        do {
+            undoStatus = try await service.getUndoStatus()
+        } catch {
+            undoStatus = nil
+        }
     }
 
     func closeCollection() async {

@@ -8,6 +8,7 @@ struct DeckRowView: View {
     @State private var showingRenameAlert = false
     @State private var showingDeleteConfirm = false
     @State private var showingDeckConfig = false
+    @State private var showingCustomStudy = false
     @State private var renameName = ""
 
     var body: some View {
@@ -41,6 +42,9 @@ struct DeckRowView: View {
                 showingDeleteConfirm = true
             }
             Divider()
+            Button("Custom Study...") {
+                showingCustomStudy = true
+            }
             Button("Options...") {
                 showingDeckConfig = true
             }
@@ -70,6 +74,9 @@ struct DeckRowView: View {
         }
         .sheet(isPresented: $showingDeckConfig) {
             DeckConfigView(deckId: node.deckID, deckName: node.name, service: appState.service)
+        }
+        .sheet(isPresented: $showingCustomStudy) {
+            CustomStudyView(service: appState.service, deckId: node.deckID)
         }
     }
 }

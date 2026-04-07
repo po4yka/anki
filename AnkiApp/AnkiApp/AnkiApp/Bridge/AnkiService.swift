@@ -520,4 +520,165 @@ actor AnkiService: AnkiServiceProtocol {
         )
         return response.val
     }
+
+    func getCsvMetadata(path: String, delimiter: Anki_ImportExport_CsvMetadata.Delimiter?, notetypeId: Int64?, deckId: Int64?, isHtml: Bool?) async throws -> Anki_ImportExport_CsvMetadata {
+        var req = Anki_ImportExport_CsvMetadataRequest()
+        req.path = path
+        if let delimiter { req.delimiter = delimiter }
+        if let notetypeId { req.notetypeID = notetypeId }
+        if let deckId { req.deckID = deckId }
+        if let isHtml { req.isHTML = isHtml }
+        return try backend.command(
+            service: ServiceIndex.importExport,
+            method: ImportExportMethod.getCsvMetadata,
+            input: req
+        )
+    }
+
+    func importCsv(path: String, metadata: Anki_ImportExport_CsvMetadata) async throws -> Anki_ImportExport_ImportResponse {
+        var req = Anki_ImportExport_ImportCsvRequest()
+        req.path = path
+        req.metadata = metadata
+        return try backend.command(
+            service: ServiceIndex.importExport,
+            method: ImportExportMethod.importCsv,
+            input: req
+        )
+    }
+
+    func checkMedia() async throws -> Anki_Media_CheckMediaResponse {
+        let req = Anki_Generic_Empty()
+        return try backend.command(
+            service: ServiceIndex.media,
+            method: MediaMethod.checkMedia,
+            input: req
+        )
+    }
+
+    func trashMediaFiles(filenames: [String]) async throws {
+        var req = Anki_Media_TrashMediaFilesRequest()
+        req.fnames = filenames
+        let _: Anki_Generic_Empty = try backend.command(
+            service: ServiceIndex.media,
+            method: MediaMethod.trashMediaFiles,
+            input: req
+        )
+    }
+
+    func emptyTrash() async throws {
+        let req = Anki_Generic_Empty()
+        let _: Anki_Generic_Empty = try backend.command(
+            service: ServiceIndex.media,
+            method: MediaMethod.emptyTrash,
+            input: req
+        )
+    }
+
+    func restoreTrash() async throws {
+        let req = Anki_Generic_Empty()
+        let _: Anki_Generic_Empty = try backend.command(
+            service: ServiceIndex.media,
+            method: MediaMethod.restoreTrash,
+            input: req
+        )
+    }
+
+    func addNotetype(notetype: Anki_Notetypes_Notetype) async throws -> Anki_Collection_OpChangesWithId {
+        return try backend.command(
+            service: ServiceIndex.notetypes,
+            method: NotetypesMethod.addNotetype,
+            input: notetype
+        )
+    }
+
+    func updateNotetype(notetype: Anki_Notetypes_Notetype) async throws -> Anki_Collection_OpChanges {
+        return try backend.command(
+            service: ServiceIndex.notetypes,
+            method: NotetypesMethod.updateNotetype,
+            input: notetype
+        )
+    }
+
+    func removeNotetype(id: Int64) async throws -> Anki_Collection_OpChanges {
+        var req = Anki_Notetypes_NotetypeId()
+        req.ntid = id
+        return try backend.command(
+            service: ServiceIndex.notetypes,
+            method: NotetypesMethod.removeNotetype,
+            input: req
+        )
+    }
+
+    func getNotetypeNamesAndCounts() async throws -> Anki_Notetypes_NotetypeUseCounts {
+        let req = Anki_Generic_Empty()
+        return try backend.command(
+            service: ServiceIndex.notetypes,
+            method: NotetypesMethod.getNotetypeNamesAndCounts,
+            input: req
+        )
+    }
+
+    func getImageForOcclusion(path: String) async throws -> Anki_ImageOcclusion_GetImageForOcclusionResponse {
+        var req = Anki_ImageOcclusion_GetImageForOcclusionRequest()
+        req.path = path
+        return try backend.command(
+            service: ServiceIndex.imageOcclusion,
+            method: ImageOcclusionMethod.getImageForOcclusion,
+            input: req
+        )
+    }
+
+    func addImageOcclusionNote(request: Anki_ImageOcclusion_AddImageOcclusionNoteRequest) async throws -> Anki_Collection_OpChanges {
+        return try backend.command(
+            service: ServiceIndex.imageOcclusion,
+            method: ImageOcclusionMethod.addImageOcclusionNote,
+            input: request
+        )
+    }
+
+    func updateImageOcclusionNote(request: Anki_ImageOcclusion_UpdateImageOcclusionNoteRequest) async throws -> Anki_Collection_OpChanges {
+        return try backend.command(
+            service: ServiceIndex.imageOcclusion,
+            method: ImageOcclusionMethod.updateImageOcclusionNote,
+            input: request
+        )
+    }
+
+    func customStudy(request: Anki_Scheduler_CustomStudyRequest) async throws -> Anki_Collection_OpChanges {
+        return try backend.command(
+            service: ServiceIndex.scheduler,
+            method: SchedulerMethod.customStudy,
+            input: request
+        )
+    }
+
+    func customStudyDefaults(deckId: Int64) async throws -> Anki_Scheduler_CustomStudyDefaultsResponse {
+        var req = Anki_Scheduler_CustomStudyDefaultsRequest()
+        req.deckID = deckId
+        return try backend.command(
+            service: ServiceIndex.scheduler,
+            method: SchedulerMethod.customStudyDefaults,
+            input: req
+        )
+    }
+
+    func emptyFilteredDeck(deckId: Int64) async throws -> Anki_Collection_OpChanges {
+        var req = Anki_Decks_DeckId()
+        req.did = deckId
+        return try backend.command(
+            service: ServiceIndex.scheduler,
+            method: SchedulerMethod.emptyFilteredDeck,
+            input: req
+        )
+    }
+
+    func rebuildFilteredDeck(deckId: Int64) async throws -> Anki_Collection_OpChangesWithCount {
+        var req = Anki_Decks_DeckId()
+        req.did = deckId
+        return try backend.command(
+            service: ServiceIndex.scheduler,
+            method: SchedulerMethod.rebuildFilteredDeck,
+            input: req
+        )
+    }
 }

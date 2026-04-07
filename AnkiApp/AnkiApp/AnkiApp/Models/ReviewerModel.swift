@@ -10,6 +10,7 @@ final class ReviewerModel {
     var undoLabel: String? = nil
     var isLoading: Bool = false
     var error: AnkiError? = nil
+    var lastDeckId: Int64 = 0
 
     private let service: AnkiServiceProtocol
 
@@ -22,6 +23,9 @@ final class ReviewerModel {
         defer { isLoading = false }
         do {
             queuedCards = try await service.getQueuedCards(fetchLimit: 1)
+            if let card = queuedCards?.cards.first?.card {
+                lastDeckId = card.deckID
+            }
             if let cardId = queuedCards?.cards.first?.card.id {
                 currentCardHTML = try await service.renderExistingCard(cardId: cardId)
                 await extractAvTags()

@@ -3,6 +3,8 @@ import SwiftUI
 enum SidebarItem: String, CaseIterable, Identifiable {
     case decks = "Decks"
     case browse = "Browse"
+    case notetypes = "Note Types"
+    case imageOcclusion = "Image Occlusion"
     case stats = "Statistics"
     case importPkg = "Import"
     case exportPkg = "Export"
@@ -18,6 +20,8 @@ enum SidebarItem: String, CaseIterable, Identifiable {
         switch self {
         case .decks: "rectangle.stack"
         case .browse: "magnifyingglass"
+        case .notetypes: "doc.on.doc"
+        case .imageOcclusion: "photo.on.rectangle"
         case .stats: "chart.bar"
         case .importPkg: "square.and.arrow.down"
         case .exportPkg: "square.and.arrow.up"
@@ -40,7 +44,7 @@ enum SidebarItem: String, CaseIterable, Identifiable {
 struct SidebarView: View {
     @Environment(AppState.self) private var appState
 
-    private let ankiItems: [SidebarItem] = [.decks, .browse, .stats, .importPkg, .exportPkg, .sync]
+    private let ankiItems: [SidebarItem] = [.decks, .browse, .notetypes, .imageOcclusion, .stats, .importPkg, .exportPkg, .sync]
     private let atlasItems: [SidebarItem] = [.atlasSearch, .analytics, .generator, .obsidian]
 
     var body: some View {
