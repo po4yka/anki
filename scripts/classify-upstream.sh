@@ -60,7 +60,10 @@ git log "$RANGE" --format="%H %s" | while IFS=' ' read -r hash subject; do
     has_relevant=$(echo "$files" | grep -cE '^(rslib/|proto/|ftl/)' || true)
     has_cargo_toml=$(echo "$files" | grep -cxF 'Cargo.toml' || true)
     has_check=$(echo "$files" | grep -cE '^(Cargo\.lock$|\.cargo/|build\.rs$)' || true)
-    has_skip=$(echo "$files" | grep -cE '^(qt/|pylib/|ts/|web/|aqt/|pip/|python/|node_modules/)' || true)
+    # SKIP: removed UI stacks + GitHub/Python/CI infra that is irrelevant to this fork
+    has_skip=$(echo "$files" | grep -cE \
+        '^(qt/|pylib/|ts/|web/|aqt/|pip/|python/|node_modules/|design/|ankidroid/|ankiweb/|tools/|\.github/|\.pre-commit-config\.yaml$|pyproject\.toml$|uv\.lock$|CONTRIBUTORS$|README\.md$|CHANGELOG\.md$|CHANGELOG$|ninja$|ninja\.bat$|Makefile$|\.vale\.ini$|\.editorconfig$|\.gitattributes$|docs/contributing\.md$|docs/development\.md$)' \
+        || true)
     total_files=$(echo "$files" | wc -l | tr -d ' ')
 
     if [ "$has_relevant" -gt 0 ] || [ "$has_cargo_toml" -gt 0 ]; then

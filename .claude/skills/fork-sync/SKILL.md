@@ -21,7 +21,7 @@ Every upstream commit falls into one of four categories based on the files it to
 |----------|-------|--------|
 | **RELEVANT** | `rslib/`, `proto/`, `ftl/`, root `Cargo.toml` | Review and apply |
 | **CHECK** | `Cargo.lock`, `.cargo/`, root `build.rs` | Review for dependency changes |
-| **SKIP** | `qt/`, `pylib/`, `ts/`, `web/`, `aqt/`, `pip/`, `python/`, `node_modules/` | Discard |
+| **SKIP** | `qt/`, `pylib/`, `ts/`, `web/`, `aqt/`, `pip/`, `python/`, `node_modules/`, `design/`, `ankidroid/`, `ankiweb/`, `tools/`, `.github/`, `.pre-commit-config.yaml`, `pyproject.toml`, `uv.lock`, `CONTRIBUTORS`, `README.md`, `Makefile`, `ninja`, `ninja.bat`, `docs/contributing.md`, `docs/development.md` | Discard |
 | **UNKNOWN** | Everything else | Manual triage |
 
 A commit touching both RELEVANT and SKIP paths is **RELEVANT** — the relevant
