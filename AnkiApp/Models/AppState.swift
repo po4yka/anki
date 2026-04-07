@@ -8,7 +8,7 @@ final class AppState {
     var collectionPath: String = ""
     var error: AnkiError? = nil
 
-    private let service: AnkiServiceProtocol
+    let service: AnkiServiceProtocol
 
     init(service: AnkiServiceProtocol) {
         self.service = service

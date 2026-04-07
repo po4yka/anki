@@ -121,6 +121,108 @@ actor AnkiService: AnkiServiceProtocol {
         )
     }
 
+    func searchNotes(search: String, order: Anki_Search_SortOrder) async throws -> Anki_Search_SearchResponse {
+        var req = Anki_Search_SearchRequest()
+        req.search = search
+        req.order = order
+        return try backend.command(
+            service: ServiceIndex.search,
+            method: SearchMethod.searchNotes,
+            input: req
+        )
+    }
+
+    func allBrowserColumns() async throws -> Anki_Search_BrowserColumns {
+        let req = Anki_Generic_Empty()
+        return try backend.command(
+            service: ServiceIndex.search,
+            method: SearchMethod.allBrowserColumns,
+            input: req
+        )
+    }
+
+    func removeNotes(noteIds: [Int64], cardIds: [Int64]) async throws -> Anki_Collection_OpChangesWithCount {
+        var req = Anki_Notes_RemoveNotesRequest()
+        req.noteIds = noteIds
+        req.cardIds = cardIds
+        return try backend.command(
+            service: ServiceIndex.notes,
+            method: NotesMethod.removeNotes,
+            input: req
+        )
+    }
+
+    func findAndReplace(nids: [Int64], search: String, replacement: String, regex: Bool, matchCase: Bool, fieldName: String) async throws -> Anki_Collection_OpChangesWithCount {
+        var req = Anki_Search_FindAndReplaceRequest()
+        req.nids = nids
+        req.search = search
+        req.replacement = replacement
+        req.regex = regex
+        req.matchCase = matchCase
+        req.fieldName = fieldName
+        return try backend.command(
+            service: ServiceIndex.search,
+            method: SearchMethod.findAndReplace,
+            input: req
+        )
+    }
+
+    func setActiveBrowserColumns(columns: [String]) async throws {
+        var req = Anki_Generic_StringList()
+        req.vals = columns
+        let _: Anki_Generic_Empty = try backend.command(
+            service: ServiceIndex.search,
+            method: SearchMethod.setActiveBrowserColumns,
+            input: req
+        )
+    }
+
+    func setDueDate(cardIds: [Int64], days: String) async throws -> Anki_Collection_OpChanges {
+        var req = Anki_Scheduler_SetDueDateRequest()
+        req.cardIds = cardIds
+        req.days = days
+        return try backend.command(
+            service: ServiceIndex.scheduler,
+            method: SchedulerMethod.setDueDate,
+            input: req
+        )
+    }
+
+    func scheduleCardsAsNew(cardIds: [Int64], log: Bool, restorePosition: Bool, resetCounts: Bool) async throws -> Anki_Collection_OpChanges {
+        var req = Anki_Scheduler_ScheduleCardsAsNewRequest()
+        req.cardIds = cardIds
+        req.log = log
+        req.restorePosition = restorePosition
+        req.resetCounts = resetCounts
+        return try backend.command(
+            service: ServiceIndex.scheduler,
+            method: SchedulerMethod.scheduleCardsAsNew,
+            input: req
+        )
+    }
+
+    func addNoteTags(noteIds: [Int64], tags: String) async throws -> Anki_Collection_OpChangesWithCount {
+        var req = Anki_Tags_NoteIdsAndTagsRequest()
+        req.noteIds = noteIds
+        req.tags = tags
+        return try backend.command(
+            service: ServiceIndex.tags,
+            method: TagsMethod.addNoteTags,
+            input: req
+        )
+    }
+
+    func removeNoteTags(noteIds: [Int64], tags: String) async throws -> Anki_Collection_OpChangesWithCount {
+        var req = Anki_Tags_NoteIdsAndTagsRequest()
+        req.noteIds = noteIds
+        req.tags = tags
+        return try backend.command(
+            service: ServiceIndex.tags,
+            method: TagsMethod.removeNoteTags,
+            input: req
+        )
+    }
+
     func browserRowForId(id: Int64) async throws -> Anki_Search_BrowserRow {
         var req = Anki_Generic_Int64()
         req.val = id
@@ -176,6 +278,18 @@ actor AnkiService: AnkiServiceProtocol {
         return try backend.command(
             service: ServiceIndex.notetypes,
             method: NotetypesMethod.getNotetype,
+            input: req
+        )
+    }
+
+    func buryOrSuspendCards(cardIds: [Int64], noteIds: [Int64], mode: Anki_Scheduler_BuryOrSuspendCardsRequest.Mode) async throws -> Anki_Collection_OpChangesWithCount {
+        var req = Anki_Scheduler_BuryOrSuspendCardsRequest()
+        req.cardIds = cardIds
+        req.noteIds = noteIds
+        req.mode = mode
+        return try backend.command(
+            service: ServiceIndex.scheduler,
+            method: SchedulerMethod.buryOrSuspendCards,
             input: req
         )
     }

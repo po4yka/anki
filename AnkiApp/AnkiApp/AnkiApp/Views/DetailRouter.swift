@@ -11,6 +11,10 @@ struct DetailRouter: View {
             SearchView()
         case .stats:
             StatisticsView()
+        case .importPkg:
+            ImportView()
+        case .exportPkg:
+            ExportView()
         case .sync:
             SyncView()
         case .atlasSearch:

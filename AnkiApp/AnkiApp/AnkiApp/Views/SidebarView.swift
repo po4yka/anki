@@ -4,6 +4,8 @@ enum SidebarItem: String, CaseIterable, Identifiable {
     case decks = "Decks"
     case browse = "Browse"
     case stats = "Statistics"
+    case importPkg = "Import"
+    case exportPkg = "Export"
     case sync = "Sync"
     case atlasSearch = "Search+"
     case analytics = "Analytics"
@@ -17,6 +19,8 @@ enum SidebarItem: String, CaseIterable, Identifiable {
         case .decks: "rectangle.stack"
         case .browse: "magnifyingglass"
         case .stats: "chart.bar"
+        case .importPkg: "square.and.arrow.down"
+        case .exportPkg: "square.and.arrow.up"
         case .sync: "arrow.triangle.2.circlepath"
         case .atlasSearch: "sparkle.magnifyingglass"
         case .analytics: "brain.head.profile"
@@ -36,7 +40,7 @@ enum SidebarItem: String, CaseIterable, Identifiable {
 struct SidebarView: View {
     @Environment(AppState.self) private var appState
 
-    private let ankiItems: [SidebarItem] = [.decks, .browse, .stats, .sync]
+    private let ankiItems: [SidebarItem] = [.decks, .browse, .stats, .importPkg, .exportPkg, .sync]
     private let atlasItems: [SidebarItem] = [.atlasSearch, .analytics, .generator, .obsidian]
 
     var body: some View {

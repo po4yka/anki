@@ -41,6 +41,8 @@ enum SchedulerMethod {
     static let countsForDeckToday: UInt32 = 10
     static let congratsInfo: UInt32 = 11
     static let buryOrSuspendCards: UInt32 = 14
+    static let scheduleCardsAsNew: UInt32 = 17
+    static let setDueDate: UInt32 = 19
     static let getSchedulingStates: UInt32 = 20
     static let describeNextStates: UInt32 = 21
 }
@@ -78,8 +80,10 @@ enum CardsMethod {
 enum SearchMethod {
     static let searchCards: UInt32 = 1
     static let searchNotes: UInt32 = 2
+    static let findAndReplace: UInt32 = 5
     static let allBrowserColumns: UInt32 = 6
     static let browserRowForId: UInt32 = 7
+    static let setActiveBrowserColumns: UInt32 = 8
 }
 
 enum CardRenderingMethod {
