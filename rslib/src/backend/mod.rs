@@ -105,7 +105,7 @@ impl Backend {
         func(
             self.col
                 .lock()
-                .unwrap()
+                .unwrap_or_else(|e| e.into_inner())
                 .as_mut()
                 .ok_or(AnkiError::CollectionNotOpen)?,
         )
@@ -118,7 +118,7 @@ impl Backend {
                     .worker_threads(1)
                     .enable_all()
                     .build()
-                    .unwrap()
+                    .expect("failed to build tokio runtime")
             })
             .handle()
             .clone()
@@ -131,10 +131,17 @@ impl Backend {
 
         use reqwest::Certificate;
 
-        let mut web_client = self.web_client.lock().unwrap();
+        let mut web_client = self.web_client.lock().unwrap_or_else(|e| e.into_inner());
 
         if cert_str.is_empty() {
-            let _ = web_client.insert(Client::builder().http1_only().build().unwrap());
+            let _ = web_client.insert(
+                Client::builder()
+                    .http1_only()
+                    .build()
+                    .map_err(|e| AnkiError::SyncError {
+                        info: e.to_string(),
+                    })?,
+            );
             return Ok(());
         }
 
@@ -157,13 +164,20 @@ impl Backend {
         Err(AnkiError::InvalidCertificateFormat)
     }
 
-    fn web_client(&self) -> Client {
+    fn web_client(&self) -> Result<Client> {
         // currently limited to http1, as nginx doesn't support http2 proxies
-        let mut web_client = self.web_client.lock().unwrap();
+        let mut web_client = self.web_client.lock().unwrap_or_else(|e| e.into_inner());
 
-        web_client
-            .get_or_insert_with(|| Client::builder().http1_only().build().unwrap())
-            .clone()
+        Ok(web_client
+            .get_or_insert(
+                Client::builder()
+                    .http1_only()
+                    .build()
+                    .map_err(|e| AnkiError::SyncError {
+                        info: e.to_string(),
+                    })?,
+            )
+            .clone())
     }
 
     /// Useful for operations that function with a closed collection, such as
