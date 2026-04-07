@@ -9,6 +9,7 @@ license.workspace = true
 common = { path = "../common" }
 serde = { workspace = true }
 sha2 = { workspace = true }
+hex = { workspace = true }
 regex = { workspace = true }
 unicode-normalization = "0.1"
 thiserror = { workspace = true }

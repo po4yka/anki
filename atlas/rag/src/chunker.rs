@@ -215,7 +215,7 @@ fn slugify(text: &str) -> String {
 
 fn sha256_hex(data: &[u8], hex_len: usize) -> String {
     let hash = Sha256::digest(data);
-    let full_hex = format!("{hash:x}");
+    let full_hex = hex::encode(hash);
     full_hex[..hex_len].to_string()
 }
 

@@ -65,35 +65,35 @@ unicase = "=2.6.0" # any changes could invalidate sqlite indexes
 
 # normal
 ammonia = "4.1.2"
-anyhow = "1.0.98"
-async-compression = { version = "0.4.24", features = ["zstd", "tokio"] }
+anyhow = "1.0.102"
+async-compression = { version = "0.4.41", features = ["zstd", "tokio"] }
 async-stream = "0.3.6"
-async-trait = "0.1.88"
-axum = { version = "0.8.4", features = ["multipart", "macros", "json"] }
-axum-client-ip = "1.1.3"
-axum-extra = { version = "0.10.1", features = ["typed-header"] }
-bitflags = "2.9.1"
-blake3 = "1.8.2"
+async-trait = "0.1.89"
+axum = { version = "0.8.8", features = ["multipart", "macros", "json"] }
+axum-client-ip = "1.3.1"
+axum-extra = { version = "0.12.5", features = ["typed-header"] }
+bitflags = "2.11.0"
+blake3 = "1.8.4"
 bytes = "1.11.1"
-camino = "1.1.10"
-chrono = { version = "0.4.41", default-features = false, features = ["std", "clock", "serde"] }
-clap = { version = "4.5.40", features = ["derive", "env"] }
-coarsetime = "0.1.36"
-convert_case = "0.8.0"
+camino = "1.2.2"
+chrono = { version = "0.4.44", default-features = false, features = ["std", "clock", "serde"] }
+clap = { version = "4.6.0", features = ["derive", "env"] }
+coarsetime = "0.1.37"
+convert_case = "0.11.0"
 criterion = { version = "0.8.2", features = ["async_tokio", "html_reports"] }
-csv = "1.3.1"
-data-encoding = "2.9.0"
+csv = "1.4.0"
+data-encoding = "2.10.0"
 difflib = "0.4.0"
 dirs = "6.0.0"
 dunce = "1.0.5"
 envy = "0.4.2"
-flate2 = "1.1.2"
+flate2 = "1.1.9"
 fluent = "0.17.0"
 fluent-bundle = "0.16.0"
 fluent-syntax = "0.12.0"
 fnv = "1.0.7"
-futures = "0.3.31"
-globset = "0.4.16"
+futures = "0.3.32"
+globset = "0.4.18"
 hex = "0.4.3"
 htmlescape = "0.3.1"
 hyper = "1"
@@ -107,64 +107,64 @@ maplit = "1.0.2"
 nom = "8.0.0"
 num-format = "0.4.4"
 num_cpus = "1.17.0"
-num_enum = "0.7.3"
-once_cell = "1.21.3"
+num_enum = "0.7.6"
+once_cell = "1.21.4"
 pbkdf2 = { version = "0.12", features = ["simple"] }
 permutation = "0.4.1"
 phf = { version = "0.13", features = ["macros"] }
-pin-project = "1.1.10"
-prettyplease = "0.2.34"
-prost = "0.13"
-prost-build = "0.13"
-prost-reflect = "0.14.7"
-prost-types = "0.13"
-pulldown-cmark = "0.13.0"
+pin-project = "1.1.11"
+prettyplease = "0.2.37"
+prost = "0.14"
+prost-build = "0.14"
+prost-reflect = "0.16.3"
+prost-types = "0.14"
+pulldown-cmark = "0.13.3"
 rand = "0.9.1"
-rayon = "1.10.0"
-regex = "1.11.1"
+rayon = "1.11.0"
+regex = "1.12.3"
 reqwest = { version = "0.13", default-features = false, features = ["json", "query", "socks", "stream", "multipart", "rustls"] }
 rusqlite = { version = "0.32.1", features = ["trace", "functions", "collation", "bundled"] }
 rustls-pemfile = "2.2.0"
 scopeguard = "1.2.0"
-serde = { version = "1.0.219", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
 serde-aux = "4.7.0"
-serde_json = "1.0.140"
+serde_json = "1.0.149"
 serde_repr = "0.1.20"
-serde_tuple = "1.1.0"
-sha1 = "0.10.6"
-sha2 = { version = "0.10.9" }
-snafu = { version = "0.8.6", features = ["rust_1_61"] }
+serde_tuple = "1.1.3"
+sha1 = "0.11.0"
+sha2 = { version = "0.11.0" }
+snafu = { version = "0.9.0", features = ["rust_1_81"] }
 strum = { version = "0.28", features = ["derive"] }
-syn = { version = "2.0.103", features = ["parsing", "printing"] }
-tar = "0.4.44"
-tempfile = "3.20.0"
+syn = { version = "2.0.117", features = ["parsing", "printing"] }
+tar = "0.4.45"
+tempfile = "3.27.0"
 termcolor = "1.4.1"
-tokio = { version = "1.45", features = ["fs", "rt-multi-thread", "macros", "signal"] }
-tokio-util = { version = "0.7.15", features = ["io"] }
-tower-http = { version = "0.6.6", features = ["trace", "cors", "request-id"] }
-tracing = { version = "0.1.41", features = ["max_level_trace", "release_max_level_debug"] }
-tracing-appender = "0.2.3"
-tracing-subscriber = { version = "0.3.20", features = ["fmt", "env-filter", "json"] }
+tokio = { version = "1.51", features = ["fs", "rt-multi-thread", "macros", "signal"] }
+tokio-util = { version = "0.7.18", features = ["io"] }
+tower-http = { version = "0.6.8", features = ["trace", "cors", "request-id"] }
+tracing = { version = "0.1.44", features = ["max_level_trace", "release_max_level_debug"] }
+tracing-appender = "0.2.4"
+tracing-subscriber = { version = "0.3.23", features = ["fmt", "env-filter", "json"] }
 unic-langid = { version = "0.9.6", features = ["macros"] }
 unic-ucd-category = "0.9.0"
-unicode-normalization = "0.1.24"
+unicode-normalization = "0.1.25"
 walkdir = "2.5.0"
-which = "8.0.0"
-wiremock = "0.6.3"
+which = "8.0.2"
+wiremock = "0.6.5"
 xz2 = "0.1.7"
-zip = { version = "4.1.0", default-features = false, features = ["deflate", "time"] }
+zip = { version = "8.5.1", default-features = false, features = ["deflate", "time"] }
 zstd = { version = "0.13.3", features = ["zstdmt"] }
 
 # Atlas dependencies
 sqlx = { version = "0.8", features = ["runtime-tokio", "tls-rustls", "postgres", "macros", "chrono", "uuid", "json"] }
 qdrant-client = "1"
-rmcp = { version = "1.1.1", features = ["transport-io"] }
+rmcp = { version = "1.3.0", features = ["transport-io"] }
 thiserror = "2"
 uuid = { version = "1", features = ["v4", "serde"] }
 url = "2"
 dotenvy = "0.15"
 base64 = "0.22"
-fastembed = "4"
+fastembed = "5"
 mockall = "0.14"
 assert_matches = "1.5"
 serde_yml = "0.0.12"
