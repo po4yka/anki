@@ -75,8 +75,14 @@ impl Collection {
             return;
         };
         if let (
-            [UndoableChange::Note(UndoableNoteChange::Updated(previous)), UndoableChange::Collection(UndoableCollectionChange::Modified(_))],
-            [UndoableChange::Note(UndoableNoteChange::Updated(current)), UndoableChange::Collection(UndoableCollectionChange::Modified(_))],
+            [
+                UndoableChange::Note(UndoableNoteChange::Updated(previous)),
+                UndoableChange::Collection(UndoableCollectionChange::Modified(_)),
+            ],
+            [
+                UndoableChange::Note(UndoableNoteChange::Updated(current)),
+                UndoableChange::Collection(UndoableCollectionChange::Modified(_)),
+            ],
         ) = (&previous_op.changes[..], &current_op.changes[..])
         {
             if previous.id == current.id && previous_op.timestamp.elapsed_secs() < 60 {

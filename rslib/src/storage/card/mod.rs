@@ -10,13 +10,13 @@ use std::fmt;
 use std::result;
 
 use anki_proto::stats::CardEntry;
+use rusqlite::OptionalExtension;
+use rusqlite::Row;
 use rusqlite::named_params;
 use rusqlite::params;
 use rusqlite::types::FromSql;
 use rusqlite::types::FromSqlError;
 use rusqlite::types::ValueRef;
-use rusqlite::OptionalExtension;
-use rusqlite::Row;
 
 use self::data::CardData;
 use super::ids_to_string;
@@ -829,8 +829,9 @@ impl fmt::Display for ReviewOrderSubclause {
                 let today = timing.days_elapsed;
                 let next_day_at = timing.next_day_at.0;
                 let now = timing.now.0;
-                temp_string =
-                    format!("extract_fsrs_retrievability(data, case when odue !=0 then odue else due end, ivl, {today}, {next_day_at}, {now}) {order}");
+                temp_string = format!(
+                    "extract_fsrs_retrievability(data, case when odue !=0 then odue else due end, ivl, {today}, {next_day_at}, {now}) {order}"
+                );
                 &temp_string
             }
             ReviewOrderSubclause::RelativeOverdueness { fsrs, timing } => {
@@ -838,7 +839,9 @@ impl fmt::Display for ReviewOrderSubclause {
                 let next_day_at = timing.next_day_at.0;
                 let now = timing.now.0;
                 temp_string = if *fsrs {
-                    format!("extract_fsrs_relative_retrievability(data, case when odue !=0 then odue else due end, ivl, {today}, {next_day_at}, {now}) asc")
+                    format!(
+                        "extract_fsrs_relative_retrievability(data, case when odue !=0 then odue else due end, ivl, {today}, {next_day_at}, {now}) asc"
+                    )
                 } else {
                     format!(
                         // - (elapsed days+0.001)/(scheduled interval)

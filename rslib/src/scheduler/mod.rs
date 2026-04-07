@@ -22,8 +22,8 @@ mod upgrade;
 
 use chrono::FixedOffset;
 pub use reviews::parse_due_date_str;
-use timing::sched_timing_today;
 use timing::SchedTimingToday;
+use timing::sched_timing_today;
 
 #[derive(Debug, Clone, Copy)]
 pub struct SchedulerInfo {

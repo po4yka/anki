@@ -14,17 +14,17 @@ use axum_extra::headers::HeaderValue;
 use bytes::Bytes;
 use futures::Stream;
 use futures::TryStreamExt;
-use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 use tokio::io::AsyncReadExt;
 use tokio_util::io::ReaderStream;
 
 use crate::sync::error::HttpError;
 use crate::sync::error::HttpResult;
 use crate::sync::error::OrHttpErr;
-use crate::sync::request::SyncRequest;
 use crate::sync::request::MAXIMUM_SYNC_PAYLOAD_BYTES_UNCOMPRESSED;
+use crate::sync::request::SyncRequest;
 use crate::sync::version::SyncVersion;
 
 impl<T> SyncRequest<T> {

@@ -229,11 +229,7 @@ impl From<anki_proto::notetypes::ChangeNotetypeRequest> for ChangeNotetypeInput 
                     .into_iter()
                     .map(|v| if v == -1 { None } else { Some(v as usize) })
                     .collect();
-                if v.is_empty() {
-                    None
-                } else {
-                    Some(v)
-                }
+                if v.is_empty() { None } else { Some(v) }
             },
         }
     }

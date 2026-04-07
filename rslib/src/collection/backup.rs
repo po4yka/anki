@@ -2,9 +2,9 @@
 // License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
 
 use std::ffi::OsStr;
+use std::fs::DirEntry;
 use std::fs::read_dir;
 use std::fs::remove_file;
-use std::fs::DirEntry;
 use std::path::Path;
 use std::path::PathBuf;
 use std::thread;

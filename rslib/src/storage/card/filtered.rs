@@ -26,7 +26,8 @@ pub(crate) fn order_and_limit_for_search(
         FilteredSearchOrder::Due => {
             let current_timestamp = timing.now.0;
             temp_string = format!(
-                "(case when c.due > 1000000000 then due else (due - {today}) * 86400 + {current_timestamp} end), c.ord");
+                "(case when c.due > 1000000000 then due else (due - {today}) * 86400 + {current_timestamp} end), c.ord"
+            );
             &temp_string
         }
         FilteredSearchOrder::RetrievabilityAscending => {
@@ -40,8 +41,9 @@ pub(crate) fn order_and_limit_for_search(
             &temp_string
         }
         FilteredSearchOrder::RelativeOverdueness => {
-            temp_string =
-                format!("extract_fsrs_relative_retrievability(data, case when odue !=0 then odue else due end, ivl, {today}, {next_day_at}, {now}) asc");
+            temp_string = format!(
+                "extract_fsrs_relative_retrievability(data, case when odue !=0 then odue else due end, ivl, {today}, {next_day_at}, {now}) asc"
+            );
             &temp_string
         }
     };

@@ -1,9 +1,9 @@
 // Copyright: Ankitects Pty Ltd and contributors
 // License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
 
+use rusqlite::ToSql;
 use rusqlite::params;
 use rusqlite::types::FromSql;
-use rusqlite::ToSql;
 
 use super::*;
 use crate::prelude::*;
@@ -66,10 +66,6 @@ impl SqliteStorage {
 impl Usn {
     /// Used when gathering pending objects during sync.
     pub(crate) fn pending_object_clause(self) -> &'static str {
-        if self.0 == -1 {
-            "usn = ?"
-        } else {
-            "usn >= ?"
-        }
+        if self.0 == -1 { "usn = ?" } else { "usn >= ?" }
     }
 }

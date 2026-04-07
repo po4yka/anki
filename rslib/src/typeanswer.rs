@@ -7,8 +7,8 @@ use std::sync::LazyLock;
 use difflib::sequencematcher::SequenceMatcher;
 use regex::Regex;
 use unic_ucd_category::GeneralCategory;
-use unicode_normalization::char::is_combining_mark;
 use unicode_normalization::UnicodeNormalization;
+use unicode_normalization::char::is_combining_mark;
 
 use crate::card_rendering::strip_av_tags;
 use crate::text::normalize_to_nfc;

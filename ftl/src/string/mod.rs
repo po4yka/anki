@@ -7,12 +7,12 @@ mod transform;
 use std::fs;
 use std::path::Path;
 
+use anki_io::ToUtf8PathBuf;
 use anki_io::read_to_string;
 use anki_io::write_file_if_changed;
-use anki_io::ToUtf8PathBuf;
-use anyhow::anyhow;
 use anyhow::Context;
 use anyhow::Result;
+use anyhow::anyhow;
 use camino::Utf8Component;
 use camino::Utf8Path;
 use camino::Utf8PathBuf;
@@ -24,10 +24,10 @@ use fluent_syntax::parser;
 use itertools::Itertools;
 
 use crate::serialize;
-use crate::string::copy::copy_or_move;
 use crate::string::copy::CopyOrMove;
-use crate::string::transform::transform;
+use crate::string::copy::copy_or_move;
 use crate::string::transform::TransformArgs;
+use crate::string::transform::transform;
 
 #[derive(Subcommand)]
 pub enum StringCommand {

@@ -1,9 +1,9 @@
 // Copyright: Ankitects Pty Ltd and contributors
 // License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
 use anki_proto::scheduler::SimulateFsrsReviewRequest;
-use fsrs::extract_simulator_config;
-use fsrs::SimulatorConfig;
 use fsrs::FSRS;
+use fsrs::SimulatorConfig;
+use fsrs::extract_simulator_config;
 
 use crate::prelude::*;
 use crate::revlog::RevlogEntry;

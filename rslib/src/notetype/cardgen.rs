@@ -6,9 +6,9 @@ use std::collections::HashSet;
 use std::ops::Deref;
 
 use itertools::Itertools;
-use rand::rngs::StdRng;
 use rand::Rng;
 use rand::SeedableRng;
+use rand::rngs::StdRng;
 
 use super::Notetype;
 use crate::cloze::cloze_number_in_fields;

@@ -1,14 +1,14 @@
 // Copyright: Ankitects Pty Ltd and contributors
 // License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
 
-use rusqlite::params;
 use rusqlite::Row;
+use rusqlite::params;
 
 use crate::error;
 use crate::prelude::TimestampSecs;
 use crate::prelude::Usn;
-use crate::sync::media::database::server::entry::MediaEntry;
 use crate::sync::media::database::server::ServerMediaDatabase;
+use crate::sync::media::database::server::entry::MediaEntry;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct StoreMetadata {

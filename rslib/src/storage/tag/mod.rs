@@ -3,8 +3,8 @@
 
 use std::collections::HashMap;
 
-use rusqlite::params;
 use rusqlite::Row;
+use rusqlite::params;
 
 use super::SqliteStorage;
 use crate::error::Result;

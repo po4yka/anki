@@ -6,18 +6,18 @@ use std::collections::HashSet;
 use std::iter;
 
 use prost::Message;
+use rusqlite::Row;
 use rusqlite::named_params;
 use rusqlite::params;
-use rusqlite::Row;
 use unicase::UniCase;
 
 use super::SqliteStorage;
 use crate::card::CardQueue;
-use crate::decks::immediate_parent_name;
 use crate::decks::DeckCommon;
 use crate::decks::DeckKindContainer;
 use crate::decks::DeckSchema11;
 use crate::decks::DueCounts;
+use crate::decks::immediate_parent_name;
 use crate::error::DbErrorKind;
 use crate::prelude::*;
 

@@ -12,10 +12,10 @@ pub use anki_proto::import_export::import_response::Note as LogNote;
 use snafu::Snafu;
 
 use crate::prelude::*;
+use crate::text::CowMapping;
 use crate::text::newlines_to_spaces;
 use crate::text::strip_html_preserving_media_filenames;
 use crate::text::truncate_to_char_boundary;
-use crate::text::CowMapping;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ImportProgress {

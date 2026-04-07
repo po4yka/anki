@@ -12,7 +12,6 @@ use std::borrow::Cow;
 pub use builder::JoinSearches;
 pub use builder::Negated;
 pub use builder::SearchBuilder;
-pub use parser::parse as parse_search;
 pub use parser::FieldSearchMode;
 pub use parser::Node;
 pub use parser::PropertyKind;
@@ -20,6 +19,7 @@ pub use parser::RatingKind;
 pub use parser::SearchNode;
 pub use parser::StateKind;
 pub use parser::TemplateKind;
+pub use parser::parse as parse_search;
 use rusqlite::params_from_iter;
 use rusqlite::types::FromSql;
 use sqlwriter::RequiredTable;
@@ -428,7 +428,16 @@ fn prepare_sort(col: &mut Collection, column: Column, item_type: ReturnItemType)
             Column::CardMod => include_str!("card_mod_order.sql"),
             Column::Deck => include_str!("note_decks_order.sql"),
             Column::Due => {
-                temp_string = format!("{} ORDER BY MIN({});", include_str!("note_due_order.sql"), format_args!("CASE WHEN due > 1000000000 OR type = {ctype} THEN due ELSE (due - {today}) * 86400 + {current_timestamp} END", ctype = CardType::New as i8, today = col.timing_today()?.days_elapsed, current_timestamp = TimestampSecs::now().0));
+                temp_string = format!(
+                    "{} ORDER BY MIN({});",
+                    include_str!("note_due_order.sql"),
+                    format_args!(
+                        "CASE WHEN due > 1000000000 OR type = {ctype} THEN due ELSE (due - {today}) * 86400 + {current_timestamp} END",
+                        ctype = CardType::New as i8,
+                        today = col.timing_today()?.days_elapsed,
+                        current_timestamp = TimestampSecs::now().0
+                    )
+                );
                 &temp_string
             }
             Column::Ease => include_str!("note_ease_order.sql"),

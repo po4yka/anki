@@ -5,12 +5,12 @@ use std::mem;
 
 use itertools::Itertools;
 
-use super::writer::write_nodes;
 use super::FieldSearchMode;
 use super::Node;
 use super::SearchNode;
 use super::StateKind;
 use super::TemplateKind;
+use super::writer::write_nodes;
 use crate::prelude::*;
 use crate::storage::comma_separated_ids;
 use crate::text::escape_anki_wildcards_for_search_node;

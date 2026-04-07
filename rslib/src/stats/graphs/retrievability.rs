@@ -7,8 +7,8 @@ use fsrs::FSRS5_DEFAULT_DECAY;
 
 use crate::prelude::TimestampSecs;
 use crate::scheduler::timing::SchedTimingToday;
-use crate::stats::graphs::eases::percent_to_bin;
 use crate::stats::graphs::GraphsContext;
+use crate::stats::graphs::eases::percent_to_bin;
 
 impl GraphsContext {
     /// (SM-2, FSRS)

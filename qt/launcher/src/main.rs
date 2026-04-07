@@ -3,21 +3,21 @@
 
 #![windows_subsystem = "windows"]
 
+use std::io::Write;
 use std::io::stdin;
 use std::io::stdout;
-use std::io::Write;
 use std::process::Command;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
 use anki_i18n::I18n;
+use anki_io::ToUtf8Path;
 use anki_io::copy_file;
 use anki_io::create_dir_all;
 use anki_io::modified_time;
 use anki_io::read_file;
 use anki_io::remove_file;
 use anki_io::write_file;
-use anki_io::ToUtf8Path;
 use anki_process::CommandExt as AnkiCommandExt;
 use anyhow::Context;
 use anyhow::Result;

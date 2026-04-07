@@ -11,20 +11,20 @@ use std::path::PathBuf;
 use std::sync::LazyLock;
 use std::time;
 
+use anki_io::FileIoError;
+use anki_io::FileIoSnafu;
+use anki_io::FileOp;
 use anki_io::create_dir;
 use anki_io::open_file;
 use anki_io::set_file_times;
 use anki_io::write_file;
-use anki_io::FileIoError;
-use anki_io::FileIoSnafu;
-use anki_io::FileOp;
 use regex::Regex;
 use sha1::Digest;
 use sha1::Sha1;
 use tracing::debug;
 use unic_ucd_category::GeneralCategory;
-use unicode_normalization::is_nfc;
 use unicode_normalization::UnicodeNormalization;
+use unicode_normalization::is_nfc;
 
 use crate::prelude::*;
 use crate::sync::media::MAX_MEDIA_FILENAME_LENGTH;

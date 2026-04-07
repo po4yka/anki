@@ -5,10 +5,10 @@ use std::collections::HashMap;
 use anki_i18n::I18n;
 use anki_proto::generic;
 use anki_proto::generic::Json;
-use anki_proto::i18n::format_timespan_request::Context;
 use anki_proto::i18n::FormatTimespanRequest;
 use anki_proto::i18n::I18nResourcesRequest;
 use anki_proto::i18n::TranslateStringRequest;
+use anki_proto::i18n::format_timespan_request::Context;
 use fluent_bundle::FluentArgs;
 use fluent_bundle::FluentValue;
 

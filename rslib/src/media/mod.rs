@@ -20,10 +20,10 @@ use crate::prelude::*;
 use crate::progress::ThrottlingProgressHandler;
 use crate::sync::http_client::HttpSyncClient;
 use crate::sync::login::SyncAuth;
-use crate::sync::media::database::client::changetracker::ChangeTracker;
 pub use crate::sync::media::database::client::Checksums;
 use crate::sync::media::database::client::MediaDatabase;
 use crate::sync::media::database::client::MediaEntry;
+use crate::sync::media::database::client::changetracker::ChangeTracker;
 use crate::sync::media::progress::MediaSyncProgress;
 use crate::sync::media::syncer::MediaSyncer;
 

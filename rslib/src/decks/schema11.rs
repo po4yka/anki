@@ -4,8 +4,8 @@
 use std::collections::HashMap;
 
 use anki_proto::decks::deck::normal::DayLimit;
-use phf::phf_set;
 use phf::Set;
+use phf::phf_set;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;

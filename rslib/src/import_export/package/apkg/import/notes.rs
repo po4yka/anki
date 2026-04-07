@@ -7,14 +7,14 @@ use std::collections::HashSet;
 use std::mem;
 use std::sync::Arc;
 
-use super::media::MediaUseMap;
 use super::Context;
 use super::TemplateMap;
-use crate::import_export::package::media::safe_normalized_file_name;
-use crate::import_export::package::UpdateCondition;
+use super::media::MediaUseMap;
 use crate::import_export::ImportError;
 use crate::import_export::ImportProgress;
 use crate::import_export::NoteLog;
+use crate::import_export::package::UpdateCondition;
+use crate::import_export::package::media::safe_normalized_file_name;
 use crate::notes::UpdateNoteInnerWithoutCardsArgs;
 use crate::notetype::ChangeNotetypeInput;
 use crate::prelude::*;
@@ -893,10 +893,11 @@ mod test {
             .import(&mut col)
             .remapped_fields;
         // Front field is preserved and new field added
-        assert!(col
-            .basic_notetype()
-            .field_names()
-            .eq(["Front", "renamed", "new"]));
+        assert!(
+            col.basic_notetype()
+                .field_names()
+                .eq(["Front", "renamed", "new"])
+        );
         // extra field must be inserted into incoming notes
         assert_eq!(
             fields.get(&to_import.id).unwrap(),
@@ -922,10 +923,11 @@ mod test {
             .imports
             .remapped_templates;
         // Card 1 is preserved and new template added
-        assert!(col
-            .basic_rev_notetype()
-            .template_names()
-            .eq(["Card 1", "renamed", "new"]));
+        assert!(
+            col.basic_rev_notetype()
+                .template_names()
+                .eq(["Card 1", "renamed", "new"])
+        );
         // templates must be shifted accordingly
         let map = templates.get(&to_import.id).unwrap();
         assert_eq!(map.get(&0), Some(&1));
@@ -965,10 +967,12 @@ mod test {
             "new remapped",
             "new incoming",
         ]));
-        assert!(col.get_all_notes()[0]
-            .fields()
-            .iter()
-            .eq(["front", "back", "new", ""]))
+        assert!(
+            col.get_all_notes()[0]
+                .fields()
+                .iter()
+                .eq(["front", "back", "new", ""])
+        )
     }
 
     #[test]
@@ -1072,10 +1076,12 @@ mod test {
         ]));
         // merged, now unused notetype should have been deleted
         assert!(col.get_notetype(existing_notetype.id).unwrap().is_none());
-        assert!(col.get_all_notes()[0]
-            .fields()
-            .iter()
-            .eq(["front", "back", "new incoming", "",]))
+        assert!(
+            col.get_all_notes()[0]
+                .fields()
+                .iter()
+                .eq(["front", "back", "new incoming", "",])
+        )
     }
 
     #[test]

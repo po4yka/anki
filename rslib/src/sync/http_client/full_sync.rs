@@ -13,8 +13,8 @@ use crate::sync::collection::protocol::EmptyInput;
 use crate::sync::collection::protocol::SyncMethod;
 use crate::sync::collection::upload::UploadResponse;
 use crate::sync::error::HttpResult;
-use crate::sync::http_client::io_monitor::IoMonitor;
 use crate::sync::http_client::HttpSyncClient;
+use crate::sync::http_client::io_monitor::IoMonitor;
 use crate::sync::request::SyncRequest;
 use crate::sync::response::SyncResponse;
 

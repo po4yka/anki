@@ -13,10 +13,10 @@ use tokio::task::spawn_blocking;
 
 use crate::sync::error::HttpResult;
 use crate::sync::error::OrHttpErr;
-use crate::sync::request::SyncRequest;
 use crate::sync::request::MAXIMUM_SYNC_PAYLOAD_BYTES_UNCOMPRESSED;
-use crate::sync::version::SyncVersion;
+use crate::sync::request::SyncRequest;
 use crate::sync::version::SYNC_VERSION_10_V2_TIMEZONE;
+use crate::sync::version::SyncVersion;
 
 impl<T> SyncRequest<T> {
     pub(super) async fn from_multipart(

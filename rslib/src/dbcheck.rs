@@ -5,8 +5,8 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use anki_i18n::I18n;
-use anki_proto::notetypes::stock_notetype::OriginalStockKind;
 use anki_proto::notetypes::ImageOcclusionField;
+use anki_proto::notetypes::stock_notetype::OriginalStockKind;
 use itertools::Itertools;
 use tracing::debug;
 
@@ -16,12 +16,12 @@ use crate::error::AnkiError;
 use crate::error::DbError;
 use crate::error::DbErrorKind;
 use crate::error::Result;
-use crate::notetype::all_stock_notetypes;
 use crate::notetype::AlreadyGeneratedCardInfo;
 use crate::notetype::CardGenContext;
 use crate::notetype::Notetype;
 use crate::notetype::NotetypeId;
 use crate::notetype::NotetypeKind;
+use crate::notetype::all_stock_notetypes;
 use crate::prelude::*;
 use crate::progress::ThrottlingProgressHandler;
 use crate::storage::card::CardFixStats;
@@ -561,9 +561,10 @@ mod test {
                 ..Default::default()
             }
         );
-        assert!(col
-            .storage
-            .db_scalar::<bool>("select ivl = lastIvl = 1 from revlog")?);
+        assert!(
+            col.storage
+                .db_scalar::<bool>("select ivl = lastIvl = 1 from revlog")?
+        );
 
         Ok(())
     }

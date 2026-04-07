@@ -11,12 +11,12 @@ use anki_io::new_tempfile_in_parent_of;
 
 use super::super::meta::MetaExt;
 use crate::collection::CollectionBuilder;
+use crate::import_export::ExportProgress;
 use crate::import_export::gather::ExchangeData;
-use crate::import_export::package::colpkg::export::export_collection;
-use crate::import_export::package::media::MediaIter;
 use crate::import_export::package::ExportAnkiPackageOptions;
 use crate::import_export::package::Meta;
-use crate::import_export::ExportProgress;
+use crate::import_export::package::colpkg::export::export_collection;
+use crate::import_export::package::media::MediaIter;
 use crate::prelude::*;
 use crate::progress::ThrottlingProgressHandler;
 

@@ -5,8 +5,8 @@ use std::fs::File;
 use std::io;
 use std::io::Read;
 
-pub(super) use anki_proto::import_export::package_metadata::Version;
 pub(super) use anki_proto::import_export::PackageMetadata as Meta;
+pub(super) use anki_proto::import_export::package_metadata::Version;
 use prost::Message;
 use zip::ZipArchive;
 use zstd::stream::copy_decode;

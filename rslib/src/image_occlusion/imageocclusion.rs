@@ -6,6 +6,7 @@ use std::fmt::Write;
 use anki_proto::image_occlusion::get_image_occlusion_note_response::ImageOcclusionProperty;
 use anki_proto::image_occlusion::get_image_occlusion_note_response::ImageOcclusionShape;
 use htmlescape::encode_attribute;
+use nom::Parser;
 use nom::bytes::complete::escaped;
 use nom::bytes::complete::is_not;
 use nom::bytes::complete::tag;
@@ -13,7 +14,6 @@ use nom::character::complete::char;
 use nom::error::ErrorKind;
 use nom::sequence::preceded;
 use nom::sequence::separated_pair;
-use nom::Parser;
 
 fn unescape(text: &str) -> String {
     text.replace("\\:", ":")

@@ -3,8 +3,8 @@
 
 use anki_io::read_file;
 
-use crate::import_export::text::ForeignData;
 use crate::import_export::NoteLog;
+use crate::import_export::text::ForeignData;
 use crate::prelude::*;
 
 impl Collection {

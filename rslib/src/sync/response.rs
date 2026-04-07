@@ -7,8 +7,8 @@ use axum::body::Body;
 use axum::response::IntoResponse;
 use axum::response::Response;
 use axum_extra::headers::HeaderName;
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 
 use crate::prelude::*;
 use crate::sync::collection::upload::UploadResponse;

@@ -18,9 +18,9 @@ use anki_proto::scheduler::SimulateFsrsReviewRequest;
 use anki_proto::scheduler::SimulateFsrsReviewResponse;
 use anki_proto::scheduler::SimulateFsrsWorkloadResponse;
 use fsrs::ComputeParametersInput;
+use fsrs::FSRS;
 use fsrs::FSRSItem;
 use fsrs::FSRSReview;
-use fsrs::FSRS;
 
 use crate::backend::Backend;
 use crate::prelude::*;

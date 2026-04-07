@@ -9,15 +9,15 @@ mod sync;
 use anyhow::Result;
 use clap::Parser;
 use clap::Subcommand;
-use garbage_collection::deprecate_ftl_entries;
-use garbage_collection::garbage_collect_ftl_entries;
-use garbage_collection::write_ftl_json;
 use garbage_collection::DeprecateEntriesArgs;
 use garbage_collection::GarbageCollectArgs;
 use garbage_collection::WriteJsonArgs;
+use garbage_collection::deprecate_ftl_entries;
+use garbage_collection::garbage_collect_ftl_entries;
+use garbage_collection::write_ftl_json;
 
-use crate::string::string_operation;
 use crate::string::StringCommand;
+use crate::string::string_operation;
 
 #[derive(Parser)]
 struct Cli {

@@ -11,13 +11,13 @@ use zip::ZipArchive;
 
 use super::super::super::meta::MetaExt;
 use super::Context;
-use crate::import_export::package::media::extract_media_entries;
+use crate::import_export::ImportProgress;
 use crate::import_export::package::media::MediaCopier;
 use crate::import_export::package::media::SafeMediaEntry;
-use crate::import_export::ImportProgress;
+use crate::import_export::package::media::extract_media_entries;
+use crate::media::Checksums;
 use crate::media::files::add_hash_suffix_to_file_stem;
 use crate::media::files::sha1_of_reader;
-use crate::media::Checksums;
 use crate::prelude::*;
 use crate::progress::ThrottlingProgressHandler;
 

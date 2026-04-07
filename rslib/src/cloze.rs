@@ -11,12 +11,12 @@ use anki_proto::image_occlusion::get_image_occlusion_note_response::ImageOcclusi
 use anki_proto::image_occlusion::get_image_occlusion_note_response::ImageOcclusionShape;
 use htmlescape::encode_attribute;
 use itertools::Itertools;
+use nom::IResult;
+use nom::Parser;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::bytes::complete::take_while;
 use nom::combinator::map;
-use nom::IResult;
-use nom::Parser;
 use regex::Captures;
 use regex::Regex;
 

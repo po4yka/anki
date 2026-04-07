@@ -3,17 +3,17 @@
 
 use std::collections::HashSet;
 
-use anki_proto::scheduler::custom_study_request::cram::CramKind;
 use anki_proto::scheduler::custom_study_request::Cram;
 use anki_proto::scheduler::custom_study_request::Value as CustomStudyValue;
+use anki_proto::scheduler::custom_study_request::cram::CramKind;
 
 use super::FilteredDeckForUpdate;
 use crate::config::DeckConfigKey;
-use crate::decks::tree::get_deck_in_tree;
-use crate::decks::tree::sum_deck_tree_node;
 use crate::decks::FilteredDeck;
 use crate::decks::FilteredSearchOrder;
 use crate::decks::FilteredSearchTerm;
+use crate::decks::tree::get_deck_in_tree;
+use crate::decks::tree::sum_deck_tree_node;
 use crate::error::CustomStudyError;
 use crate::error::FilteredDeckError;
 use crate::prelude::*;
@@ -293,10 +293,10 @@ fn tags_to_nodes(tags_to_include: &[String], tags_to_exclude: &[String]) -> Sear
 
 #[cfg(test)]
 mod test {
-    use anki_proto::scheduler::custom_study_request::cram::CramKind;
+    use anki_proto::scheduler::CustomStudyRequest;
     use anki_proto::scheduler::custom_study_request::Cram;
     use anki_proto::scheduler::custom_study_request::Value;
-    use anki_proto::scheduler::CustomStudyRequest;
+    use anki_proto::scheduler::custom_study_request::cram::CramKind;
 
     use super::*;
 

@@ -7,9 +7,9 @@ use std::process::Command;
 use std::string::FromUtf8Error;
 
 use itertools::Itertools;
-use snafu::ensure;
 use snafu::ResultExt;
 use snafu::Snafu;
+use snafu::ensure;
 
 #[derive(Debug)]
 pub struct CodeDisplay(Option<i32>);

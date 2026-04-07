@@ -17,18 +17,18 @@ pub(crate) mod undo;
 
 use std::sync::Arc;
 
-pub use anki_proto::decks::deck::filtered::search_term::Order as FilteredSearchOrder;
-pub use anki_proto::decks::deck::filtered::SearchTerm as FilteredSearchTerm;
-pub use anki_proto::decks::deck::kind_container::Kind as DeckKind;
-pub use anki_proto::decks::deck::normal::DayLimit as NormalDeckDayLimit;
+pub use anki_proto::decks::Deck as DeckProto;
 pub use anki_proto::decks::deck::Common as DeckCommon;
 pub use anki_proto::decks::deck::Filtered as FilteredDeck;
 pub use anki_proto::decks::deck::KindContainer as DeckKindContainer;
 pub use anki_proto::decks::deck::Normal as NormalDeck;
-pub use anki_proto::decks::Deck as DeckProto;
+pub use anki_proto::decks::deck::filtered::SearchTerm as FilteredSearchTerm;
+pub use anki_proto::decks::deck::filtered::search_term::Order as FilteredSearchOrder;
+pub use anki_proto::decks::deck::kind_container::Kind as DeckKind;
+pub use anki_proto::decks::deck::normal::DayLimit as NormalDeckDayLimit;
 pub(crate) use counts::DueCounts;
-pub(crate) use name::immediate_parent_name;
 pub use name::NativeDeckName;
+pub(crate) use name::immediate_parent_name;
 pub use schema11::DeckSchema11;
 
 use crate::deckconfig::DeckConfig;
@@ -42,11 +42,7 @@ define_newtype!(DeckId, i64);
 
 impl DeckId {
     pub(crate) fn or(self, other: DeckId) -> Self {
-        if self.0 == 0 {
-            other
-        } else {
-            self
-        }
+        if self.0 == 0 { other } else { self }
     }
 }
 

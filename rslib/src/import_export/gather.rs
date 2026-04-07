@@ -8,8 +8,8 @@ use anki_io::filename_is_safe;
 use itertools::Itertools;
 
 use super::ExportProgress;
-use crate::decks::immediate_parent_name;
 use crate::decks::NormalDeck;
+use crate::decks::immediate_parent_name;
 use crate::latex::extract_latex;
 use crate::prelude::*;
 use crate::progress::ThrottlingProgressHandler;
@@ -348,8 +348,9 @@ mod test {
         note.id = NoteId(now_micros);
         col.add_note_only_with_id_undoable(&mut note).unwrap();
 
-        assert!(data
-            .gather_data(&mut col, SearchNode::WholeCollection, true, true)
-            .is_err());
+        assert!(
+            data.gather_data(&mut col, SearchNode::WholeCollection, true, true)
+                .is_err()
+        );
     }
 }

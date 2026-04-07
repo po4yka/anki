@@ -13,11 +13,11 @@ use anki_proto::search::sort_order::Value as SortOrderProto;
 use crate::browser_table::Column;
 use crate::notes::service::to_note_ids;
 use crate::prelude::*;
-use crate::search::replace_search_node;
-use crate::search::service::browser_table::string_list_to_browser_columns;
 use crate::search::JoinSearches;
 use crate::search::Node;
 use crate::search::SortMode;
+use crate::search::replace_search_node;
+use crate::search::service::browser_table::string_list_to_browser_columns;
 
 impl crate::services::SearchService for Collection {
     fn build_search_string(

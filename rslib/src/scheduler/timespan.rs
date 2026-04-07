@@ -175,9 +175,9 @@ impl Timespan {
 mod test {
     use anki_i18n::I18n;
 
+    use crate::scheduler::timespan::MONTH;
     use crate::scheduler::timespan::answer_button_time;
     use crate::scheduler::timespan::time_span;
-    use crate::scheduler::timespan::MONTH;
 
     #[test]
     fn answer_buttons() {

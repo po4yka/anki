@@ -13,7 +13,12 @@ crate-type = ["staticlib"]
 [dependencies]
 surface-runtime = { path = "../atlas/surface-runtime" }
 surface-contracts = { path = "../atlas/surface-contracts" }
+common = { path = "../atlas/common" }
+jobs = { path = "../atlas/jobs" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
 thiserror = { workspace = true }
+async-trait = { workspace = true }
+chrono = { workspace = true }
+sqlx = { workspace = true }

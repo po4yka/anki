@@ -9,16 +9,16 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use nom::AsBytes;
-use reqwest::multipart;
 use reqwest::Client;
+use reqwest::multipart;
 
 use crate::error::Result;
 use crate::media::MediaManager;
 use crate::prelude::AnkiError;
 use crate::progress::ThrottlingProgressHandler;
 use crate::sync::collection::protocol::AsSyncEndpoint;
-use crate::sync::collection::tests::with_active_server;
 use crate::sync::collection::tests::SyncTestContext;
+use crate::sync::collection::tests::with_active_server;
 use crate::sync::media::begin::SyncBeginQuery;
 use crate::sync::media::begin::SyncBeginRequest;
 use crate::sync::media::progress::MediaSyncProgress;

@@ -6,12 +6,12 @@ use std::path::PathBuf;
 
 use anki_io::metadata;
 use anki_io::read_file;
-use anki_proto::image_occlusion::get_image_occlusion_note_response::ImageOcclusionNote;
-use anki_proto::image_occlusion::get_image_occlusion_note_response::Value;
 use anki_proto::image_occlusion::AddImageOcclusionNoteRequest;
 use anki_proto::image_occlusion::GetImageForOcclusionResponse;
 use anki_proto::image_occlusion::GetImageOcclusionNoteResponse;
 use anki_proto::image_occlusion::ImageOcclusionFieldIndexes;
+use anki_proto::image_occlusion::get_image_occlusion_note_response::ImageOcclusionNote;
+use anki_proto::image_occlusion::get_image_occlusion_note_response::Value;
 use anki_proto::notetypes::ImageOcclusionField;
 use regex::Regex;
 

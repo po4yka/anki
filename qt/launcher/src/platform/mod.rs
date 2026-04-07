@@ -31,8 +31,7 @@ pub fn get_uv_binary_name() -> &'static str {
 pub fn respawn_launcher() -> Result<()> {
     use std::process::Stdio;
 
-    let current_exe =
-        std::env::current_exe().context("Failed to get current executable path")?;
+    let current_exe = std::env::current_exe().context("Failed to get current executable path")?;
 
     // Navigate from Contents/MacOS/launcher to the .app bundle
     let app_bundle = current_exe

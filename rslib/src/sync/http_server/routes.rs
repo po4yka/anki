@@ -1,6 +1,7 @@
 // Copyright: Ankitects Pty Ltd and contributors
 // License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
 
+use axum::Router;
 use axum::extract::Path;
 use axum::extract::Query;
 use axum::extract::State;
@@ -9,7 +10,6 @@ use axum::response::IntoResponse;
 use axum::response::Response;
 use axum::routing::get;
 use axum::routing::post;
-use axum::Router;
 
 use crate::sync::collection::protocol::SyncMethod;
 use crate::sync::collection::protocol::SyncProtocol;

@@ -113,8 +113,8 @@ fn image_link_for_fname(src: &str, fname: &str) -> String {
 
 #[cfg(test)]
 mod test {
-    use crate::latex::extract_latex;
     use crate::latex::ExtractedLatex;
+    use crate::latex::extract_latex;
 
     #[test]
     fn latex() {

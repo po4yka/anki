@@ -6,10 +6,10 @@ use std::collections::HashSet;
 
 use unicase::UniCase;
 
+use super::Tag;
 use super::immediate_parent_name_str;
 use super::is_tag_separator;
 use super::split_tags;
-use super::Tag;
 use crate::prelude::*;
 use crate::text::normalize_to_nfc;
 use crate::types::Usn;

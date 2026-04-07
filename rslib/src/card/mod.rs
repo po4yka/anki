@@ -4,9 +4,9 @@
 mod service;
 pub(crate) mod undo;
 
-use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::collections::hash_map::Entry;
 
 use fsrs::MemoryState;
 use num_enum::TryFromPrimitive;
@@ -507,9 +507,9 @@ impl From<MemoryState> for FsrsMemoryState {
 #[cfg(test)]
 mod test {
     use crate::prelude::*;
+    use crate::tests::DeckAdder;
     use crate::tests::open_test_collection_with_learning_card;
     use crate::tests::open_test_collection_with_relearning_card;
-    use crate::tests::DeckAdder;
 
     #[test]
     fn should_increase_remaining_learning_steps_if_new_deck_has_more_unpassed_ones() {

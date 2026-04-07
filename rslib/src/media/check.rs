@@ -17,21 +17,21 @@ use tracing::info;
 
 use crate::error::DbErrorKind;
 use crate::latex::extract_latex_expanding_clozes;
+use crate::media::MediaManager;
 use crate::media::files::data_for_file;
 use crate::media::files::filename_if_normalized;
 use crate::media::files::normalize_nfc_filename;
 use crate::media::files::sha1_of_data;
 use crate::media::files::trash_folder;
-use crate::media::MediaManager;
 use crate::prelude::*;
 use crate::progress::ThrottlingProgressHandler;
-use crate::sync::media::progress::MediaCheckProgress;
 use crate::sync::media::MAX_INDIVIDUAL_MEDIA_FILE_SIZE;
-use crate::text::extract_media_refs;
-use crate::text::normalize_to_nfc;
+use crate::sync::media::progress::MediaCheckProgress;
 use crate::text::CowMapping;
 use crate::text::MediaRef;
 use crate::text::REMOTE_FILENAME;
+use crate::text::extract_media_refs;
+use crate::text::normalize_to_nfc;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct MediaCheckOutput {
@@ -547,8 +547,8 @@ pub(crate) mod test {
     use anki_io::read_to_string;
     use anki_io::write_file;
     use anki_io::write_file_and_flush;
-    use tempfile::tempdir;
     use tempfile::TempDir;
+    use tempfile::tempdir;
 
     use super::*;
     use crate::collection::CollectionBuilder;

@@ -13,15 +13,15 @@ use itertools::Itertools;
 use regex::Regex;
 
 use super::metadata::Delimiter;
-use crate::import_export::text::csv::metadata::DelimeterExt;
 use crate::import_export::ExportProgress;
+use crate::import_export::text::csv::metadata::DelimeterExt;
 use crate::notetype::RenderCardOutput;
 use crate::prelude::*;
 use crate::search::SearchNode;
 use crate::search::SortMode;
 use crate::template::RenderedNode;
-use crate::text::html_to_text_line;
 use crate::text::CowMapping;
+use crate::text::html_to_text_line;
 
 const DELIMITER: Delimiter = Delimiter::Tab;
 

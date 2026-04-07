@@ -18,9 +18,9 @@ use crate::sync::error::HttpError;
 use crate::sync::error::HttpResult;
 use crate::sync::http_client::io_monitor::IoMonitor;
 use crate::sync::login::SyncAuth;
-use crate::sync::request::header_and_stream::SyncHeader;
-use crate::sync::request::header_and_stream::SYNC_HEADER_NAME;
 use crate::sync::request::SyncRequest;
+use crate::sync::request::header_and_stream::SYNC_HEADER_NAME;
+use crate::sync::request::header_and_stream::SyncHeader;
 use crate::sync::response::SyncResponse;
 
 #[derive(Clone)]

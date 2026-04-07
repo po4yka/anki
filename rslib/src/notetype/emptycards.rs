@@ -4,11 +4,11 @@
 use std::collections::HashSet;
 use std::fmt::Write;
 
-use super::cardgen::group_generated_cards_by_note;
 use super::CardGenContext;
 use super::Notetype;
 use super::NotetypeId;
 use super::NotetypeKind;
+use super::cardgen::group_generated_cards_by_note;
 use crate::card::CardId;
 use crate::collection::Collection;
 use crate::error::Result;

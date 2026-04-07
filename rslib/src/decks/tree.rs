@@ -6,13 +6,13 @@ use std::collections::HashSet;
 use std::iter::Peekable;
 use std::ops::AddAssign;
 
-pub use anki_proto::decks::set_deck_collapsed_request::Scope as DeckCollapseScope;
 use anki_proto::decks::DeckTreeNode;
+pub use anki_proto::decks::set_deck_collapsed_request::Scope as DeckCollapseScope;
 use unicase::UniCase;
 
-use super::limits::remaining_limits_map;
-use super::limits::RemainingLimits;
 use super::DueCounts;
+use super::limits::RemainingLimits;
+use super::limits::remaining_limits_map;
 use crate::ops::OpOutput;
 use crate::prelude::*;
 use crate::undo::Op;
@@ -217,7 +217,6 @@ pub(crate) fn sum_deck_tree_node<T: AddAssign>(
     }
     output
 }
-
 
 impl Collection {
     /// Get the deck tree.

@@ -5,13 +5,13 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 
 use prost::Message;
-use rusqlite::params;
 use rusqlite::OptionalExtension;
 use rusqlite::Row;
+use rusqlite::params;
 use unicase::UniCase;
 
-use super::ids_to_string;
 use super::SqliteStorage;
+use super::ids_to_string;
 use crate::error::DbErrorKind;
 use crate::notetype::AlreadyGeneratedCardInfo;
 use crate::notetype::CardTemplate;

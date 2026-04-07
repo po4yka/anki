@@ -1,9 +1,9 @@
 // Copyright: Ankitects Pty Ltd and contributors
 // License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
 
-use anki_proto::sync::sync_status_response::Required;
 use anki_proto::sync::MediaSyncStatusResponse;
 use anki_proto::sync::SyncStatusResponse;
+use anki_proto::sync::sync_status_response::Required;
 use futures::future::AbortHandle;
 use futures::future::AbortRegistration;
 use futures::future::Abortable;
@@ -18,8 +18,8 @@ use crate::sync::collection::normal::SyncOutput;
 use crate::sync::collection::progress::sync_abort;
 use crate::sync::collection::status::online_sync_status_check;
 use crate::sync::http_client::HttpSyncClient;
-use crate::sync::login::sync_login;
 use crate::sync::login::SyncAuth;
+use crate::sync::login::sync_login;
 
 #[derive(Default)]
 pub(super) struct SyncState {

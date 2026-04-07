@@ -4,6 +4,7 @@
 use std::sync::LazyLock;
 
 use anki_proto::search::search_node::FieldSearchMode as FieldSearchModeProto;
+use nom::Parser;
 use nom::branch::alt;
 use nom::bytes::complete::escaped;
 use nom::bytes::complete::is_not;
@@ -20,7 +21,6 @@ use nom::error::ErrorKind as NomErrorKind;
 use nom::multi::many0;
 use nom::sequence::preceded;
 use nom::sequence::separated_pair;
-use nom::Parser;
 use regex::Captures;
 use regex::Regex;
 
@@ -641,7 +641,7 @@ fn parse_state(s: &str) -> ParseResult<'_, SearchNode> {
             return Err(parse_failure(
                 s,
                 FailKind::InvalidState { provided: s.into() },
-            ))
+            ));
         }
     }))
 }

@@ -5,10 +5,10 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 
 use chrono::Datelike;
-use rand::distr::weighted::WeightedIndex;
-use rand::distr::Distribution;
-use rand::rngs::StdRng;
 use rand::SeedableRng;
+use rand::distr::Distribution;
+use rand::distr::weighted::WeightedIndex;
+use rand::rngs::StdRng;
 
 use super::fuzz::constrained_fuzz_bounds;
 use crate::card::CardId;

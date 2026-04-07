@@ -14,16 +14,16 @@ use fnv::FnvHasher;
 use fsrs::FSRS;
 use fsrs::FSRS5_DEFAULT_DECAY;
 use regex::Regex;
+use rusqlite::Connection;
 use rusqlite::functions::FunctionFlags;
 use rusqlite::params;
-use rusqlite::Connection;
 use serde_json::Value;
 use unicase::UniCase;
 
+use super::SchemaVersion;
 use super::upgrades::SCHEMA_MAX_VERSION;
 use super::upgrades::SCHEMA_MIN_VERSION;
 use super::upgrades::SCHEMA_STARTING_VERSION;
-use super::SchemaVersion;
 use crate::cloze::strip_clozes;
 use crate::config::schema11::schema11_config_as_string;
 use crate::error::DbErrorKind;
@@ -31,8 +31,8 @@ use crate::prelude::*;
 use crate::scheduler::timing::local_minutes_west_for_stamp;
 use crate::scheduler::timing::v1_creation_date;
 use crate::storage::card::data::CardData;
-use crate::text::without_combining;
 use crate::text::CowMapping;
+use crate::text::without_combining;
 
 fn unicase_compare(s1: &str, s2: &str) -> Ordering {
     UniCase::new(s1).cmp(&UniCase::new(s2))
@@ -463,7 +463,6 @@ fn schema_version(db: &Connection) -> Result<(bool, u8)> {
         db.query_row("select ver from col", [], |r| r.get(0))?,
     ))
 }
-
 
 impl SqliteStorage {
     pub(crate) fn open_or_create(

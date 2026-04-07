@@ -10,16 +10,16 @@ use std::io::SeekFrom;
 
 use anki_io::open_file;
 
+use crate::import_export::NoteLog;
+use crate::import_export::text::ForeignData;
+use crate::import_export::text::ForeignNote;
+use crate::import_export::text::NameOrId;
 use crate::import_export::text::csv::metadata::CsvDeck;
 use crate::import_export::text::csv::metadata::CsvMetadata;
 use crate::import_export::text::csv::metadata::CsvMetadataHelpers;
 use crate::import_export::text::csv::metadata::CsvNotetype;
 use crate::import_export::text::csv::metadata::DelimeterExt;
 use crate::import_export::text::csv::metadata::Delimiter;
-use crate::import_export::text::ForeignData;
-use crate::import_export::text::ForeignNote;
-use crate::import_export::text::NameOrId;
-use crate::import_export::NoteLog;
 use crate::prelude::*;
 use crate::text::strip_utf8_bom;
 

@@ -9,8 +9,8 @@ use std::io::Write;
 use serde::Deserialize;
 use serde_tuple::Serialize_tuple;
 use unicode_normalization::is_nfc;
-use zip::write::FileOptions;
 use zip::ZipWriter;
+use zip::write::FileOptions;
 
 use crate::media::files::sha1_of_data;
 use crate::prelude::*;

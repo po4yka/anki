@@ -9,11 +9,11 @@ use std::iter;
 use std::sync::LazyLock;
 
 use anki_i18n::I18n;
+use nom::Parser;
 use nom::bytes::complete::tag;
 use nom::bytes::complete::take_until;
 use nom::combinator::map;
 use nom::sequence::delimited;
-use nom::Parser;
 use regex::Regex;
 
 use crate::cloze::cloze_number_in_fields;
@@ -926,13 +926,13 @@ mod test {
     use super::ParsedNode::*;
     use super::ParsedTemplate as PT;
     use crate::error::TemplateError;
-    use crate::template::field_is_empty;
-    use crate::template::nonempty_fields;
+    use crate::template::COMMENT_END;
+    use crate::template::COMMENT_START;
     use crate::template::FieldRequirements;
     use crate::template::RenderCardRequest;
     use crate::template::RenderContext;
-    use crate::template::COMMENT_END;
-    use crate::template::COMMENT_START;
+    use crate::template::field_is_empty;
+    use crate::template::nonempty_fields;
 
     #[test]
     fn field_empty() {
@@ -1040,8 +1040,7 @@ mod test {
         let tmpl = PT::from_text(orig).unwrap();
         assert_eq!(orig, &tmpl.template_to_string());
 
-        let orig =
-            "foo {{one:two}} <!--<!--abc {{^def}}-->--> {{one:two:three}} {{^baz}} <!-- {{/baz}} 🙂 --> {{/baz}} {{foo:}}";
+        let orig = "foo {{one:two}} <!--<!--abc {{^def}}-->--> {{one:two:three}} {{^baz}} <!-- {{/baz}} 🙂 --> {{/baz}} {{foo:}}";
         let tmpl = PT::from_text(orig).unwrap();
         assert_eq!(orig, &tmpl.template_to_string());
     }

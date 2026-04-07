@@ -10,8 +10,8 @@ mod string;
 pub(crate) mod undo;
 
 use anki_proto::config::preferences::BackupLimits;
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 use serde_repr::Deserialize_repr;
 use serde_repr::Serialize_repr;
 use strum::IntoStaticStr;

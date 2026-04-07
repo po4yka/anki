@@ -4,10 +4,10 @@ use anki_proto::decks::deck::kind_container::Kind as DeckKind;
 use anki_proto::generic;
 
 use crate::collection::Collection;
-use crate::decks::filtered::search_order_labels;
 use crate::decks::Deck;
 use crate::decks::DeckId;
 use crate::decks::NativeDeckName;
+use crate::decks::filtered::search_order_labels;
 use crate::error;
 use crate::error::AnkiError;
 use crate::error::OrInvalid;

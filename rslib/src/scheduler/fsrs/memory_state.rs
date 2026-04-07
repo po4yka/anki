@@ -4,11 +4,11 @@
 use std::collections::HashMap;
 
 use anki_proto::scheduler::ComputeMemoryStateResponse;
-use fsrs::FSRSItem;
-use fsrs::MemoryState;
 use fsrs::FSRS;
 use fsrs::FSRS5_DEFAULT_DECAY;
 use fsrs::FSRS6_DEFAULT_DECAY;
+use fsrs::FSRSItem;
+use fsrs::MemoryState;
 use itertools::Either;
 use itertools::Itertools;
 
@@ -19,8 +19,8 @@ use crate::card::CardType;
 use crate::prelude::*;
 use crate::revlog::RevlogEntry;
 use crate::scheduler::answering::get_fuzz_seed;
-use crate::scheduler::fsrs::params::reviews_for_fsrs;
 use crate::scheduler::fsrs::params::Params;
+use crate::scheduler::fsrs::params::reviews_for_fsrs;
 use crate::scheduler::states::fuzz::with_review_fuzz;
 use crate::search::Negated;
 use crate::search::SearchNode;
@@ -264,7 +264,10 @@ impl Collection {
         Ok(())
     }
 
-    fn create_progress_closure(&self, item_count: usize) -> Result<impl FnMut() -> Result<()> + use<>> {
+    fn create_progress_closure(
+        &self,
+        item_count: usize,
+    ) -> Result<impl FnMut() -> Result<()> + use<>> {
         let mut progress = self.new_progress_handler::<ComputeMemoryProgress>();
         progress.update(false, |s| {
             s.total_cards = item_count as u32;

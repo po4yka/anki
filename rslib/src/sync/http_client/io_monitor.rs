@@ -11,16 +11,16 @@ use bytes::Bytes;
 use futures::Stream;
 use futures::StreamExt;
 use futures::TryStreamExt;
-use reqwest::header::CONTENT_TYPE;
-use reqwest::header::LOCATION;
 use reqwest::Body;
 use reqwest::RequestBuilder;
 use reqwest::Response;
 use reqwest::StatusCode;
+use reqwest::header::CONTENT_TYPE;
+use reqwest::header::LOCATION;
 use tokio::io::AsyncReadExt;
 use tokio::select;
-use tokio::time::interval;
 use tokio::time::Instant;
+use tokio::time::interval;
 use tokio_util::io::ReaderStream;
 use tokio_util::io::StreamReader;
 
@@ -186,15 +186,15 @@ impl IoMonitor {}
 #[cfg(test)]
 mod test {
     use async_stream::stream;
-    use futures::pin_mut;
     use futures::StreamExt;
+    use futures::pin_mut;
     use tokio::select;
     use tokio::time::sleep;
-    use wiremock::matchers::method;
-    use wiremock::matchers::path;
     use wiremock::Mock;
     use wiremock::MockServer;
     use wiremock::ResponseTemplate;
+    use wiremock::matchers::method;
+    use wiremock::matchers::path;
 
     use super::*;
     use crate::sync::error::HttpError;

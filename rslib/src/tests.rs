@@ -5,8 +5,8 @@
 #![allow(dead_code)]
 
 use itertools::Itertools;
-use tempfile::tempdir;
 use tempfile::TempDir;
+use tempfile::tempdir;
 
 use crate::collection::CollectionBuilder;
 use crate::deckconfig::DeckConfigInner;

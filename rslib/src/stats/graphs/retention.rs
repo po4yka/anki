@@ -2,8 +2,8 @@
 // License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
 use std::collections::HashMap;
 
-use anki_proto::stats::graphs_response::true_retention_stats::TrueRetention;
 use anki_proto::stats::graphs_response::TrueRetentionStats;
+use anki_proto::stats::graphs_response::true_retention_stats::TrueRetention;
 
 use super::GraphsContext;
 use super::TimestampSecs;

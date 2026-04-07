@@ -8,11 +8,11 @@ use super::CardTemplate;
 use super::Notetype;
 use super::NotetypeKind;
 use crate::prelude::*;
-use crate::template::field_is_empty;
-use crate::template::render_card;
 use crate::template::ParsedTemplate;
 use crate::template::RenderCardRequest;
 use crate::template::RenderedNode;
+use crate::template::field_is_empty;
+use crate::template::render_card;
 
 #[derive(Debug)]
 pub struct RenderCardOutput {

@@ -4,15 +4,15 @@
 use std::collections::HashMap;
 use std::path::Path;
 
-use rusqlite::params;
 use rusqlite::Connection;
 use rusqlite::OptionalExtension;
 use rusqlite::Row;
+use rusqlite::params;
 use tracing::debug;
 
 use crate::error;
-use crate::media::files::AddedFile;
 use crate::media::Sha1Hash;
+use crate::media::files::AddedFile;
 use crate::prelude::Usn;
 use crate::prelude::*;
 
@@ -338,8 +338,8 @@ mod test {
     use tempfile::TempDir;
 
     use crate::error::Result;
-    use crate::media::files::sha1_of_data;
     use crate::media::MediaManager;
+    use crate::media::files::sha1_of_data;
     use crate::sync::media::database::client::MediaEntry;
 
     #[test]

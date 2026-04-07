@@ -8,18 +8,18 @@ use std::time::Duration;
 
 use anki_io::write_file;
 use anki_proto::scheduler::ComputeFsrsParamsResponse;
-use anki_proto::stats::revlog_entry;
 use anki_proto::stats::Dataset;
 use anki_proto::stats::DeckEntry;
+use anki_proto::stats::revlog_entry;
 use chrono::NaiveDate;
 use chrono::NaiveTime;
 use fsrs::CombinedProgressState;
 use fsrs::ComputeParametersInput;
+use fsrs::FSRS;
 use fsrs::FSRSItem;
 use fsrs::FSRSReview;
 use fsrs::MemoryState;
 use fsrs::ModelEvaluation;
-use fsrs::FSRS;
 use itertools::Itertools;
 use prost::Message;
 

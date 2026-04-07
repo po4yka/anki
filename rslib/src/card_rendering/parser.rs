@@ -3,6 +3,8 @@
 
 use std::collections::HashMap;
 
+use nom::Input;
+use nom::Parser;
 use nom::branch::alt;
 use nom::bytes::complete::is_not;
 use nom::bytes::complete::tag;
@@ -20,8 +22,6 @@ use nom::sequence::pair;
 use nom::sequence::preceded;
 use nom::sequence::separated_pair;
 use nom::sequence::terminated;
-use nom::Input;
-use nom::Parser;
 
 use super::CardNodes;
 use super::Directive;

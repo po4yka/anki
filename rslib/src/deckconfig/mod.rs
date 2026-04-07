@@ -6,6 +6,7 @@ mod service;
 pub(crate) mod undo;
 mod update;
 
+pub use anki_proto::deck_config::deck_config::Config as DeckConfigInner;
 pub use anki_proto::deck_config::deck_config::config::AnswerAction;
 pub use anki_proto::deck_config::deck_config::config::LeechAction;
 pub use anki_proto::deck_config::deck_config::config::NewCardGatherPriority;
@@ -14,7 +15,6 @@ pub use anki_proto::deck_config::deck_config::config::NewCardSortOrder;
 pub use anki_proto::deck_config::deck_config::config::QuestionAction;
 pub use anki_proto::deck_config::deck_config::config::ReviewCardOrder;
 pub use anki_proto::deck_config::deck_config::config::ReviewMix;
-pub use anki_proto::deck_config::deck_config::Config as DeckConfigInner;
 pub use schema11::DeckConfSchema11;
 pub use schema11::NewCardOrderSchema11;
 pub use update::UpdateDeckConfigsRequest;

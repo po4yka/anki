@@ -4,8 +4,8 @@
 use anki_proto::notetypes::stock_notetype::Kind;
 use anki_proto::notetypes::stock_notetype::OriginalStockKind;
 
-use crate::notetype::stock::get_original_stock_notetype;
 use crate::notetype::stock::StockKind;
+use crate::notetype::stock::get_original_stock_notetype;
 use crate::prelude::*;
 
 impl Collection {

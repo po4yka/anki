@@ -36,11 +36,7 @@ impl Graves {
             out.decks.push(self.decks.pop().unwrap());
             limit -= 1;
         }
-        if limit == CHUNK_SIZE {
-            None
-        } else {
-            Some(out)
-        }
+        if limit == CHUNK_SIZE { None } else { Some(out) }
     }
 }
 

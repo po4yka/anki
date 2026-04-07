@@ -5,10 +5,10 @@ use std::fs;
 use std::io::ErrorKind;
 use std::path::Path;
 
-use anki_io::write_file;
 use anki_io::FileIoError;
 use anki_io::FileIoSnafu;
 use anki_io::FileOp;
+use anki_io::write_file;
 use snafu::ResultExt;
 use tracing::info;
 

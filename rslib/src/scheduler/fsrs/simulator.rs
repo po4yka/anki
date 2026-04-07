@@ -8,14 +8,14 @@ use anki_proto::deck_config::deck_config::config::ReviewCardOrder::*;
 use anki_proto::scheduler::SimulateFsrsReviewRequest;
 use anki_proto::scheduler::SimulateFsrsReviewResponse;
 use anki_proto::scheduler::SimulateFsrsWorkloadResponse;
-use fsrs::simulate;
+use fsrs::FSRS;
 use fsrs::PostSchedulingFn;
 use fsrs::ReviewPriorityFn;
 use fsrs::SimulatorConfig;
-use fsrs::FSRS;
+use fsrs::simulate;
 use itertools::Itertools;
-use rand::rngs::StdRng;
 use rand::Rng;
+use rand::rngs::StdRng;
 use rayon::iter::IntoParallelIterator;
 use rayon::iter::ParallelIterator;
 
@@ -24,12 +24,12 @@ use crate::card::CardType;
 use crate::card::FsrsMemoryState;
 use crate::prelude::*;
 use crate::scheduler::states::fuzz::constrained_fuzz_bounds;
+use crate::scheduler::states::load_balancer::EasyDay;
+use crate::scheduler::states::load_balancer::LoadBalancerInterval;
 use crate::scheduler::states::load_balancer::calculate_easy_days_modifiers;
 use crate::scheduler::states::load_balancer::interval_to_weekday;
 use crate::scheduler::states::load_balancer::parse_easy_days_percentages;
 use crate::scheduler::states::load_balancer::select_weighted_interval;
-use crate::scheduler::states::load_balancer::EasyDay;
-use crate::scheduler::states::load_balancer::LoadBalancerInterval;
 use crate::search::SortMode;
 
 pub(crate) fn apply_load_balance_and_easy_days(

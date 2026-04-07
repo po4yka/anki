@@ -6,11 +6,11 @@ use chrono::Datelike;
 
 use crate::prelude::*;
 use crate::scheduler::states::fuzz::constrained_fuzz_bounds;
+use crate::scheduler::states::load_balancer::EasyDay;
+use crate::scheduler::states::load_balancer::LoadBalancerInterval;
 use crate::scheduler::states::load_balancer::build_easy_days_percentages;
 use crate::scheduler::states::load_balancer::calculate_easy_days_modifiers;
 use crate::scheduler::states::load_balancer::select_weighted_interval;
-use crate::scheduler::states::load_balancer::EasyDay;
-use crate::scheduler::states::load_balancer::LoadBalancerInterval;
 
 pub struct Rescheduler {
     today: i32,

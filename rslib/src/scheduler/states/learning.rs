@@ -1,11 +1,11 @@
 // Copyright: Ankitects Pty Ltd and contributors
 // License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
 
-use super::interval_kind::IntervalKind;
 use super::CardState;
 use super::ReviewState;
 use super::SchedulingStates;
 use super::StateContext;
+use super::interval_kind::IntervalKind;
 use crate::card::FsrsMemoryState;
 use crate::revlog::RevlogReviewKind;
 

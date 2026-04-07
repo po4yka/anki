@@ -12,8 +12,8 @@ use serde::Serialize;
 use crate::error;
 use crate::error::AnkiError;
 use crate::error::SyncErrorKind;
-use crate::media::files::add_file_from_ankiweb;
 use crate::media::files::AddedFile;
+use crate::media::files::add_file_from_ankiweb;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DownloadFilesRequest {

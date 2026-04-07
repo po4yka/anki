@@ -365,10 +365,11 @@ impl RowContext {
                 return Err(AnkiError::DatabaseCheckRequired);
             }
         } else {
-            cards = vec![col
-                .storage
-                .get_card(CardId(id))?
-                .ok_or(AnkiError::Deleted)?];
+            cards = vec![
+                col.storage
+                    .get_card(CardId(id))?
+                    .ok_or(AnkiError::Deleted)?,
+            ];
             note = col.get_note_maybe_with_fields(cards[0].note_id, with_card_render)?;
         }
         let notetype = col

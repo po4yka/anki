@@ -7,6 +7,7 @@ use std::ops::Range;
 
 use itertools::Itertools;
 
+use super::ReturnItemType;
 use super::parser::FieldSearchMode;
 use super::parser::Node;
 use super::parser::PropertyKind;
@@ -14,7 +15,6 @@ use super::parser::RatingKind;
 use super::parser::SearchNode;
 use super::parser::StateKind;
 use super::parser::TemplateKind;
-use super::ReturnItemType;
 use crate::card::CardQueue;
 use crate::card::CardType;
 use crate::collection::Collection;
@@ -22,8 +22,8 @@ use crate::error::Result;
 use crate::notes::field_checksum;
 use crate::notetype::NotetypeId;
 use crate::prelude::*;
-use crate::storage::ids_to_string;
 use crate::storage::ProcessTextFlags;
+use crate::storage::ids_to_string;
 use crate::text::glob_matcher;
 use crate::text::is_glob;
 use crate::text::normalize_to_nfc;
@@ -1009,9 +1009,9 @@ trait CollectRanges {
 }
 
 impl<
-        Idx: Copy + PartialOrd + std::ops::Add<Idx, Output = Idx> + From<u8>,
-        I: IntoIterator<Item = Idx>,
-    > CollectRanges for I
+    Idx: Copy + PartialOrd + std::ops::Add<Idx, Output = Idx> + From<u8>,
+    I: IntoIterator<Item = Idx>,
+> CollectRanges for I
 {
     type Item = Idx;
 
@@ -1420,7 +1420,10 @@ c.odue != 0 then c.odue else c.due end) != {days}) or (c.queue in (1,4) and
         assert_eq!(&s(ctx, "preset:typo").0, "(false)");
 
         // strip clozes
-        assert_eq!(&s(ctx, "sc:abcdef").0, "((n.mid = 1581236385343) and (coalesce(process_text(cast(n.sfld as text), 2), n.sfld) like ?1 escape '\\' or coalesce(process_text(n.flds, 2), n.flds) like ?1 escape '\\'))");
+        assert_eq!(
+            &s(ctx, "sc:abcdef").0,
+            "((n.mid = 1581236385343) and (coalesce(process_text(cast(n.sfld as text), 2), n.sfld) like ?1 escape '\\' or coalesce(process_text(n.flds, 2), n.flds) like ?1 escape '\\'))"
+        );
     }
 
     #[test]

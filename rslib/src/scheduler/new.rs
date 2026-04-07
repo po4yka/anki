@@ -4,9 +4,9 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-pub use anki_proto::scheduler::schedule_cards_as_new_request::Context as ScheduleAsNewContext;
 pub use anki_proto::scheduler::RepositionDefaultsResponse;
 pub use anki_proto::scheduler::ScheduleCardsAsNewDefaultsResponse;
+pub use anki_proto::scheduler::schedule_cards_as_new_request::Context as ScheduleAsNewContext;
 use rand::seq::SliceRandom;
 
 use crate::card::CardQueue;

@@ -11,21 +11,21 @@ use std::io::Seek;
 use std::io::SeekFrom;
 
 use anki_io::read_to_string;
+pub use anki_proto::import_export::CsvMetadata;
 pub use anki_proto::import_export::csv_metadata::Deck as CsvDeck;
 pub use anki_proto::import_export::csv_metadata::Delimiter;
 pub use anki_proto::import_export::csv_metadata::DupeResolution;
 pub use anki_proto::import_export::csv_metadata::MappedNotetype;
 pub use anki_proto::import_export::csv_metadata::MatchScope;
 pub use anki_proto::import_export::csv_metadata::Notetype as CsvNotetype;
-pub use anki_proto::import_export::CsvMetadata;
 use itertools::Itertools;
 use strum::IntoEnumIterator;
 
 use super::import::build_csv_reader;
 use crate::config::I32ConfigKey;
-use crate::import_export::text::csv::import::FieldSourceColumns;
-use crate::import_export::text::NameOrId;
 use crate::import_export::ImportError;
+use crate::import_export::text::NameOrId;
+use crate::import_export::text::csv::import::FieldSourceColumns;
 use crate::notetype::NoteField;
 use crate::prelude::*;
 use crate::text::html_to_text_line;

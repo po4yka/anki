@@ -87,7 +87,9 @@ struct OtherDirective<'a> {
 #[cfg(feature = "bench")]
 #[inline]
 pub fn anki_directive_benchmark() {
-    CardNodes::parse("[anki:foo bar=baz][/anki:foo][anki:tts lang=jp_JP voices=Alice,Bob speed=0.5 cloze_blank= bar=baz][/anki:tts]");
+    CardNodes::parse(
+        "[anki:foo bar=baz][/anki:foo][anki:tts lang=jp_JP voices=Alice,Bob speed=0.5 cloze_blank= bar=baz][/anki:tts]",
+    );
 }
 
 #[cfg(test)]

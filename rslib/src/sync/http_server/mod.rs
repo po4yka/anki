@@ -19,19 +19,19 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 use anki_io::create_dir_all;
+use axum::Router;
 use axum::extract::DefaultBodyLimit;
 use axum::routing::get;
-use axum::Router;
 use axum_client_ip::ClientIpSource;
+use pbkdf2::Pbkdf2;
 use pbkdf2::password_hash::PasswordHash;
 use pbkdf2::password_hash::PasswordHasher;
 use pbkdf2::password_hash::PasswordVerifier;
 use pbkdf2::password_hash::SaltString;
-use pbkdf2::Pbkdf2;
-use snafu::whatever;
 use snafu::OptionExt;
 use snafu::ResultExt;
 use snafu::Whatever;
+use snafu::whatever;
 use tokio::net::TcpListener;
 use tracing::Span;
 
@@ -47,8 +47,8 @@ use crate::sync::http_server::routes::media_sync_router;
 use crate::sync::http_server::user::User;
 use crate::sync::login::HostKeyRequest;
 use crate::sync::login::HostKeyResponse;
-use crate::sync::request::SyncRequest;
 use crate::sync::request::MAXIMUM_SYNC_PAYLOAD_BYTES;
+use crate::sync::request::SyncRequest;
 use crate::sync::response::SyncResponse;
 
 pub struct SimpleServer {

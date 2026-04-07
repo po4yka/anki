@@ -3,8 +3,8 @@
 
 use std::collections::HashMap;
 
-use phf::phf_set;
 use phf::Set;
+use phf::phf_set;
 use serde::Deserialize as DeTrait;
 use serde::Deserialize;
 use serde::Deserializer;
@@ -18,8 +18,8 @@ use serde_tuple::Serialize_tuple;
 use super::DeckConfig;
 use super::DeckConfigId;
 use super::DeckConfigInner;
-use super::NewCardInsertOrder;
 use super::INITIAL_EASE_FACTOR_THOUSANDS;
+use super::NewCardInsertOrder;
 use crate::serde::default_on_invalid;
 use crate::timestamp::TimestampSecs;
 use crate::types::Usn;
@@ -563,8 +563,8 @@ static RESERVED_DECKCONF_LAPSE_KEYS: Set<&'static str> = phf_set! {
 mod test {
     use itertools::Itertools;
     use serde::de::IntoDeserializer;
-    use serde_json::json;
     use serde_json::Value;
+    use serde_json::json;
 
     use super::*;
     use crate::prelude::*;

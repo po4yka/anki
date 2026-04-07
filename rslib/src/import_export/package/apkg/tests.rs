@@ -11,8 +11,8 @@ use anki_io::read_file;
 use anki_proto::import_export::ImportAnkiPackageOptions;
 
 use crate::import_export::package::ExportAnkiPackageOptions;
-use crate::media::files::sha1_of_data;
 use crate::media::MediaManager;
+use crate::media::files::sha1_of_data;
 use crate::prelude::*;
 use crate::search::SearchNode;
 use crate::tests::open_fs_test_collection;

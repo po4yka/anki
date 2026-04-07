@@ -4,18 +4,18 @@
 use std::borrow::Cow;
 use std::sync::LazyLock;
 
-use percent_encoding_iri::percent_decode_str;
-use percent_encoding_iri::utf8_percent_encode;
 use percent_encoding_iri::AsciiSet;
 use percent_encoding_iri::CONTROLS;
+use percent_encoding_iri::percent_decode_str;
+use percent_encoding_iri::utf8_percent_encode;
 use regex::Captures;
 use regex::Regex;
 use unicase::eq as uni_eq;
+use unicode_normalization::IsNormalized;
+use unicode_normalization::UnicodeNormalization;
 use unicode_normalization::char::is_combining_mark;
 use unicode_normalization::is_nfc;
 use unicode_normalization::is_nfkd_quick;
-use unicode_normalization::IsNormalized;
-use unicode_normalization::UnicodeNormalization;
 
 pub trait Trimming {
     fn trim(self) -> Self;

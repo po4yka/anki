@@ -9,9 +9,9 @@ use std::env;
 use std::path::PathBuf;
 use std::sync::LazyLock;
 
+use anki_io::ToUtf8Path;
 use anki_io::read_to_string;
 use anki_io::write_file_if_changed;
-use anki_io::ToUtf8Path;
 use anyhow::Result;
 use camino::Utf8Path;
 use inflections::Inflect;

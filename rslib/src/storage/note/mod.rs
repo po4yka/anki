@@ -4,8 +4,8 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-use rusqlite::params;
 use rusqlite::Row;
+use rusqlite::params;
 use unicase::UniCase;
 
 use crate::import_export::package::NoteMeta;

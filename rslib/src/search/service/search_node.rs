@@ -5,7 +5,6 @@ use anki_proto::search::search_node::IdList;
 use itertools::Itertools;
 
 use crate::prelude::*;
-use crate::search::parse_search;
 use crate::search::FieldSearchMode;
 use crate::search::Negated;
 use crate::search::Node;
@@ -14,6 +13,7 @@ use crate::search::RatingKind;
 use crate::search::SearchNode;
 use crate::search::StateKind;
 use crate::search::TemplateKind;
+use crate::search::parse_search;
 use crate::text::escape_anki_wildcards;
 use crate::text::escape_anki_wildcards_for_search_node;
 
@@ -21,9 +21,9 @@ impl TryFrom<anki_proto::search::SearchNode> for Node {
     type Error = AnkiError;
 
     fn try_from(msg: anki_proto::search::SearchNode) -> std::result::Result<Self, Self::Error> {
-        use anki_proto::search::search_node::group::Joiner;
         use anki_proto::search::search_node::Filter;
         use anki_proto::search::search_node::Flag;
+        use anki_proto::search::search_node::group::Joiner;
         Ok(if let Some(filter) = msg.filter {
             match filter {
                 Filter::Tag(s) => SearchNode::from_tag_name(&s).into(),

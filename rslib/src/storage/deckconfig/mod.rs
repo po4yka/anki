@@ -4,16 +4,16 @@
 use std::collections::HashMap;
 
 use prost::Message;
-use rusqlite::params;
 use rusqlite::Row;
+use rusqlite::params;
 use serde_json::Value;
 
 use super::SqliteStorage;
-use crate::deckconfig::ensure_deck_config_values_valid;
 use crate::deckconfig::DeckConfSchema11;
 use crate::deckconfig::DeckConfig;
 use crate::deckconfig::DeckConfigId;
 use crate::deckconfig::DeckConfigInner;
+use crate::deckconfig::ensure_deck_config_values_valid;
 use crate::prelude::*;
 
 fn row_to_deckconf(row: &Row, fix_invalid: bool) -> Result<DeckConfig> {

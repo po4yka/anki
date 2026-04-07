@@ -9,10 +9,10 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use fluent::types::FluentNumber;
 use fluent::FluentArgs;
 use fluent::FluentResource;
 use fluent::FluentValue;
+use fluent::types::FluentNumber;
 use fluent_bundle::bundle::FluentBundle as FluentBundleOrig;
 use num_format::Locale;
 use serde::Serialize;

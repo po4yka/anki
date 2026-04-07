@@ -3,12 +3,12 @@
 
 use std::convert::TryFrom;
 
+use rusqlite::OptionalExtension;
+use rusqlite::Row;
 use rusqlite::params;
 use rusqlite::types::FromSql;
 use rusqlite::types::FromSqlError;
 use rusqlite::types::ValueRef;
-use rusqlite::OptionalExtension;
-use rusqlite::Row;
 
 use super::SqliteStorage;
 use crate::error::Result;

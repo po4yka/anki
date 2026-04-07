@@ -1,7 +1,7 @@
 use std::ffi::c_void;
 use std::slice;
 
-use anki::backend::{init_backend, Backend};
+use anki::backend::{Backend, init_backend};
 
 /// Byte buffer for transferring owned data across the FFI boundary.
 /// Swift must call anki_free_buffer() when it is done with the data.
@@ -36,10 +36,7 @@ impl ByteBuffer {
 /// all subsequent anki_command calls and must call anki_free() when done.
 /// Returns null on error.
 #[unsafe(no_mangle)]
-pub extern "C" fn anki_init(
-    data: *const u8,
-    len: usize,
-) -> *mut c_void {
+pub extern "C" fn anki_init(data: *const u8, len: usize) -> *mut c_void {
     let bytes = unsafe { slice::from_raw_parts(data, len) };
     match init_backend(bytes) {
         Ok(backend) => Box::into_raw(Box::new(backend)) as *mut c_void,

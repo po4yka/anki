@@ -3,8 +3,8 @@
 
 use std::collections::HashMap;
 
-use phf::phf_set;
 use phf::Set;
+use phf::phf_set;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;

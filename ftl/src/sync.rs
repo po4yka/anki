@@ -4,9 +4,9 @@
 use std::process::Command;
 
 use anki_process::CommandExt;
-use anyhow::bail;
 use anyhow::Context;
 use anyhow::Result;
+use anyhow::bail;
 use camino::Utf8Path;
 
 #[derive(Debug)]

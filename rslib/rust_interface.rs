@@ -6,10 +6,10 @@ use std::fmt::Write;
 use std::path::PathBuf;
 
 use anki_io::write_file_if_changed;
-use anki_proto_gen::get_services;
 use anki_proto_gen::BackendService;
 use anki_proto_gen::CollectionService;
 use anki_proto_gen::Method;
+use anki_proto_gen::get_services;
 use anyhow::Context;
 use anyhow::Result;
 use inflections::Inflect;

@@ -3,12 +3,12 @@
 
 use fsrs::NextStates;
 
-use super::interval_kind::IntervalKind;
 use super::CardState;
 use super::LearnState;
 use super::RelearnState;
 use super::SchedulingStates;
 use super::StateContext;
+use super::interval_kind::IntervalKind;
 use crate::card::FsrsMemoryState;
 use crate::revlog::RevlogReviewKind;
 

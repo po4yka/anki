@@ -8,7 +8,6 @@ use regex::Regex;
 
 use crate::notetype::NotetypeId as NotetypeIdType;
 use crate::prelude::*;
-use crate::search::parser::parse;
 use crate::search::parser::FieldSearchMode;
 use crate::search::parser::Node;
 use crate::search::parser::PropertyKind;
@@ -16,6 +15,7 @@ use crate::search::parser::RatingKind;
 use crate::search::parser::SearchNode;
 use crate::search::parser::StateKind;
 use crate::search::parser::TemplateKind;
+use crate::search::parser::parse;
 use crate::text::escape_anki_wildcards;
 
 /// Given an existing parsed search, if the provided `replacement` is a single

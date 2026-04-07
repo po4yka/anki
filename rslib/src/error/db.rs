@@ -4,8 +4,8 @@
 use std::str::Utf8Error;
 
 use anki_i18n::I18n;
-use rusqlite::types::FromSqlError;
 use rusqlite::Error;
+use rusqlite::types::FromSqlError;
 use snafu::Snafu;
 
 use super::AnkiError;

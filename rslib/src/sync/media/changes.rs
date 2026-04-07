@@ -122,9 +122,9 @@ mod test {
 
     #[test]
     fn required_change() {
-        use crate::sync::media::changes::determine_required_change as d;
         use crate::sync::media::changes::LocalState as L;
         use crate::sync::media::changes::RequiredChange as R;
+        use crate::sync::media::changes::determine_required_change as d;
         assert_eq!(d("", "", L::NotInDb), R::None);
         assert_eq!(d("", "", L::InDbNotPending), R::Delete);
         assert_eq!(d("", "1", L::InDbAndPending), R::Download);
