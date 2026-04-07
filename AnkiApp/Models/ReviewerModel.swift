@@ -21,7 +21,7 @@ final class ReviewerModel {
         do {
             queuedCards = try await service.getQueuedCards(fetchLimit: 1)
             if let cardId = queuedCards?.cards.first?.card.id {
-                currentCardHTML = try await service.renderExistingCard(cardId: cardId)
+                currentCardHTML = try await service.renderExistingCard(cardId: cardId, browser: false)
             }
             error = nil
         } catch let e as AnkiError {

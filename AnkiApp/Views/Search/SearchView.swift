@@ -3,6 +3,8 @@ import SwiftUI
 struct SearchView: View {
     @Environment(AppState.self) private var appState
     @State private var model: SearchModel?
+    @State private var previewModel: CardPreviewModel?
+    @State private var showPreview: Bool = true
     @State private var showingSetDueDate = false
     @State private var showingAddTags = false
     @State private var showingRemoveTags = false
@@ -53,70 +55,91 @@ struct SearchView: View {
 
                     Divider()
 
-                    Table(model.results, selection: Binding(
-                        get: { model.selectedCardIds },
-                        set: { model.selectedCardIds = $0 }
-                    )) {
-                        TableColumn("Question") { row in
-                            Text(row.questionPreview)
-                                .lineLimit(1)
-                        }
-                        .width(min: 200)
+                    HSplitView {
+                        Table(model.results, selection: Binding(
+                            get: { model.selectedCardIds },
+                            set: { ids in
+                                model.selectedCardIds = ids
+                                if let cardId = ids.first, let preview = previewModel {
+                                    Task { await preview.loadCard(cardId: cardId) }
+                                }
+                            }
+                        )) {
+                            TableColumn("Question") { row in
+                                Text(row.questionPreview)
+                                    .lineLimit(1)
+                            }
+                            .width(min: 200)
 
-                        TableColumn("Deck") { row in
-                            Text(row.deckName)
-                                .foregroundStyle(.secondary)
-                        }
-                        .width(min: 100)
+                            TableColumn("Deck") { row in
+                                Text(row.deckName)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .width(min: 100)
 
-                        TableColumn("Due") { row in
-                            Text(row.due)
-                                .foregroundStyle(.secondary)
+                            TableColumn("Due") { row in
+                                Text(row.due)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .width(min: 80)
                         }
-                        .width(min: 80)
-                    }
-                    .contextMenu(forSelectionType: Int64.self) { ids in
-                        if !ids.isEmpty {
-                            Button("Set Due Date...") {
-                                dueDateInput = ""
-                                showingSetDueDate = true
+                        .frame(minWidth: 300)
+                        .contextMenu(forSelectionType: Int64.self) { ids in
+                            if !ids.isEmpty {
+                                Button("Set Due Date...") {
+                                    dueDateInput = ""
+                                    showingSetDueDate = true
+                                }
+                                Button("Add Tags...") {
+                                    tagInput = ""
+                                    showingAddTags = true
+                                }
+                                Button("Remove Tags...") {
+                                    tagInput = ""
+                                    showingRemoveTags = true
+                                }
+                                Divider()
+                                Button("Suspend") {
+                                    Task { await model.suspendSelected() }
+                                }
+                                Button("Bury") {
+                                    Task { await model.burySelected() }
+                                }
+                                Button("Forget") {
+                                    Task { await model.forgetSelected() }
+                                }
+                                Divider()
+                                Button("Find and Replace...") {
+                                    findText = ""
+                                    replaceText = ""
+                                    showingFindReplace = true
+                                }
+                                Divider()
+                                Button("Delete", role: .destructive) {
+                                    Task { await model.deleteSelected() }
+                                }
                             }
-                            Button("Add Tags...") {
-                                tagInput = ""
-                                showingAddTags = true
-                            }
-                            Button("Remove Tags...") {
-                                tagInput = ""
-                                showingRemoveTags = true
-                            }
-                            Divider()
-                            Button("Suspend") {
-                                Task { await model.suspendSelected() }
-                            }
-                            Button("Bury") {
-                                Task { await model.burySelected() }
-                            }
-                            Button("Forget") {
-                                Task { await model.forgetSelected() }
-                            }
-                            Divider()
-                            Button("Find and Replace...") {
-                                findText = ""
-                                replaceText = ""
-                                showingFindReplace = true
-                            }
-                            Divider()
-                            Button("Delete", role: .destructive) {
-                                Task { await model.deleteSelected() }
-                            }
+                        } primaryAction: { _ in
+                            // Double-click: could open editor in future
                         }
-                    } primaryAction: { _ in
-                        // Double-click: could open editor in future
+
+                        if showPreview, let preview = previewModel {
+                            CardPreviewPane(model: preview, mediaFolderURL: appState.mediaFolderURL)
+                                .frame(minWidth: 280)
+                        }
                     }
                 }
                 .navigationTitle("Browse")
                 .toolbar {
                     ToolbarItemGroup {
+                        Button {
+                            showPreview.toggle()
+                        } label: {
+                            Label("Toggle Preview", systemImage: "sidebar.right")
+                        }
+
+                        Divider()
+
                         Button {
                             dueDateInput = ""
                             showingSetDueDate = true
@@ -173,6 +196,9 @@ struct SearchView: View {
         .onAppear {
             if model == nil {
                 model = SearchModel(service: appState.service)
+            }
+            if previewModel == nil {
+                previewModel = CardPreviewModel(service: appState.service)
             }
         }
         .ankiErrorAlert($model?.error)

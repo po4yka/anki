@@ -47,7 +47,7 @@ final class ReviewerModel {
                 lastDeckId = card.deckID
             }
             if let cardId = queuedCards?.cards.first?.card.id {
-                currentCardHTML = try await service.renderExistingCard(cardId: cardId)
+                currentCardHTML = try await service.renderExistingCard(cardId: cardId, browser: false)
                 await extractAvTags()
                 detectTypeAnswer()
                 await loadDeckConfig()

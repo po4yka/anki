@@ -13,7 +13,7 @@ protocol AnkiServiceProtocol: Sendable {
         answeredAtMillis: Int64,
         millisecondsTaken: UInt32
     ) async throws -> Anki_Collection_OpChanges
-    func renderExistingCard(cardId: Int64) async throws -> Anki_CardRendering_RenderCardResponse
+    func renderExistingCard(cardId: Int64, browser: Bool) async throws -> Anki_CardRendering_RenderCardResponse
     func getNote(id: Int64) async throws -> Anki_Notes_Note
     func addNote(note: Anki_Notes_Note, deckId: Int64) async throws -> Anki_Notes_AddNoteResponse
     func searchCards(search: String, order: Anki_Search_SortOrder) async throws -> Anki_Search_SearchResponse

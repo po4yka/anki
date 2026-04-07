@@ -79,9 +79,11 @@ actor AnkiService: AnkiServiceProtocol {
         )
     }
 
-    func renderExistingCard(cardId: Int64) async throws -> Anki_CardRendering_RenderCardResponse {
+    func renderExistingCard(cardId: Int64,
+                            browser: Bool = false) async throws -> Anki_CardRendering_RenderCardResponse {
         var req = Anki_CardRendering_RenderExistingCardRequest()
         req.cardID = cardId
+        req.browser = browser
         return try backend.command(
             service: ServiceIndex.cardRendering,
             method: CardRenderingMethod.renderExistingCard,
