@@ -29,4 +29,10 @@ protocol AnkiServiceProtocol: Sendable {
     func redo() async throws -> Anki_Collection_OpChangesAfterUndo
     func extractAvTags(text: String, questionSide: Bool) async throws -> Anki_CardRendering_ExtractAvTagsResponse
     func clozeNumbersInNote(note: Anki_Notes_Note) async throws -> Anki_Notes_ClozeNumbersInNoteResponse
+    func noteFieldsCheck(note: Anki_Notes_Note) async throws -> Anki_Notes_NoteFieldsCheckResponse
+    func syncLogin(username: String, password: String) async throws -> Anki_Sync_SyncAuth
+    func syncStatus(auth: Anki_Sync_SyncAuth) async throws -> Anki_Sync_SyncStatusResponse
+    func syncCollection(auth: Anki_Sync_SyncAuth, syncMedia: Bool) async throws -> Anki_Sync_SyncCollectionResponse
+    func fullUploadOrDownload(auth: Anki_Sync_SyncAuth, upload: Bool, serverUsn: Int32?) async throws
+    func syncMedia(auth: Anki_Sync_SyncAuth) async throws
 }

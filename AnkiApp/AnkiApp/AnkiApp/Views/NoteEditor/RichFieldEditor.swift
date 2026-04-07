@@ -1,0 +1,118 @@
+import SwiftUI
+import WebKit
+
+struct RichFieldEditor: NSViewRepresentable {
+    @Binding var html: String
+    var onContentChange: ((String) -> Void)?
+
+    func makeNSView(context: Context) -> WKWebView {
+        let config = WKWebViewConfiguration()
+        let contentController = WKUserContentController()
+        contentController.add(context.coordinator, name: "contentChanged")
+        config.userContentController = contentController
+
+        let webView = WKWebView(frame: .zero, configuration: config)
+        webView.navigationDelegate = context.coordinator
+        context.coordinator.webView = webView
+
+        let htmlPage = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <meta charset="utf-8">
+        <style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+                font-size: 14px;
+                margin: 0;
+                padding: 8px;
+                min-height: 100%;
+            }
+            #editor {
+                outline: none;
+                min-height: 50px;
+                word-wrap: break-word;
+            }
+        </style>
+        </head>
+        <body>
+        <div id="editor" contenteditable="true">\(html)</div>
+        <script>
+            const editor = document.getElementById('editor');
+            editor.addEventListener('input', function() {
+                window.webkit.messageHandlers.contentChanged.postMessage(editor.innerHTML);
+            });
+            function setContent(html) {
+                editor.innerHTML = html;
+            }
+            function getContent() {
+                return editor.innerHTML;
+            }
+            function execCommand(cmd, value) {
+                document.execCommand(cmd, false, value || null);
+                window.webkit.messageHandlers.contentChanged.postMessage(editor.innerHTML);
+            }
+            function getSelectedText() {
+                return window.getSelection().toString();
+            }
+            function insertHTML(html) {
+                document.execCommand('insertHTML', false, html);
+                window.webkit.messageHandlers.contentChanged.postMessage(editor.innerHTML);
+            }
+        </script>
+        </body>
+        </html>
+        """
+        webView.loadHTMLString(htmlPage, baseURL: nil)
+        return webView
+    }
+
+    func updateNSView(_ webView: WKWebView, context: Context) {
+        if context.coordinator.lastSetHTML != html {
+            context.coordinator.lastSetHTML = html
+            let escaped = html
+                .replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "'", with: "\\'")
+                .replacingOccurrences(of: "\n", with: "\\n")
+            webView.evaluateJavaScript("setContent('\(escaped)')")
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
+        let parent: RichFieldEditor
+        weak var webView: WKWebView?
+        var lastSetHTML: String = ""
+
+        init(_ parent: RichFieldEditor) {
+            self.parent = parent
+        }
+
+        func userContentController(
+            _ userContentController: WKUserContentController,
+            didReceive message: WKScriptMessage
+        ) {
+            guard let content = message.body as? String else { return }
+            lastSetHTML = content
+            DispatchQueue.main.async {
+                self.parent.html = content
+                self.parent.onContentChange?(content)
+            }
+        }
+
+        func executeCommand(_ command: String, value: String? = nil) {
+            let valueArg = value.map { "'\($0)'" } ?? "null"
+            webView?.evaluateJavaScript("execCommand('\(command)', \(valueArg))")
+        }
+
+        func insertHTML(_ html: String) {
+            let escaped = html
+                .replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "'", with: "\\'")
+            webView?.evaluateJavaScript("insertHTML('\(escaped)')")
+        }
+    }
+}

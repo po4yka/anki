@@ -19,6 +19,7 @@ final class NoteEditorModel {
     var deckTree: Anki_Decks_DeckTreeNode? = nil
     var selectedNotetypeId: Int64 = 0
     var currentNotetype: Anki_Notetypes_Notetype? = nil
+    var isClozeNotetype: Bool = false
 
     var availableNotetypes: [Anki_Notetypes_NotetypeNameId] {
         notetypeNames?.entries ?? []
@@ -82,7 +83,9 @@ final class NoteEditorModel {
     func loadNotetype() async {
         guard selectedNotetypeId != 0 else { return }
         do {
-            currentNotetype = try await service.getNotetype(id: selectedNotetypeId)
+            let notetype = try await service.getNotetype(id: selectedNotetypeId)
+            currentNotetype = notetype
+            isClozeNotetype = notetype.config.kind == .cloze
         } catch {}
     }
 
@@ -148,5 +151,25 @@ final class NoteEditorModel {
         } catch let e as AnkiError {
             error = e
         } catch {}
+    }
+
+    func nextClozeNumber() async -> Int {
+        guard let note else { return 1 }
+        do {
+            let response = try await service.clozeNumbersInNote(note: note)
+            let existing = response.numbers.map { Int($0) }
+            return ClozeHelper.nextClozeNumber(existing: existing)
+        } catch {
+            return 1
+        }
+    }
+
+    func validateFields() async -> Anki_Notes_NoteFieldsCheckResponse? {
+        guard let note else { return nil }
+        do {
+            return try await service.noteFieldsCheck(note: note)
+        } catch {
+            return nil
+        }
     }
 }

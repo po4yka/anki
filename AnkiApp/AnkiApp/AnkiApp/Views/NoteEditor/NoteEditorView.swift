@@ -22,7 +22,19 @@ struct NoteEditorView: View {
                                 text: Binding(
                                     get: { model.fields[index] },
                                     set: { model.fields[index] = $0 }
-                                )
+                                ),
+                                isPlainText: false,
+                                isClozeNotetype: model.isClozeNotetype,
+                                onCloze: {
+                                    Task {
+                                        let num = await model.nextClozeNumber()
+                                        let field = model.fields[index]
+                                        let range = NSRange(field.startIndex..., in: field)
+                                        model.fields[index] = ClozeHelper.insertCloze(
+                                            into: field, at: range, number: num
+                                        )
+                                    }
+                                }
                             )
                         }
                     }

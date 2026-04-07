@@ -3,6 +3,9 @@ import SwiftUI
 struct SyncView: View {
     @Environment(AppState.self) private var appState
     @State private var model: SyncModel?
+    @State private var username: String = ""
+    @State private var password: String = ""
+    @State private var showFullSyncAlert: Bool = false
 
     var body: some View {
         Group {
@@ -17,35 +20,14 @@ struct SyncView: View {
                     }
                     .buttonStyle(.borderedProminent)
                 }
-            } else {
-                VStack(spacing: 24) {
-                    Image(systemName: "arrow.triangle.2.circlepath")
-                        .font(.system(size: 48))
-                        .foregroundStyle(.blue)
-
-                    Text("Sync with AnkiWeb")
-                        .font(.title2.bold())
-
-                    if let model {
-                        if model.isSyncing {
-                            VStack(spacing: 12) {
-                                ProgressView()
-                                Text("Syncing...")
-                                    .foregroundStyle(.secondary)
-                            }
-                            .animation(.default, value: model.isSyncing)
-                        } else {
-                            Button("Sync Now") {
-                                Task { await model.loadTags() }
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .keyboardShortcut("s", modifiers: .command)
-                        }
-                    } else {
-                        ProgressView()
-                    }
+            } else if let model {
+                if model.isAuthenticated {
+                    authenticatedView(model: model)
+                } else {
+                    loginView(model: model)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ProgressView()
             }
         }
         .navigationTitle("Sync")
@@ -58,6 +40,164 @@ struct SyncView: View {
             get: { model?.lastSyncError },
             set: { model?.lastSyncError = $0 }
         ))
+    }
+
+    @ViewBuilder
+    private func loginView(model: SyncModel) -> some View {
+        VStack(spacing: 20) {
+            Image(systemName: "person.circle")
+                .font(.system(size: 48))
+                .foregroundStyle(.secondary)
+
+            Text("Sign in to AnkiWeb")
+                .font(.title2.bold())
+
+            Text("Enter your AnkiWeb credentials to sync your collection across devices.")
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 300)
+
+            VStack(spacing: 12) {
+                TextField("Email", text: $username)
+                    .textFieldStyle(.roundedBorder)
+                    .textContentType(.emailAddress)
+
+                SecureField("Password", text: $password)
+                    .textFieldStyle(.roundedBorder)
+                    .textContentType(.password)
+                    .onSubmit {
+                        Task { await performLogin(model: model) }
+                    }
+            }
+            .frame(maxWidth: 280)
+
+            if case .syncing(let message) = model.state {
+                VStack(spacing: 8) {
+                    ProgressView()
+                    Text(message)
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                }
+            } else {
+                Button("Sign In") {
+                    Task { await performLogin(model: model) }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(username.isEmpty || password.isEmpty)
+            }
+
+            if case .error(let message) = model.state {
+                Text(message)
+                    .foregroundStyle(.red)
+                    .font(.caption)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    @ViewBuilder
+    private func authenticatedView(model: SyncModel) -> some View {
+        VStack(spacing: 24) {
+            Image(systemName: "arrow.triangle.2.circlepath")
+                .font(.system(size: 48))
+                .foregroundStyle(.blue)
+
+            Text("Sync with AnkiWeb")
+                .font(.title2.bold())
+
+            syncStateView(model: model)
+
+            if let message = model.serverMessage {
+                Text(message)
+                    .foregroundStyle(.secondary)
+                    .font(.caption)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 300)
+            }
+
+            Button("Sign Out", role: .destructive) {
+                model.logout()
+                username = ""
+                password = ""
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.red)
+            .font(.caption)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .alert("Full Sync Required", isPresented: $showFullSyncAlert) {
+            fullSyncAlertActions(model: model)
+        } message: {
+            Text("Your collection has diverged from the server. Would you like to upload your local collection or download the server's version?")
+        }
+        .onChange(of: model.state) { _, newState in
+            if case .fullSyncRequired = newState {
+                showFullSyncAlert = true
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func syncStateView(model: SyncModel) -> some View {
+        switch model.state {
+        case .syncing(let message):
+            VStack(spacing: 12) {
+                ProgressView()
+                Text(message)
+                    .foregroundStyle(.secondary)
+            }
+            .animation(.default, value: message)
+        case .error(let message):
+            VStack(spacing: 8) {
+                Text(message)
+                    .foregroundStyle(.red)
+                    .font(.caption)
+                syncButton(model: model)
+            }
+        default:
+            syncButton(model: model)
+        }
+    }
+
+    @ViewBuilder
+    private func syncButton(model: SyncModel) -> some View {
+        Button("Sync Now") {
+            Task { await model.sync() }
+        }
+        .buttonStyle(.borderedProminent)
+        .keyboardShortcut("s", modifiers: .command)
+    }
+
+    @ViewBuilder
+    private func fullSyncAlertActions(model: SyncModel) -> some View {
+        if case .fullSyncRequired(let upload, let serverMediaUsn) = model.state {
+            if upload == nil {
+                Button("Upload to AnkiWeb") {
+                    Task { await model.performFullSync(upload: true, serverMediaUsn: serverMediaUsn) }
+                }
+                Button("Download from AnkiWeb") {
+                    Task { await model.performFullSync(upload: false, serverMediaUsn: serverMediaUsn) }
+                }
+                Button("Cancel", role: .cancel) {
+                    model.state = .idle
+                }
+            } else if let upload {
+                Button(upload ? "Upload" : "Download") {
+                    Task { await model.performFullSync(upload: upload, serverMediaUsn: serverMediaUsn) }
+                }
+                Button("Cancel", role: .cancel) {
+                    model.state = .idle
+                }
+            }
+        }
+    }
+
+    private func performLogin(model: SyncModel) async {
+        guard !username.isEmpty, !password.isEmpty else { return }
+        await model.login(username: username, password: password)
+        if model.isAuthenticated {
+            password = ""
+        }
     }
 }
 
