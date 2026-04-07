@@ -149,11 +149,10 @@ impl DeckContext<'_> {
         if let Some(ancestor) = self
             .target_col
             .first_existing_parent(deck.name.as_native_str(), 0)?
+            && ancestor.is_filtered()
         {
-            if ancestor.is_filtered() {
-                self.add_unique_default_deck(ancestor.name.as_native_str())?;
-                self.maybe_reparent(deck);
-            }
+            self.add_unique_default_deck(ancestor.name.as_native_str())?;
+            self.maybe_reparent(deck);
         }
         Ok(())
     }

@@ -6,7 +6,7 @@ import Observation
 final class AppState {
     var isCollectionOpen: Bool = false
     var collectionPath: String = ""
-    var error: AnkiError? = nil
+    var error: AnkiError?
 
     let service: AnkiServiceProtocol
 

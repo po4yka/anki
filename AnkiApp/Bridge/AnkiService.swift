@@ -2,7 +2,7 @@ actor AnkiService: AnkiServiceProtocol {
     private let backend: AnkiBackend
 
     init(langs: [String] = ["en"]) throws {
-        self.backend = try AnkiBackend(preferredLangs: langs)
+        backend = try AnkiBackend(preferredLangs: langs)
     }
 
     func openCollection(path: String, mediaFolder: String, mediaDb: String) async throws {
@@ -152,7 +152,14 @@ actor AnkiService: AnkiServiceProtocol {
         )
     }
 
-    func findAndReplace(nids: [Int64], search: String, replacement: String, regex: Bool, matchCase: Bool, fieldName: String) async throws -> Anki_Collection_OpChangesWithCount {
+    func findAndReplace(
+        nids: [Int64],
+        search: String,
+        replacement: String,
+        regex: Bool,
+        matchCase: Bool,
+        fieldName: String
+    ) async throws -> Anki_Collection_OpChangesWithCount {
         var req = Anki_Search_FindAndReplaceRequest()
         req.nids = nids
         req.search = search
@@ -188,7 +195,8 @@ actor AnkiService: AnkiServiceProtocol {
         )
     }
 
-    func scheduleCardsAsNew(cardIds: [Int64], log: Bool, restorePosition: Bool, resetCounts: Bool) async throws -> Anki_Collection_OpChanges {
+    func scheduleCardsAsNew(cardIds: [Int64], log: Bool, restorePosition: Bool,
+                            resetCounts: Bool) async throws -> Anki_Collection_OpChanges {
         var req = Anki_Scheduler_ScheduleCardsAsNewRequest()
         req.cardIds = cardIds
         req.log = log
@@ -282,7 +290,11 @@ actor AnkiService: AnkiServiceProtocol {
         )
     }
 
-    func buryOrSuspendCards(cardIds: [Int64], noteIds: [Int64], mode: Anki_Scheduler_BuryOrSuspendCardsRequest.Mode) async throws -> Anki_Collection_OpChangesWithCount {
+    func buryOrSuspendCards(
+        cardIds: [Int64],
+        noteIds: [Int64],
+        mode: Anki_Scheduler_BuryOrSuspendCardsRequest.Mode
+    ) async throws -> Anki_Collection_OpChangesWithCount {
         var req = Anki_Scheduler_BuryOrSuspendCardsRequest()
         req.cardIds = cardIds
         req.noteIds = noteIds

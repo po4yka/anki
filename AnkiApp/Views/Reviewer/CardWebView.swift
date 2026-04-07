@@ -6,7 +6,7 @@ struct CardWebView: NSViewRepresentable {
     let css: String
     let baseURL: URL?
 
-    func makeNSView(context: Context) -> WKWebView {
+    func makeNSView(context _: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
         config.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
         let webView = WKWebView(frame: .zero, configuration: config)
@@ -14,7 +14,7 @@ struct CardWebView: NSViewRepresentable {
         return webView
     }
 
-    func updateNSView(_ webView: WKWebView, context: Context) {
+    func updateNSView(_ webView: WKWebView, context _: Context) {
         let fullHTML = buildReviewerHTML(body: html, css: css)
         webView.loadHTMLString(fullHTML, baseURL: baseURL)
     }

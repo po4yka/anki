@@ -4,10 +4,10 @@ import Observation
 @Observable
 @MainActor
 final class ReviewerModel {
-    var queuedCards: Anki_Scheduler_QueuedCards? = nil
-    var currentCardHTML: Anki_CardRendering_RenderCardResponse? = nil
+    var queuedCards: Anki_Scheduler_QueuedCards?
+    var currentCardHTML: Anki_CardRendering_RenderCardResponse?
     var isLoading: Bool = false
-    var error: AnkiError? = nil
+    var error: AnkiError?
 
     private let service: AnkiServiceProtocol
 

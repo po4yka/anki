@@ -210,10 +210,10 @@ impl Collection {
     ) -> Result<Vec<RevlogEntry>> {
         let search = search.try_into_search()?;
         // a whole-collection search can match revlog entries of deleted cards, too
-        if let Node::Group(nodes) = &search {
-            if let &[Node::Search(SearchNode::WholeCollection)] = &nodes[..] {
-                return self.storage.get_all_revlog_entries_in_card_order();
-            }
+        if let Node::Group(nodes) = &search
+            && let &[Node::Search(SearchNode::WholeCollection)] = &nodes[..]
+        {
+            return self.storage.get_all_revlog_entries_in_card_order();
         }
         self.search_cards_into_table(search, SortMode::NoOrder)?
             .col
@@ -434,19 +434,20 @@ pub(crate) fn reviews_for_fsrs(
     if training {
         // While training, ignore the entire card if the first learning step of the last
         // group of learning steps is before the ignore_revlogs_before date
-        if let Some(idx) = first_of_last_learn_entries {
-            if entries[idx].id.0 < ignore_revlogs_before.0 {
-                return None;
-            }
+        if let Some(idx) = first_of_last_learn_entries
+            && entries[idx].id.0 < ignore_revlogs_before.0
+        {
+            return None;
         }
     } else {
         // While reviewing, if the first learning step is before the ignore date,
         // we ignore it, and will fall back on SM2 info and the last user grade below.
-        if let Some(idx) = first_of_last_learn_entries {
-            if entries[idx].id.0 < ignore_revlogs_before.0 && idx < entries.len() - 1 {
-                revlogs_complete = false;
-                first_of_last_learn_entries = None;
-            }
+        if let Some(idx) = first_of_last_learn_entries
+            && entries[idx].id.0 < ignore_revlogs_before.0
+            && idx < entries.len() - 1
+        {
+            revlogs_complete = false;
+            first_of_last_learn_entries = None;
         }
     }
     if let Some(idx) = first_of_last_learn_entries {

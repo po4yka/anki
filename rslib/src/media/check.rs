@@ -439,12 +439,12 @@ impl MediaChecker<'_> {
             // we'll need to update the field to match it. It may be possible
             // to remove this check in the future once we can be sure all media
             // files stored on AnkiWeb are in normalized form.
-            if matches!(fname, Cow::Borrowed(_)) {
-                if let Cow::Owned(normname) = normalize_nfc_filename(fname.as_ref().into()) {
-                    let path = self.media.media_folder.join(&normname);
-                    if path.exists() {
-                        fname = normname.into();
-                    }
+            if matches!(fname, Cow::Borrowed(_))
+                && let Cow::Owned(normname) = normalize_nfc_filename(fname.as_ref().into())
+            {
+                let path = self.media.media_folder.join(&normname);
+                if path.exists() {
+                    fname = normname.into();
                 }
             }
             // update the field if the filename was modified

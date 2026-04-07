@@ -265,10 +265,10 @@ impl LoadBalancer {
     }
 
     pub fn add_card(&mut self, cid: CardId, nid: NoteId, dcid: DeckConfigId, interval: u32) {
-        if let Some(days) = self.days_by_preset.get_mut(&dcid) {
-            if let Some(day) = days.get_mut(interval as usize) {
-                day.add(cid, nid);
-            }
+        if let Some(days) = self.days_by_preset.get_mut(&dcid)
+            && let Some(day) = days.get_mut(interval as usize)
+        {
+            day.add(cid, nid);
         }
     }
 
@@ -397,10 +397,10 @@ fn calculate_sibling_modifiers(
             for (step, sibling_modifier_value) in sibling_iter {
                 // converts true interval to modifier-space
                 let target_day = sibling_day as i32 + step - before_days as i32;
-                if let Ok(target_day) = TryInto::<usize>::try_into(target_day) {
-                    if let Some(day_modifier) = modifiers.get_mut(target_day) {
-                        *day_modifier *= sibling_modifier_value;
-                    }
+                if let Ok(target_day) = TryInto::<usize>::try_into(target_day)
+                    && let Some(day_modifier) = modifiers.get_mut(target_day)
+                {
+                    *day_modifier *= sibling_modifier_value;
                 }
             }
         }

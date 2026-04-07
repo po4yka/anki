@@ -211,14 +211,14 @@ impl Collection {
         let mut wrong = 0;
         for (cid, did) in self.storage.all_filtered_cards_by_deck()? {
             // we expect calling code to ensure all decks already exist
-            if let Some(deck) = decks.get(&did) {
-                if !deck.is_filtered() {
-                    let mut card = self.storage.get_card(cid)?.unwrap();
-                    card.original_deck_id.0 = 0;
-                    card.original_due = 0;
-                    self.storage.update_card(&card)?;
-                    wrong += 1;
-                }
+            if let Some(deck) = decks.get(&did)
+                && !deck.is_filtered()
+            {
+                let mut card = self.storage.get_card(cid)?.unwrap();
+                card.original_deck_id.0 = 0;
+                card.original_due = 0;
+                self.storage.update_card(&card)?;
+                wrong += 1;
             }
         }
 

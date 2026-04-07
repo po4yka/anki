@@ -18,8 +18,8 @@ pub use self::field::FieldMap;
 pub use self::field::FieldRequirements;
 pub use self::parser::ParsedTemplate;
 pub use self::parser::Token;
-pub use self::render::RenderedNode;
 pub use self::render::RenderContext;
+pub use self::render::RenderedNode;
 pub use self::render::field_is_empty;
 
 use self::parser::template_error_to_anki_error;

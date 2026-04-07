@@ -1,4 +1,4 @@
-// Service index constants matching the Rust backend's service registration order.
+/// Service index constants matching the Rust backend's service registration order.
 enum ServiceIndex {
     static let sync: UInt32 = 1
     static let collection: UInt32 = 3

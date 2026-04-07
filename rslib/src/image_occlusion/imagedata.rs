@@ -165,14 +165,12 @@ impl Collection {
 
         if file_path.exists() {
             let meta = metadata(file_path)?;
-            if meta.is_file() {
-                if let Some(ext_osstr) = file_path.extension() {
-                    if let Some(ext_str) = ext_osstr.to_str() {
-                        if supported_extensions.contains(&ext_str.to_lowercase().as_str()) {
-                            return Ok(true);
-                        }
-                    }
-                }
+            if meta.is_file()
+                && let Some(ext_osstr) = file_path.extension()
+                && let Some(ext_str) = ext_osstr.to_str()
+                && supported_extensions.contains(&ext_str.to_lowercase().as_str())
+            {
+                return Ok(true);
             }
         }
 

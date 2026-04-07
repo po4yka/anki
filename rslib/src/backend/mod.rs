@@ -134,14 +134,9 @@ impl Backend {
         let mut web_client = self.web_client.lock().unwrap_or_else(|e| e.into_inner());
 
         if cert_str.is_empty() {
-            let _ = web_client.insert(
-                Client::builder()
-                    .http1_only()
-                    .build()
-                    .map_err(|e| AnkiError::SyncError {
-                        info: e.to_string(),
-                    })?,
-            );
+            let _ = web_client.insert(Client::builder().http1_only().build().map_err(|e| {
+                AnkiError::sync_error(e.to_string(), crate::error::SyncErrorKind::Other)
+            })?);
             return Ok(());
         }
 
@@ -149,16 +144,15 @@ impl Backend {
             return Err(AnkiError::InvalidCertificateFormat);
         }
 
-        if let Ok(certificate) = Certificate::from_pem(cert_str.as_bytes()) {
-            if let Ok(new_client) = Client::builder()
+        if let Ok(certificate) = Certificate::from_pem(cert_str.as_bytes())
+            && let Ok(new_client) = Client::builder()
                 .use_rustls_tls()
                 .add_root_certificate(certificate)
                 .http1_only()
                 .build()
-            {
-                let _ = web_client.insert(new_client);
-                return Ok(());
-            }
+        {
+            let _ = web_client.insert(new_client);
+            return Ok(());
         }
 
         Err(AnkiError::InvalidCertificateFormat)
@@ -169,14 +163,9 @@ impl Backend {
         let mut web_client = self.web_client.lock().unwrap_or_else(|e| e.into_inner());
 
         Ok(web_client
-            .get_or_insert(
-                Client::builder()
-                    .http1_only()
-                    .build()
-                    .map_err(|e| AnkiError::SyncError {
-                        info: e.to_string(),
-                    })?,
-            )
+            .get_or_insert(Client::builder().http1_only().build().map_err(|e| {
+                AnkiError::sync_error(e.to_string(), crate::error::SyncErrorKind::Other)
+            })?)
             .clone())
     }
 

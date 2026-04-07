@@ -7,11 +7,11 @@ use anki::log::set_global_logger;
 use anki::sync::http_server::SimpleServer;
 
 fn main() {
-    if let Some(arg) = env::args().nth(1) {
-        if arg == "--healthcheck" {
-            run_health_check();
-            return;
-        }
+    if let Some(arg) = env::args().nth(1)
+        && arg == "--healthcheck"
+    {
+        run_health_check();
+        return;
     }
     if env::var("RUST_LOG").is_err() {
         unsafe { env::set_var("RUST_LOG", "anki=info") }

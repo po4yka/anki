@@ -418,6 +418,9 @@ impl EmbeddingProvider for GoogleEmbeddingProvider {
         }
 
         let concurrency = self.batch_size.clamp(1, 8);
+        // `.cloned()` is needed here: removing it causes a HRTB lifetime error
+        // with async move blocks capturing references from the iterator.
+        #[allow(clippy::redundant_iter_cloned)]
         futures::stream::iter(
             inputs
                 .iter()

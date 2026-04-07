@@ -247,13 +247,11 @@ pub fn atomic_rename(file: NamedTempFile, target: &Path, fsync: bool) -> Result<
     }
     file.persist(target)?;
     #[cfg(not(windows))]
-    if fsync {
-        if let Some(parent) = target.parent() {
-            open_file(parent)?.sync_all().context(FileIoSnafu {
-                path: parent,
-                op: FileOp::Sync,
-            })?;
-        }
+    if fsync && let Some(parent) = target.parent() {
+        open_file(parent)?.sync_all().context(FileIoSnafu {
+            path: parent,
+            op: FileOp::Sync,
+        })?;
     }
     Ok(())
 }

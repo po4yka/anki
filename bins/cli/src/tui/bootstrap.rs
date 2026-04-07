@@ -54,10 +54,10 @@ fn install_panic_hook() {
 
 fn spawn_ctrl_c_listener(tx: mpsc::UnboundedSender<AppEvent>) {
     tokio::spawn(async move {
-        if tokio::signal::ctrl_c().await.is_ok() {
-            if let Err(e) = tx.send(AppEvent::Quit) {
-                tracing::warn!("failed to send quit event: {e}");
-            }
+        if tokio::signal::ctrl_c().await.is_ok()
+            && let Err(e) = tx.send(AppEvent::Quit)
+        {
+            tracing::warn!("failed to send quit event: {e}");
         }
     });
 }

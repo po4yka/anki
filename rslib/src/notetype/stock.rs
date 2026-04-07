@@ -75,6 +75,7 @@ pub(crate) fn empty_stock(
     }
 }
 
+#[allow(dead_code)]
 pub(crate) fn get_stock_notetype(kind: StockKind, tr: &I18n) -> Notetype {
     match kind {
         Kind::Basic => basic(tr),

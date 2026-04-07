@@ -255,12 +255,12 @@ fn check_versions(state: &mut State) {
 
     // Read previous version from "previous-version" file
     let previous_version_path = state.uv_install_root.join("previous-version");
-    if let Ok(content) = read_file(&previous_version_path) {
-        if let Ok(version_str) = String::from_utf8(content) {
-            let version = version_str.trim().to_string();
-            if !version.is_empty() {
-                state.previous_version = Some(version);
-            }
+    if let Ok(content) = read_file(&previous_version_path)
+        && let Ok(version_str) = String::from_utf8(content)
+    {
+        let version = version_str.trim().to_string();
+        if !version.is_empty() {
+            state.previous_version = Some(version);
         }
     }
 }
@@ -290,16 +290,16 @@ fn handle_version_install_or_update(state: &State, choice: MainMenuChoice) -> Re
 
     if cfg!(target_os = "macos") {
         // remove CONDA_PREFIX/bin from PATH to avoid conda interference
-        if let Ok(conda_prefix) = std::env::var("CONDA_PREFIX") {
-            if let Ok(current_path) = std::env::var("PATH") {
-                let conda_bin = format!("{conda_prefix}/bin");
-                let filtered_paths: Vec<&str> = current_path
-                    .split(':')
-                    .filter(|&path| path != conda_bin)
-                    .collect();
-                let new_path = filtered_paths.join(":");
-                command.env("PATH", new_path);
-            }
+        if let Ok(conda_prefix) = std::env::var("CONDA_PREFIX")
+            && let Ok(current_path) = std::env::var("PATH")
+        {
+            let conda_bin = format!("{conda_prefix}/bin");
+            let filtered_paths: Vec<&str> = current_path
+                .split(':')
+                .filter(|&path| path != conda_bin)
+                .collect();
+            let new_path = filtered_paths.join(":");
+            command.env("PATH", new_path);
         }
         // put our fake install_name_tool at the top of the path to override
         // potential conflicts
@@ -339,10 +339,10 @@ fn handle_version_install_or_update(state: &State, choice: MainMenuChoice) -> Re
     }
 
     // Add python version if .python-version file exists (but not for system Qt)
-    if let Some(version) = &python_version_trimmed {
-        if !state.system_qt {
-            command.args(["--python", version]);
-        }
+    if let Some(version) = &python_version_trimmed
+        && !state.system_qt
+    {
+        command.args(["--python", version]);
     }
 
     match command.ensure_success() {
@@ -467,14 +467,14 @@ fn get_main_menu_choice(state: &State) -> Result<MainMenuChoice> {
             }
         }
 
-        if let Some(prev_version) = &state.previous_version {
-            if state.current_version.as_ref() != Some(prev_version) {
-                let normalized_prev = normalize_version(prev_version);
-                println!(
-                    "4) {}",
-                    state.tr.launcher_revert_to_previous(normalized_prev)
-                );
-            }
+        if let Some(prev_version) = &state.previous_version
+            && state.current_version.as_ref() != Some(prev_version)
+        {
+            let normalized_prev = normalize_version(prev_version);
+            println!(
+                "4) {}",
+                state.tr.launcher_revert_to_previous(normalized_prev)
+            );
         }
         println!();
 
@@ -533,12 +533,11 @@ fn get_main_menu_choice(state: &State) -> Result<MainMenuChoice> {
                 }
             }
             "4" => {
-                if let Some(prev_version) = &state.previous_version {
-                    if state.current_version.as_ref() != Some(prev_version) {
-                        if let Some(version_kind) = parse_version_kind(prev_version) {
-                            return Ok(MainMenuChoice::Version(version_kind));
-                        }
-                    }
+                if let Some(prev_version) = &state.previous_version
+                    && state.current_version.as_ref() != Some(prev_version)
+                    && let Some(version_kind) = parse_version_kind(prev_version)
+                {
+                    return Ok(MainMenuChoice::Version(version_kind));
                 }
                 println!("{}\n", state.tr.launcher_invalid_input());
                 continue;
@@ -1125,12 +1124,11 @@ fn show_mirror_submenu(state: &State) -> Result<()> {
 fn diff_launcher_was_installed(state: &State) -> Result<bool> {
     let launcher_version = option_env!("BUILDHASH").unwrap_or("dev").trim();
     let launcher_version_path = state.uv_install_root.join("launcher-version");
-    if let Ok(content) = read_file(&launcher_version_path) {
-        if let Ok(version_str) = String::from_utf8(content) {
-            if version_str.trim() == launcher_version {
-                return Ok(false);
-            }
-        }
+    if let Ok(content) = read_file(&launcher_version_path)
+        && let Ok(version_str) = String::from_utf8(content)
+        && version_str.trim() == launcher_version
+    {
+        return Ok(false);
     }
     write_file(launcher_version_path, launcher_version)?;
     Ok(true)

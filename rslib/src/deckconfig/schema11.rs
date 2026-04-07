@@ -323,20 +323,20 @@ impl Default for DeckConfSchema11 {
 impl From<DeckConfSchema11> for DeckConfig {
     fn from(mut c: DeckConfSchema11) -> DeckConfig {
         // merge any json stored in new/rev/lapse into top level
-        if !c.new.other.is_empty() {
-            if let Ok(val) = serde_json::to_value(c.new.other) {
-                c.other.insert("new".into(), val);
-            }
+        if !c.new.other.is_empty()
+            && let Ok(val) = serde_json::to_value(c.new.other)
+        {
+            c.other.insert("new".into(), val);
         }
-        if !c.rev.other.is_empty() {
-            if let Ok(val) = serde_json::to_value(c.rev.other) {
-                c.other.insert("rev".into(), val);
-            }
+        if !c.rev.other.is_empty()
+            && let Ok(val) = serde_json::to_value(c.rev.other)
+        {
+            c.other.insert("rev".into(), val);
         }
-        if !c.lapse.other.is_empty() {
-            if let Ok(val) = serde_json::to_value(c.lapse.other) {
-                c.other.insert("lapse".into(), val);
-            }
+        if !c.lapse.other.is_empty()
+            && let Ok(val) = serde_json::to_value(c.lapse.other)
+        {
+            c.other.insert("lapse".into(), val);
         }
         let other_bytes = if c.other.is_empty() {
             vec![]

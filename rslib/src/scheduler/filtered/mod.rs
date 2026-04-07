@@ -208,25 +208,26 @@ impl Collection {
             name: self.get_next_filtered_deck_name(),
             ..Deck::new_filtered()
         };
-        if let Some(current) = self.get_deck(self.get_current_deck_id())? {
-            if !current.is_filtered() && current.id.0 != 0 {
-                // start with a search based on the selected deck name
-                let search = deck_search(&current.human_name());
-                let term1 = deck
-                    .filtered_mut()
-                    .unwrap()
-                    .search_terms
-                    .get_mut(0)
-                    .unwrap();
-                term1.search = format!("{search} is:due");
-                let term2 = deck
-                    .filtered_mut()
-                    .unwrap()
-                    .search_terms
-                    .get_mut(1)
-                    .unwrap();
-                term2.search = format!("{search} is:new");
-            }
+        if let Some(current) = self.get_deck(self.get_current_deck_id())?
+            && !current.is_filtered()
+            && current.id.0 != 0
+        {
+            // start with a search based on the selected deck name
+            let search = deck_search(&current.human_name());
+            let term1 = deck
+                .filtered_mut()
+                .unwrap()
+                .search_terms
+                .get_mut(0)
+                .unwrap();
+            term1.search = format!("{search} is:due");
+            let term2 = deck
+                .filtered_mut()
+                .unwrap()
+                .search_terms
+                .get_mut(1)
+                .unwrap();
+            term2.search = format!("{search} is:new");
         }
 
         Ok(deck)

@@ -45,5 +45,5 @@ pub fn read_anki_collection(
 }
 
 pub mod models {
-    pub use super::{AnkiCard, AnkiCollection, CardStats};
+    pub use super::{AnkiCard, CardStats};
 }

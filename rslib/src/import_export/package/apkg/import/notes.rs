@@ -560,13 +560,13 @@ fn notetype_conflicts(
 ) -> HashMap<(NotetypeId, NotetypeId), Vec<NoteId>> {
     let mut conflicts: HashMap<(NotetypeId, NotetypeId), Vec<NoteId>> = HashMap::default();
     for note in incoming_notes {
-        if let Some(meta) = existing_guids.get(&note.guid) {
-            if meta.notetype_id != note.notetype_id {
-                conflicts
-                    .entry((meta.notetype_id, note.notetype_id))
-                    .or_default()
-                    .push(meta.id);
-            }
+        if let Some(meta) = existing_guids.get(&note.guid)
+            && meta.notetype_id != note.notetype_id
+        {
+            conflicts
+                .entry((meta.notetype_id, note.notetype_id))
+                .or_default()
+                .push(meta.id);
         };
     }
     conflicts

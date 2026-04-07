@@ -18,9 +18,9 @@ use super::IResult;
 use super::ast::Node;
 use super::error::parse_error;
 use super::error::parse_failure;
-use crate::error::ParseError;
 use super::filters::search_node_for_text;
 use super::filters::search_node_for_text_with_argument;
+use crate::error::ParseError;
 use crate::error::SearchErrorKind as FailKind;
 
 pub(super) fn whitespace0(s: &str) -> IResult<'_, Vec<char>> {

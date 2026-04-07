@@ -508,14 +508,14 @@ fn maybe_set_fallback_delimiter(
 }
 
 fn maybe_set_tags_column(metadata: &mut CsvMetadata, meta_columns: &HashSet<usize>) {
-    if metadata.tags_column == 0 {
-        if let Some(CsvNotetype::GlobalNotetype(ref global)) = metadata.notetype {
-            let max_field = global.field_columns.iter().max().copied().unwrap_or(0);
-            for idx in (max_field + 1) as usize..=metadata.column_labels.len() {
-                if !meta_columns.contains(&idx) {
-                    metadata.tags_column = idx as u32;
-                    break;
-                }
+    if metadata.tags_column == 0
+        && let Some(CsvNotetype::GlobalNotetype(ref global)) = metadata.notetype
+    {
+        let max_field = global.field_columns.iter().max().copied().unwrap_or(0);
+        for idx in (max_field + 1) as usize..=metadata.column_labels.len() {
+            if !meta_columns.contains(&idx) {
+                metadata.tags_column = idx as u32;
+                break;
             }
         }
     }

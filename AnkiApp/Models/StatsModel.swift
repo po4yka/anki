@@ -4,9 +4,9 @@ import Observation
 @Observable
 @MainActor
 final class StatsModel {
-    var graphs: Anki_Stats_GraphsResponse? = nil
+    var graphs: Anki_Stats_GraphsResponse?
     var isLoading: Bool = false
-    var error: AnkiError? = nil
+    var error: AnkiError?
 
     var search: String = ""
     var days: UInt32 = 365

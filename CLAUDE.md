@@ -134,6 +134,8 @@ The following slash commands are available in Claude Code:
 - `/proto-gen` -- regenerate Swift protobuf types
 - `/audit` -- run convention audit checks
 - `/sync-server` -- start local sync server
+- `/sync-status` -- show upstream sync status (read-only)
+- `/sync-upstream` -- interactive sync with ankitects/anki upstream
 
 Command definitions are in `.claude/commands/`.
 
@@ -147,6 +149,7 @@ Domain-specific skills are available in `.claude/skills/`:
 - **atlas-integration** -- how atlas crates connect to rslib
 - **build-verify** -- full build verification sequence
 - **convention-audit** -- code quality rules for Rust and Swift
+- **fork-sync** -- workflow for syncing with ankitects/anki upstream
 
 ## See also
 

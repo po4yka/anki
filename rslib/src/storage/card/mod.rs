@@ -405,12 +405,13 @@ impl super::SqliteStorage {
             let card = self.get_card(card_id)?;
             if last_revlog_info.last_reviewed_at.is_none() {
                 continue;
-            } else if let Some(mut card) = card {
-                if card.ctype != CardType::New && card.last_review_time.is_none() {
-                    card.last_review_time = last_revlog_info.last_reviewed_at;
-                    self.update_card(&card)?;
-                    last_review_time_cnt += 1;
-                }
+            } else if let Some(mut card) = card
+                && card.ctype != CardType::New
+                && card.last_review_time.is_none()
+            {
+                card.last_review_time = last_revlog_info.last_reviewed_at;
+                self.update_card(&card)?;
+                last_review_time_cnt += 1;
             }
         }
         Ok(CardFixStats {
@@ -742,12 +743,11 @@ impl super::SqliteStorage {
         let mut affected_decks = vec![];
         for conf in configs {
             for (deck_id, _name) in self.get_all_deck_names()? {
-                if let Some(deck) = self.get_deck(deck_id)? {
-                    if let DeckKind::Normal(normal) = &deck.kind {
-                        if normal.config_id == conf.0 {
-                            affected_decks.push(deck.id);
-                        }
-                    }
+                if let Some(deck) = self.get_deck(deck_id)?
+                    && let DeckKind::Normal(normal) = &deck.kind
+                    && normal.config_id == conf.0
+                {
+                    affected_decks.push(deck.id);
                 }
             }
         }

@@ -70,10 +70,10 @@ impl MediaDatabase {
 
         let mut res = func(self);
 
-        if res.is_ok() {
-            if let Err(e) = self.commit() {
-                res = Err(e);
-            }
+        if res.is_ok()
+            && let Err(e) = self.commit()
+        {
+            res = Err(e);
         }
 
         if res.is_err() {
@@ -205,12 +205,12 @@ delete from media where fname=?",
 
     pub(crate) fn record_clean(&self, clean: &[String]) -> error::Result<()> {
         for fname in clean {
-            if let Some(mut entry) = self.get_entry(fname)? {
-                if entry.sync_required {
-                    entry.sync_required = false;
-                    debug!(fname = &entry.fname, "mark clean");
-                    self.set_entry(&entry)?;
-                }
+            if let Some(mut entry) = self.get_entry(fname)?
+                && entry.sync_required
+            {
+                entry.sync_required = false;
+                debug!(fname = &entry.fname, "mark clean");
+                self.set_entry(&entry)?;
             }
         }
         Ok(())

@@ -33,20 +33,19 @@ pub(crate) fn compute_changed_notes<'a>(
             model_name,
             chunks.iter().map(|chunk| chunk.hash_component.as_str()),
         );
-        if reindex_mode != ReindexMode::Force {
-            if let Some(existing) = existing_hashes.get(&note.note.note_id) {
-                if *existing == new_hash {
-                    skipped += 1;
-                    emit_progress(
-                        progress,
-                        IndexProgressStage::Diffing,
-                        idx + 1,
-                        notes.len(),
-                        format!("skipped unchanged note {}", note.note.note_id),
-                    );
-                    continue;
-                }
-            }
+        if reindex_mode != ReindexMode::Force
+            && let Some(existing) = existing_hashes.get(&note.note.note_id)
+            && *existing == new_hash
+        {
+            skipped += 1;
+            emit_progress(
+                progress,
+                IndexProgressStage::Diffing,
+                idx + 1,
+                notes.len(),
+                format!("skipped unchanged note {}", note.note.note_id),
+            );
+            continue;
         }
         to_embed.push(NoteToEmbed {
             note,

@@ -118,10 +118,10 @@ fn serialize_file(path: &Utf8Path, resource: &Resource<String>) -> Result<bool> 
 fn get_entry(fname: &Utf8Path, key: &str) -> Option<Entry<String>> {
     let resource = parse_file(fname).unwrap();
     for entry in resource.body {
-        if let Entry::Message(message) = entry {
-            if message.id.name == key {
-                return Some(Entry::Message(message));
-            }
+        if let Entry::Message(message) = entry
+            && message.id.name == key
+        {
+            return Some(Entry::Message(message));
         }
     }
 

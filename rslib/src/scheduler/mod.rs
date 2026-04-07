@@ -34,11 +34,11 @@ pub struct SchedulerInfo {
 impl Collection {
     pub fn scheduler_info(&mut self) -> Result<SchedulerInfo> {
         let now = TimestampSecs::now();
-        if let Some(mut info) = self.state.scheduler_info {
-            if now < info.timing.next_day_at {
-                info.timing.now = now;
-                return Ok(info);
-            }
+        if let Some(mut info) = self.state.scheduler_info
+            && now < info.timing.next_day_at
+        {
+            info.timing.now = now;
+            return Ok(info);
         }
         let version = self.scheduler_version();
         let timing = self.timing_for_timestamp(now)?;

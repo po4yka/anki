@@ -5,14 +5,14 @@ struct DetailRouter: View {
 
     var body: some View {
         switch appState.selectedSidebarItem {
-        case .decks:
-            DeckBrowserView()
-        case .browse:
-            SearchView()
-        case .stats:
-            StatisticsView()
-        case .sync:
-            SyncView()
+            case .decks:
+                DeckBrowserView()
+            case .browse:
+                SearchView()
+            case .stats:
+                StatisticsView()
+            case .sync:
+                SyncView()
         }
     }
 }

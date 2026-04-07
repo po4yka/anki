@@ -64,10 +64,10 @@ impl CardloopStore {
     /// Open or create a store. Use ":memory:" for tests.
     /// Creates the `.cardloop/` directory if `db_path` is a file path.
     pub fn open(db_path: &str) -> Result<Self, CardloopError> {
-        if db_path != ":memory:" {
-            if let Some(parent) = Path::new(db_path).parent() {
-                std::fs::create_dir_all(parent)?;
-            }
+        if db_path != ":memory:"
+            && let Some(parent) = Path::new(db_path).parent()
+        {
+            std::fs::create_dir_all(parent)?;
         }
 
         let conn = if db_path == ":memory:" {

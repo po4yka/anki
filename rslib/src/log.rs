@@ -73,10 +73,10 @@ fn maybe_rotate_log(path: &str) -> io::Result<()> {
     let path3 = format!("{path}.2");
 
     // if a rotated file already exists, rename it
-    if let Err(e) = fs::rename(&path2, path3) {
-        if e.kind() != io::ErrorKind::NotFound {
-            return Err(e);
-        }
+    if let Err(e) = fs::rename(&path2, path3)
+        && e.kind() != io::ErrorKind::NotFound
+    {
+        return Err(e);
     }
 
     // and rotate the primary log

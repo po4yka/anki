@@ -3,10 +3,10 @@
 
 use std::fmt::Write;
 
-use super::SqlWriter;
 use super::super::parser::PropertyKind;
 use super::super::parser::RatingKind;
 use super::super::parser::StateKind;
+use super::SqlWriter;
 use crate::card::CardQueue;
 use crate::card::CardType;
 use crate::error::Result;

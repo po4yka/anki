@@ -333,10 +333,10 @@ impl Collection {
     /// If deck ID does not exist or points to a filtered deck, fall back on
     /// default.
     fn deck_for_adding(&mut self, did: Option<DeckId>) -> Result<(DeckId, DeckConfigId)> {
-        if let Some(did) = did {
-            if let Some(deck) = self.deck_conf_if_normal(did)? {
-                return Ok(deck);
-            }
+        if let Some(did) = did
+            && let Some(deck) = self.deck_conf_if_normal(did)?
+        {
+            return Ok(deck);
         }
 
         self.default_deck_conf()

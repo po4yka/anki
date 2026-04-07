@@ -356,17 +356,15 @@ impl Collection {
             self.add_leech_tag(card.note_id)?;
         }
 
-        if card.queue == CardQueue::Review {
-            if let Some(load_balancer) = self
+        if card.queue == CardQueue::Review
+            && let Some(load_balancer) = self
                 .state
                 .card_queues
                 .as_mut()
                 .and_then(|card_queues| card_queues.load_balancer.as_mut())
-            {
-                if let Some(deckconfig_id) = deckconfig_id {
-                    load_balancer.add_card(card.id, card.note_id, deckconfig_id, card.interval)
-                }
-            }
+            && let Some(deckconfig_id) = deckconfig_id
+        {
+            load_balancer.add_card(card.id, card.note_id, deckconfig_id, card.interval)
         }
 
         // Handle queue updates based on from_queue flag

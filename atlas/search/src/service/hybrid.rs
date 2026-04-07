@@ -142,19 +142,17 @@ where
         let mut rerank_applied = false;
         let mut rerank_model: Option<String> = None;
 
-        if should_rerank {
-            if let Some(ref reranker) = self.reranker {
-                (rerank_applied, rerank_model) = crate::reranking::apply_reranking(
-                    &mut results,
-                    query,
-                    reranker,
-                    rerank_top_n,
-                    &self.repository,
-                )
-                .await;
-            }
-            // No reranker provided: degrade gracefully
+        if should_rerank && let Some(ref reranker) = self.reranker {
+            (rerank_applied, rerank_model) = crate::reranking::apply_reranking(
+                &mut results,
+                query,
+                reranker,
+                rerank_top_n,
+                &self.repository,
+            )
+            .await;
         }
+        // No reranker provided: degrade gracefully
 
         // Apply limit
         results.truncate(limit);

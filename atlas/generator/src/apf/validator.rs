@@ -142,7 +142,7 @@ pub fn validate_markdown(content: &str) -> MarkdownValidationResult {
 
     // Check for unbalanced bold markers (**)
     let bold_count = outside_fence.matches("**").count();
-    if bold_count % 2 != 0 {
+    if !bold_count.is_multiple_of(2) {
         errors.push("Unbalanced bold markers (**) detected".into());
     }
 

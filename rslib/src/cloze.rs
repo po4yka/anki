@@ -147,10 +147,10 @@ impl ExtractedCloze<'_> {
 
     fn clozed_text(&self) -> Cow<'_, str> {
         // happy efficient path?
-        if self.nodes.len() == 1 {
-            if let TextOrCloze::Text(text) = self.nodes.last().unwrap() {
-                return (*text).into();
-            }
+        if self.nodes.len() == 1
+            && let TextOrCloze::Text(text) = self.nodes.last().unwrap()
+        {
+            return (*text).into();
         }
 
         let mut buf = String::new();
@@ -359,14 +359,13 @@ fn render_image_occlusion(
 pub fn parse_image_occlusions(text: &str) -> Vec<ImageOcclusion> {
     let mut occlusions: HashMap<u16, Vec<ImageOcclusionShape>> = HashMap::new();
     for node in parse_text_with_clozes(text) {
-        if let TextOrCloze::Cloze(cloze) = node {
-            if cloze.image_occlusion().is_some() {
-                if let Some(shape) = parse_image_cloze(cloze.image_occlusion().unwrap()) {
-                    // Associate this occlusion with all ordinals in this cloze
-                    for &ordinal in &cloze.ordinals {
-                        occlusions.entry(ordinal).or_default().push(shape.clone());
-                    }
-                }
+        if let TextOrCloze::Cloze(cloze) = node
+            && cloze.image_occlusion().is_some()
+            && let Some(shape) = parse_image_cloze(cloze.image_occlusion().unwrap())
+        {
+            // Associate this occlusion with all ordinals in this cloze
+            for &ordinal in &cloze.ordinals {
+                occlusions.entry(ordinal).or_default().push(shape.clone());
             }
         }
     }

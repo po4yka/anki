@@ -84,10 +84,10 @@ impl Collection {
                 UndoableChange::Collection(UndoableCollectionChange::Modified(_)),
             ],
         ) = (&previous_op.changes[..], &current_op.changes[..])
+            && previous.id == current.id
+            && previous_op.timestamp.elapsed_secs() < 60
         {
-            if previous.id == current.id && previous_op.timestamp.elapsed_secs() < 60 {
-                self.clear_last_op();
-            }
+            self.clear_last_op();
         }
     }
 

@@ -5,3 +5,5 @@
 --semicolons never
 --self remove
 --exclude AnkiApp/AnkiApp/AnkiApp/Proto
+# Disable rules that conflict with swiftlint defaults
+--disable wrapMultilineStatementBraces,trailingCommas

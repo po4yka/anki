@@ -4,11 +4,11 @@ import Observation
 @Observable
 @MainActor
 final class NoteEditorModel {
-    var note: Anki_Notes_Note? = nil
-    var notetypeNames: Anki_Notetypes_NotetypeNames? = nil
+    var note: Anki_Notes_Note?
+    var notetypeNames: Anki_Notetypes_NotetypeNames?
     var isSaving: Bool = false
     var isLoading: Bool = false
-    var error: AnkiError? = nil
+    var error: AnkiError?
 
     private let service: AnkiServiceProtocol
 

@@ -371,14 +371,14 @@ impl Notetype {
 
         let mut map = HashMap::new();
         for (index, card) in self.templates.iter().enumerate() {
-            if let Some(old_index) = map.insert(&card.config.q_format, index) {
-                if !CARD_TAG.is_match(&card.config.q_format) {
-                    return Err(CardTypeError {
-                        notetype: self.name.clone(),
-                        ordinal: index,
-                        source: CardTypeErrorDetails::Duplicate { index: old_index },
-                    });
-                }
+            if let Some(old_index) = map.insert(&card.config.q_format, index)
+                && !CARD_TAG.is_match(&card.config.q_format)
+            {
+                return Err(CardTypeError {
+                    notetype: self.name.clone(),
+                    ordinal: index,
+                    source: CardTypeErrorDetails::Duplicate { index: old_index },
+                });
             }
         }
 
@@ -536,10 +536,10 @@ impl Notetype {
             .filter_map(|field| {
                 if let Some(existing_ord) = field.ord {
                     remaining_ords.insert(existing_ord);
-                    if let Some(existing_field) = current.fields.get(existing_ord as usize) {
-                        if existing_field.name != field.name {
-                            return Some((existing_field.name.clone(), Some(field.name.clone())));
-                        }
+                    if let Some(existing_field) = current.fields.get(existing_ord as usize)
+                        && existing_field.name != field.name
+                    {
+                        return Some((existing_field.name.clone(), Some(field.name.clone())));
                     }
                 }
                 None
@@ -693,7 +693,7 @@ fn missing_cloze_filter(
 ) -> bool {
     parsed_templates
         .first()
-        .map_or(true, |t| !has_cloze(&t.0) || !has_cloze(&t.1))
+        .is_none_or(|t| !has_cloze(&t.0) || !has_cloze(&t.1))
 }
 
 /// True if the template is non-empty and has a cloze field.

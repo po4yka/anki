@@ -79,13 +79,13 @@ impl CardData {
     }
 
     pub(crate) fn memory_state(&self) -> Option<FsrsMemoryState> {
-        if let Some(stability) = self.fsrs_stability {
-            if let Some(difficulty) = self.fsrs_difficulty {
-                return Some(FsrsMemoryState {
-                    stability,
-                    difficulty,
-                });
-            }
+        if let Some(stability) = self.fsrs_stability
+            && let Some(difficulty) = self.fsrs_difficulty
+        {
+            return Some(FsrsMemoryState {
+                stability,
+                difficulty,
+            });
         }
         None
     }

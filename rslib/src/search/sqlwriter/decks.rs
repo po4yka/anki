@@ -3,8 +3,8 @@
 
 use std::fmt::Write;
 
-use super::SqlWriter;
 use super::super::parser::TemplateKind;
+use super::SqlWriter;
 use crate::decks::NativeDeckName;
 use crate::error::Result;
 use crate::prelude::DeckId;

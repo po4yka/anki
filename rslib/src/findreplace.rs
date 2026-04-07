@@ -91,11 +91,11 @@ impl Collection {
                     }
                 }
                 FieldForNotetype::Index(ord) => {
-                    if let Some(txt) = note.fields_mut().get_mut(ord) {
-                        if let Cow::Owned(otxt) = ctx.replace_text(txt) {
-                            changed = true;
-                            *txt = otxt;
-                        }
+                    if let Some(txt) = note.fields_mut().get_mut(ord)
+                        && let Cow::Owned(otxt) = ctx.replace_text(txt)
+                    {
+                        changed = true;
+                        *txt = otxt;
                     }
                 }
                 FieldForNotetype::None => (),

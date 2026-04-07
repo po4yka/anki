@@ -93,7 +93,13 @@ final class StatsModel {
     var reviewCountData: [ReviewDataPoint] {
         guard let reviews = graphs?.reviews else { return [] }
         return reviews.count.sorted(by: { $0.key < $1.key }).map { day, reviewCount in
-            ReviewDataPoint(day: Int(day), learn: reviewCount.learn, relearn: reviewCount.relearn, young: reviewCount.young, mature: reviewCount.mature)
+            ReviewDataPoint(
+                day: Int(day),
+                learn: reviewCount.learn,
+                relearn: reviewCount.relearn,
+                young: reviewCount.young,
+                mature: reviewCount.mature
+            )
         }
     }
 
@@ -105,7 +111,8 @@ final class StatsModel {
 
     var totalCards: UInt32 {
         guard let counts = cardCountsData else { return 0 }
-        return counts.newCards + counts.learn + counts.relearn + counts.young + counts.mature + counts.suspended + counts.buried
+        return counts.newCards + counts.learn + counts.relearn + counts.young + counts.mature + counts
+            .suspended + counts.buried
     }
 
     // MARK: - Intervals

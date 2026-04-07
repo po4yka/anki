@@ -1,5 +1,5 @@
-import SwiftUI
 import Charts
+import SwiftUI
 
 struct StatisticsView: View {
     @Environment(AppState.self) private var appState

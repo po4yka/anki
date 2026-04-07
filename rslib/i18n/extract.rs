@@ -70,30 +70,30 @@ fn extract_metadata(ftl_text: &str) -> Vec<Translation> {
     let mut output = vec![];
 
     for entry in res.body {
-        if let Entry::Message(m) = entry {
-            if let Some(pattern) = m.value {
-                let mut visitor = Visitor::default();
-                visitor.visit_pattern(&pattern);
-                let key = m.id.name.to_string();
+        if let Entry::Message(m) = entry
+            && let Some(pattern) = m.value
+        {
+            let mut visitor = Visitor::default();
+            visitor.visit_pattern(&pattern);
+            let key = m.id.name.to_string();
 
-                // special case translations that were ported from gettext, and use embedded
-                // terms that reference other variables that aren't visible to our visitor
-                if key == "statistics-studied-today" {
-                    visitor.variables.push("amount".to_string());
-                    visitor.variables.push("cards".to_string());
-                } else if key == "statistics-average-answer-time" {
-                    visitor.variables.push("cards-per-minute".to_string());
-                }
-
-                let (text, variables) = visitor.into_output();
-
-                output.push(Translation {
-                    key,
-                    text,
-                    variables,
-                    index: 0,
-                })
+            // special case translations that were ported from gettext, and use embedded
+            // terms that reference other variables that aren't visible to our visitor
+            if key == "statistics-studied-today" {
+                visitor.variables.push("amount".to_string());
+                visitor.variables.push("cards".to_string());
+            } else if key == "statistics-average-answer-time" {
+                visitor.variables.push("cards-per-minute".to_string());
             }
+
+            let (text, variables) = visitor.into_output();
+
+            output.push(Translation {
+                key,
+                text,
+                variables,
+                index: 0,
+            })
         }
     }
 

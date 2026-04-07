@@ -6,14 +6,16 @@ enum SidebarItem: String, CaseIterable, Identifiable {
     case stats = "Statistics"
     case sync = "Sync"
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
     var systemImage: String {
         switch self {
-        case .decks: "rectangle.stack"
-        case .browse: "magnifyingglass"
-        case .stats: "chart.bar"
-        case .sync: "arrow.triangle.2.circlepath"
+            case .decks: "rectangle.stack"
+            case .browse: "magnifyingglass"
+            case .stats: "chart.bar"
+            case .sync: "arrow.triangle.2.circlepath"
         }
     }
 }

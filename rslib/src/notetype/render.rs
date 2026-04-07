@@ -96,10 +96,10 @@ impl Collection {
         card_ord: u16,
     ) -> Result<Card> {
         // fetch existing card
-        if let Some(ord) = template_ord {
-            if let Some(card) = self.storage.get_card_by_ordinal(nid, ord as u16)? {
-                return Ok(card);
-            }
+        if let Some(ord) = template_ord
+            && let Some(card) = self.storage.get_card_by_ordinal(nid, ord as u16)?
+        {
+            return Ok(card);
         }
 
         // no existing card; synthesize one

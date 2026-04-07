@@ -110,7 +110,7 @@ struct SearchView: View {
                                 Task { await model.deleteSelected() }
                             }
                         }
-                    } primaryAction: { ids in
+                    } primaryAction: { _ in
                         // Double-click: could open editor in future
                     }
                 }

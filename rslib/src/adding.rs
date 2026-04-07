@@ -57,10 +57,10 @@ impl Collection {
         home_deck_of_reviewer_card: DeckId,
     ) -> Result<Arc<Deck>> {
         // current deck, if not filtered
-        if let Some(current) = self.get_deck(self.get_current_deck_id())? {
-            if !current.is_filtered() {
-                return Ok(current);
-            }
+        if let Some(current) = self.get_deck(self.get_current_deck_id())?
+            && !current.is_filtered()
+        {
+            return Ok(current);
         }
         // provided reviewer card's home deck
         if let Some(home_deck) = self.get_deck(home_deck_of_reviewer_card)? {
@@ -72,10 +72,10 @@ impl Collection {
 
     fn get_current_notetype_for_adding(&mut self) -> Result<Arc<Notetype>> {
         // try global 'current' notetype
-        if let Some(ntid) = self.get_current_notetype_id() {
-            if let Some(nt) = self.get_notetype(ntid)? {
-                return Ok(nt);
-            }
+        if let Some(ntid) = self.get_current_notetype_id()
+            && let Some(nt) = self.get_notetype(ntid)?
+        {
+            return Ok(nt);
         }
         // try first available notetype
         if let Some((ntid, _)) = self.storage.get_all_notetype_names()?.first() {
@@ -87,10 +87,10 @@ impl Collection {
 
     fn default_notetype_for_deck(&mut self, deck: DeckId) -> Result<Arc<Notetype>> {
         // try last notetype used by deck
-        if let Some(ntid) = self.get_last_notetype_for_deck(deck) {
-            if let Some(nt) = self.get_notetype(ntid)? {
-                return Ok(nt);
-            }
+        if let Some(ntid) = self.get_last_notetype_for_deck(deck)
+            && let Some(nt) = self.get_notetype(ntid)?
+        {
+            return Ok(nt);
         }
 
         // fall back
@@ -103,12 +103,11 @@ impl Collection {
     /// a previous deck is not set, we want to keep the current selection,
     /// instead of resetting it.
     pub(crate) fn default_deck_for_notetype(&mut self, ntid: NotetypeId) -> Result<Option<DeckId>> {
-        if let Some(last_deck_id) = self.get_last_deck_added_to_for_notetype(ntid) {
-            if let Some(deck) = self.get_deck(last_deck_id)? {
-                if !deck.is_filtered() {
-                    return Ok(Some(deck.id));
-                }
-            }
+        if let Some(last_deck_id) = self.get_last_deck_added_to_for_notetype(ntid)
+            && let Some(deck) = self.get_deck(last_deck_id)?
+            && !deck.is_filtered()
+        {
+            return Ok(Some(deck.id));
         }
 
         Ok(None)

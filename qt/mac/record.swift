@@ -1,8 +1,8 @@
 // Copyright: Ankitects Pty Ltd and contributors
 // License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
 
-import Foundation
 import AVKit
+import Foundation
 
 enum RecordError: Error {
     case noPermission
@@ -30,7 +30,6 @@ public func endWavRecord() {
     AudioRecorder.shared.endRecording()
 }
 
-
 private class AudioRecorder: NSObject, AVAudioRecorderDelegate {
     static let shared = AudioRecorder()
 
@@ -38,7 +37,7 @@ private class AudioRecorder: NSObject, AVAudioRecorderDelegate {
     private var onError: ((RecordError) -> Void)?
 
     func beginRecording(url: URL, onError: @escaping (Error) -> Void) {
-        self.endRecording()
+        endRecording()
 
         requestPermission { success in
             if !success {
@@ -54,7 +53,6 @@ private class AudioRecorder: NSObject, AVAudioRecorderDelegate {
             }
             self.onError = onError
         }
-
     }
 
     func endRecording() {
@@ -88,7 +86,7 @@ private class AudioRecorder: NSObject, AVAudioRecorderDelegate {
     }
 
     private func beginRecordingInner(url: URL) throws {
-        guard let audioFormat = AVAudioFormat.init(
+        guard let audioFormat = AVAudioFormat(
             commonFormat: .pcmFormatInt16,
             sampleRate: 44100,
             channels: 1,
@@ -103,15 +101,13 @@ private class AudioRecorder: NSObject, AVAudioRecorderDelegate {
         audioRecorder = recorder
     }
 
-
-    func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
+    func audioRecorderDidFinishRecording(_: AVAudioRecorder, successfully flag: Bool) {
         if !flag {
             onError?(.stoppedWithFailure)
         }
     }
 
-
-    func audioRecorderEncodeErrorDidOccur(_ recorder: AVAudioRecorder, error: Error?) {
+    func audioRecorderEncodeErrorDidOccur(_: AVAudioRecorder, error _: Error?) {
         onError?(.encodingFailure)
     }
 }

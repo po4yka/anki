@@ -89,14 +89,15 @@ impl UndoManager {
     }
 
     fn end_step(&mut self, skip_undo: bool) {
-        if let Some(step) = self.current_step.take() {
-            if step.has_changes() && !skip_undo {
-                if self.mode == UndoMode::Undoing {
-                    self.redo_steps.push(step);
-                } else {
-                    self.undo_steps.truncate(UNDO_LIMIT - 1);
-                    self.undo_steps.push_front(step);
-                }
+        if let Some(step) = self.current_step.take()
+            && step.has_changes()
+            && !skip_undo
+        {
+            if self.mode == UndoMode::Undoing {
+                self.redo_steps.push(step);
+            } else {
+                self.undo_steps.truncate(UNDO_LIMIT - 1);
+                self.undo_steps.push_front(step);
             }
         }
     }

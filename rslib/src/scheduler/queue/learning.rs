@@ -99,12 +99,13 @@ impl CardQueues {
 
         // if the provided entry would be shown again immediately, see if we
         // can place it after the next card instead
-        if entry.due <= cutoff && self.learning_collapsed() {
-            if let Some(next) = self.intraday_learning.front() {
-                if next.due >= entry.due && next.due.adding_secs(1) < cutoff {
-                    entry.due = next.due.adding_secs(1);
-                }
-            }
+        if entry.due <= cutoff
+            && self.learning_collapsed()
+            && let Some(next) = self.intraday_learning.front()
+            && next.due >= entry.due
+            && next.due.adding_secs(1) < cutoff
+        {
+            entry.due = next.due.adding_secs(1);
         }
 
         self.insert_intraday_learning_card(entry);

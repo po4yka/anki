@@ -178,18 +178,17 @@ fn build_llm_provider() -> anyhow::Result<(Box<dyn llm::provider::LlmProvider>, 
     use llm::ollama::OllamaConfig;
     use llm::openrouter::OpenRouterConfig;
 
-    if let Ok(api_key) = std::env::var("OPENROUTER_API_KEY") {
-        if !api_key.is_empty() {
-            let config = ProviderConfig::OpenRouter(OpenRouterConfig {
-                api_key,
-                ..OpenRouterConfig::default()
-            });
-            let provider = create_provider(config)
-                .map_err(|e| anyhow::anyhow!("OpenRouter provider error: {e}"))?;
-            let model =
-                std::env::var("LLM_MODEL").unwrap_or_else(|_| "openai/gpt-4o-mini".to_string());
-            return Ok((provider, model));
-        }
+    if let Ok(api_key) = std::env::var("OPENROUTER_API_KEY")
+        && !api_key.is_empty()
+    {
+        let config = ProviderConfig::OpenRouter(OpenRouterConfig {
+            api_key,
+            ..OpenRouterConfig::default()
+        });
+        let provider = create_provider(config)
+            .map_err(|e| anyhow::anyhow!("OpenRouter provider error: {e}"))?;
+        let model = std::env::var("LLM_MODEL").unwrap_or_else(|_| "openai/gpt-4o-mini".to_string());
+        return Ok((provider, model));
     }
 
     // Fall back to Ollama
@@ -416,30 +415,30 @@ fn cmd_resolve(args: &crate::args::CardloopResolveArgs) -> anyhow::Result<()> {
     // Verification gate: if resolving as Fixed and we have a registry, re-run audit
     // on this card to confirm the issue is actually gone. If the same issue is still
     // present, reopen the item automatically.
-    if new_status == ItemStatus::Fixed {
-        if let (Some(slug), Some(registry_path)) = (&updated.slug, &args.registry) {
-            let registry = CardRegistry::open(registry_path.to_str().unwrap_or(""))?;
-            let pipeline = default_pipeline();
-            let scanner = AuditScanner::new(&registry, &pipeline);
-            // Use scan_number=0 as a probe — we only care about IDs, not persisting.
-            let probe_items = scanner.scan(0)?;
-            let still_present = probe_items
-                .iter()
-                .any(|i| i.id == updated.id && i.slug.as_deref() == Some(slug.as_str()));
-            if still_present {
-                // Reopen: transition back to Open
-                store.transition(
-                    &updated.id,
-                    ItemStatus::Open,
-                    Some("auto-reopened: issue still detected after resolve"),
-                )?;
-                eprintln!(
-                    "WARNING: Issue still detected for '{}' after resolve. Item {} reopened.",
-                    slug,
-                    &updated.id[..8.min(updated.id.len())]
-                );
-                return Ok(());
-            }
+    if new_status == ItemStatus::Fixed
+        && let (Some(slug), Some(registry_path)) = (&updated.slug, &args.registry)
+    {
+        let registry = CardRegistry::open(registry_path.to_str().unwrap_or(""))?;
+        let pipeline = default_pipeline();
+        let scanner = AuditScanner::new(&registry, &pipeline);
+        // Use scan_number=0 as a probe — we only care about IDs, not persisting.
+        let probe_items = scanner.scan(0)?;
+        let still_present = probe_items
+            .iter()
+            .any(|i| i.id == updated.id && i.slug.as_deref() == Some(slug.as_str()));
+        if still_present {
+            // Reopen: transition back to Open
+            store.transition(
+                &updated.id,
+                ItemStatus::Open,
+                Some("auto-reopened: issue still detected after resolve"),
+            )?;
+            eprintln!(
+                "WARNING: Issue still detected for '{}' after resolve. Item {} reopened.",
+                slug,
+                &updated.id[..8.min(updated.id.len())]
+            );
+            return Ok(());
         }
     }
 

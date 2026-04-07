@@ -5,7 +5,7 @@ import Observation
 @MainActor
 final class SyncModel {
     var isSyncing: Bool = false
-    var lastSyncError: AnkiError? = nil
+    var lastSyncError: AnkiError?
     var tags: [String] = []
 
     private let service: AnkiServiceProtocol

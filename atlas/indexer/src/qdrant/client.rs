@@ -428,15 +428,14 @@ impl VectorRepository for QdrantRepository {
                     Vector::new_dense(vector.clone()),
                 );
 
-                if let Some(sparse_vecs) = sparse_vectors {
-                    if let Some(sv) = sparse_vecs.get(i) {
-                        if !sv.indices.is_empty() {
-                            named.vectors.insert(
-                                SPARSE_VECTOR_NAME.to_string(),
-                                Vector::new_sparse(sv.indices.clone(), sv.values.clone()),
-                            );
-                        }
-                    }
+                if let Some(sparse_vecs) = sparse_vectors
+                    && let Some(sv) = sparse_vecs.get(i)
+                    && !sv.indices.is_empty()
+                {
+                    named.vectors.insert(
+                        SPARSE_VECTOR_NAME.to_string(),
+                        Vector::new_sparse(sv.indices.clone(), sv.values.clone()),
+                    );
                 }
 
                 Ok(PointStruct::new(

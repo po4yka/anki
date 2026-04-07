@@ -141,11 +141,11 @@ where
                 .duration_since(time::UNIX_EPOCH)
                 .unwrap()
                 .as_secs() as i64;
-            if let Some(previous_mtime) = previous_mtime {
-                if previous_mtime == mtime {
-                    debug!(fname = fname.as_ref(), "mtime unchanged");
-                    continue;
-                }
+            if let Some(previous_mtime) = previous_mtime
+                && previous_mtime == mtime
+            {
+                debug!(fname = fname.as_ref(), "mtime unchanged");
+                continue;
             }
 
             // add entry to the list
@@ -165,7 +165,7 @@ where
             );
 
             self.checked += 1;
-            if self.checked % 10 == 0 {
+            if self.checked.is_multiple_of(10) {
                 self.fire_progress_cb()?;
             }
         }
@@ -189,15 +189,14 @@ where
     ) -> Result<()> {
         for fentry in entries {
             let mut sync_required = true;
-            if !fentry.is_new {
-                if let Some(db_entry) = ctx.get_entry(&fentry.fname)? {
-                    if db_entry.sha1 == fentry.sha1 {
-                        // mtime bumped but file contents are the same,
-                        // so we can preserve the current updated flag.
-                        // we still need to update the mtime however.
-                        sync_required = db_entry.sync_required
-                    }
-                }
+            if !fentry.is_new
+                && let Some(db_entry) = ctx.get_entry(&fentry.fname)?
+                && db_entry.sha1 == fentry.sha1
+            {
+                // mtime bumped but file contents are the same,
+                // so we can preserve the current updated flag.
+                // we still need to update the mtime however.
+                sync_required = db_entry.sync_required
             };
 
             ctx.set_entry(&MediaEntry {
@@ -208,7 +207,7 @@ where
             })?;
 
             self.checked += 1;
-            if self.checked % 10 == 0 {
+            if self.checked.is_multiple_of(10) {
                 self.fire_progress_cb()?;
             }
         }
@@ -227,7 +226,7 @@ where
             })?;
 
             self.checked += 1;
-            if self.checked % 10 == 0 {
+            if self.checked.is_multiple_of(10) {
                 self.fire_progress_cb()?;
             }
         }

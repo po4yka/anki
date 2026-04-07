@@ -37,7 +37,10 @@ impl crate::services::SchedulerService for Collection {
     fn sched_timing_today(&mut self) -> Result<scheduler::SchedTimingTodayResponse> {
         let timing = self.timing_today()?;
         self.unbury_if_day_rolled_over(timing)?;
-        Ok(timing.into())
+        Ok(scheduler::SchedTimingTodayResponse {
+            days_elapsed: timing.days_elapsed,
+            next_day_at: timing.next_day_at.0,
+        })
     }
 
     /// Fetch data from DB and return rendered string.

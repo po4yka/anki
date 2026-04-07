@@ -13,6 +13,5 @@ public func setDarkmodeEnabled(_ enabled: Bool) {
 /// True if the system is set to dark mode.
 @_cdecl("system_is_dark")
 public func systemIsDark() -> Bool {
-    let styleSet = UserDefaults.standard.object(forKey: "AppleInterfaceStyle") != nil
-    return styleSet
+    UserDefaults.standard.object(forKey: "AppleInterfaceStyle") != nil
 }

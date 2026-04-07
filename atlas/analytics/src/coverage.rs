@@ -309,13 +309,13 @@ pub async fn get_coverage_tree(
     for path in &paths {
         if let Some(slash_pos) = path.rfind('/') {
             let parent_path = &path[..slash_pos];
-            if let Some(child_node) = nodes.get(path).cloned() {
-                if let Some(parent_node) = nodes.get_mut(parent_path) {
-                    parent_node["children"]
-                        .as_array_mut()
-                        .unwrap()
-                        .push(child_node);
-                }
+            if let Some(child_node) = nodes.get(path).cloned()
+                && let Some(parent_node) = nodes.get_mut(parent_path)
+            {
+                parent_node["children"]
+                    .as_array_mut()
+                    .unwrap()
+                    .push(child_node);
             }
         }
     }

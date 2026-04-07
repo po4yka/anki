@@ -7,24 +7,22 @@ use std::ops::Range;
 
 use itertools::Itertools;
 
+use super::super::parser::FieldSearchMode;
 use super::SqlWriter;
 use super::utils::CollectRanges;
 use super::utils::FieldQualifiedSearchContext;
 use super::utils::UnqualifiedRegexSearchContext;
 use super::utils::UnqualifiedSearchContext;
 use crate::error::Result;
-use crate::notetype::NotetypeId;
 use crate::notes::field_checksum;
+use crate::notetype::NotetypeId;
 use crate::storage::ProcessTextFlags;
 use crate::storage::ids_to_string;
 use crate::text::glob_matcher;
-use crate::text::is_glob;
 use crate::text::strip_html_preserving_media_filenames;
 use crate::text::to_re;
 use crate::text::to_sql;
-use crate::text::to_text;
 use crate::text::without_combining;
-use super::super::parser::FieldSearchMode;
 
 impl SqlWriter<'_> {
     pub(super) fn write_unqualified(
@@ -255,9 +253,7 @@ impl SqlWriter<'_> {
             .iter()
             .map(|(mid, field_indices)| {
                 let field_index_list = field_indices.iter().join(", ");
-                format!(
-                    "(n.mid = {mid} and regexp_fields(?{arg_idx}, n.flds, {field_index_list}))"
-                )
+                format!("(n.mid = {mid} and regexp_fields(?{arg_idx}, n.flds, {field_index_list}))")
             })
             .join(" or ");
 
@@ -431,7 +427,11 @@ impl SqlWriter<'_> {
         }
     }
 
-    pub(super) fn write_dupe(&mut self, ntid: crate::notetype::NotetypeId, text: &str) -> Result<()> {
+    pub(super) fn write_dupe(
+        &mut self,
+        ntid: crate::notetype::NotetypeId,
+        text: &str,
+    ) -> Result<()> {
         let text_nohtml = strip_html_preserving_media_filenames(text);
         let csum = field_checksum(text_nohtml.as_ref());
 
@@ -498,7 +498,8 @@ impl SqlWriter<'_> {
         let re = format!(r"\b{}\b", to_re(word));
         self.write_regex(
             &re,
-            self.col.get_config_bool(crate::prelude::BoolKey::IgnoreAccentsInSearch),
+            self.col
+                .get_config_bool(crate::prelude::BoolKey::IgnoreAccentsInSearch),
         )
     }
 }

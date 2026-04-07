@@ -1,3 +1,8 @@
+// This crate is a C-ABI FFI bridge. It inherently requires unsafe code for raw
+// pointer handling and #[no_mangle] exports.
+#![allow(unsafe_code)]
+#![allow(clippy::not_unsafe_ptr_arg_deref)]
+
 use std::ffi::c_void;
 use std::slice;
 
@@ -22,6 +27,7 @@ impl ByteBuffer {
         buf
     }
 
+    #[allow(dead_code)]
     fn empty() -> Self {
         ByteBuffer {
             data: std::ptr::null_mut(),
@@ -87,7 +93,9 @@ pub extern "C" fn anki_free(backend: *mut c_void) {
 pub extern "C" fn anki_free_buffer(buf: ByteBuffer) {
     if !buf.data.is_null() {
         unsafe {
-            drop(Box::from_raw(slice::from_raw_parts_mut(buf.data, buf.len)));
+            drop(Box::from_raw(std::ptr::slice_from_raw_parts_mut(
+                buf.data, buf.len,
+            )));
         };
     }
 }

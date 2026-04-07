@@ -1,3 +1,9 @@
+// This crate is a C-ABI FFI bridge. It inherently requires unsafe code for raw
+// pointer handling and #[no_mangle] exports. The functions are not marked unsafe
+// because they are called from Swift/C which has no concept of Rust's unsafe.
+#![allow(unsafe_code)]
+#![allow(clippy::not_unsafe_ptr_arg_deref)]
+
 use std::ffi::{CStr, c_char, c_void};
 use std::path::PathBuf;
 use std::slice;
@@ -38,6 +44,7 @@ impl AtlasByteBuffer {
         Self::from_vec(s.as_bytes().to_vec())
     }
 
+    #[allow(dead_code)]
     fn empty() -> Self {
         AtlasByteBuffer {
             data: std::ptr::null_mut(),
@@ -227,20 +234,15 @@ pub extern "C" fn atlas_init(config_data: *const u8, config_len: usize) -> *mut 
         AtlasConfig::default()
     } else {
         let bytes = unsafe { slice::from_raw_parts(config_data, config_len) };
-        match serde_json::from_slice(bytes) {
-            Ok(c) => c,
-            Err(_) => AtlasConfig::default(),
-        }
+        serde_json::from_slice(bytes).unwrap_or_default()
     };
 
-    let runtime = match Runtime::new() {
-        Ok(rt) => rt,
-        Err(_) => return std::ptr::null_mut(),
+    let Ok(runtime) = Runtime::new() else {
+        return std::ptr::null_mut();
     };
 
-    let services = match build_noop_services(config.postgres_url.as_deref()) {
-        Ok(s) => s,
-        Err(_) => return std::ptr::null_mut(),
+    let Ok(services) = build_noop_services(config.postgres_url.as_deref()) else {
+        return std::ptr::null_mut();
     };
 
     let handle = Box::new(AtlasHandle {
@@ -437,14 +439,9 @@ pub extern "C" fn atlas_command(
         return AtlasByteBuffer::from_str("atlas handle is null");
     }
 
-    let method_str = unsafe {
-        match CStr::from_ptr(method).to_str() {
-            Ok(s) => s,
-            Err(_) => {
-                *is_error = true;
-                return AtlasByteBuffer::from_str("invalid UTF-8 in method name");
-            }
-        }
+    let Ok(method_str) = (unsafe { CStr::from_ptr(method).to_str() }) else {
+        unsafe { *is_error = true };
+        return AtlasByteBuffer::from_str("invalid UTF-8 in method name");
     };
 
     let input_bytes: &[u8] = if input.is_null() || input_len == 0 {
@@ -480,7 +477,9 @@ pub extern "C" fn atlas_free(handle: *mut c_void) {
 pub extern "C" fn atlas_free_buffer(buf: AtlasByteBuffer) {
     if !buf.data.is_null() {
         unsafe {
-            drop(Box::from_raw(slice::from_raw_parts_mut(buf.data, buf.len)));
+            drop(Box::from_raw(std::ptr::slice_from_raw_parts_mut(
+                buf.data, buf.len,
+            )));
         };
     }
 }

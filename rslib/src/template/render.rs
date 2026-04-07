@@ -11,11 +11,11 @@ use regex::Regex;
 
 use crate::template_filters::apply_filters;
 
+use super::parser::COMMENT_END;
+use super::parser::COMMENT_START;
 use super::parser::ParsedNode;
 use super::parser::ParsedTemplate;
 use super::parser::TemplateResult;
-use super::parser::COMMENT_END;
-use super::parser::COMMENT_START;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum RenderedNode {
@@ -171,11 +171,7 @@ pub(super) fn render_into(
 }
 
 impl RenderContext<'_> {
-    pub(super) fn evaluate_conditional(
-        &self,
-        key: &str,
-        negated: bool,
-    ) -> TemplateResult<bool> {
+    pub(super) fn evaluate_conditional(&self, key: &str, negated: bool) -> TemplateResult<bool> {
         if self.nonempty_fields.contains(key) {
             Ok(true ^ negated)
         } else if self.fields.contains_key(key) || super::field::is_cloze_conditional(key) {

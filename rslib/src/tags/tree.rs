@@ -111,11 +111,11 @@ fn add_tag_and_missing_parents<'a, 'b>(
     missing: &'a mut Vec<UniCase<&'b str>>,
     tag_name: UniCase<&'b str>,
 ) {
-    if let Some(parent) = immediate_parent_name_unicase(tag_name) {
-        if !all.contains(&parent) {
-            missing.push(parent);
-            add_tag_and_missing_parents(all, missing, parent);
-        }
+    if let Some(parent) = immediate_parent_name_unicase(tag_name)
+        && !all.contains(&parent)
+    {
+        missing.push(parent);
+        add_tag_and_missing_parents(all, missing, parent);
     }
     // finally, add provided tag
     all.insert(tag_name);

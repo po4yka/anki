@@ -63,15 +63,15 @@ pub(super) fn new_media_entry(
 impl SafeMediaEntry {
     pub(super) fn from_entry(enumerated: (usize, MediaEntry)) -> Result<Self> {
         let (index, entry) = enumerated;
-        if let Ok(sha1) = entry.sha1.try_into() {
-            if !matches!(safe_normalized_file_name(&entry.name)?, Cow::Owned(_)) {
-                return Ok(Self {
-                    name: entry.name,
-                    size: entry.size,
-                    sha1: Some(sha1),
-                    index,
-                });
-            }
+        if let Ok(sha1) = entry.sha1.try_into()
+            && !matches!(safe_normalized_file_name(&entry.name)?, Cow::Owned(_))
+        {
+            return Ok(Self {
+                name: entry.name,
+                size: entry.size,
+                sha1: Some(sha1),
+                index,
+            });
         }
         Err(AnkiError::ImportError {
             source: ImportError::Corrupt,

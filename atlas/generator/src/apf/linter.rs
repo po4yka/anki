@@ -196,13 +196,13 @@ pub fn validate_apf(apf_html: &str, slug: Option<&str>) -> LintResult {
                     }
                     Ok(manifest) => {
                         // Slug mismatch between header and manifest
-                        if let Some(manifest_slug) = manifest.get("slug").and_then(|v| v.as_str()) {
-                            if manifest_slug != block.slug {
-                                errors.push(format!(
-                                    "Card {}: manifest slug mismatch (header: {}, manifest: {})",
-                                    block.slug, block.slug, manifest_slug
-                                ));
-                            }
+                        if let Some(manifest_slug) = manifest.get("slug").and_then(|v| v.as_str())
+                            && manifest_slug != block.slug
+                        {
+                            errors.push(format!(
+                                "Card {}: manifest slug mismatch (header: {}, manifest: {})",
+                                block.slug, block.slug, manifest_slug
+                            ));
                         }
 
                         // Tags mismatch between header and manifest
@@ -251,13 +251,13 @@ pub fn validate_apf(apf_html: &str, slug: Option<&str>) -> LintResult {
         }
 
         // Slug parameter matching
-        if let Some(expected_slug) = slug {
-            if block.slug != expected_slug {
-                warnings.push(format!(
-                    "Card slug mismatch: expected {}, found {}",
-                    expected_slug, block.slug
-                ));
-            }
+        if let Some(expected_slug) = slug
+            && block.slug != expected_slug
+        {
+            warnings.push(format!(
+                "Card slug mismatch: expected {}, found {}",
+                expected_slug, block.slug
+            ));
         }
     }
 

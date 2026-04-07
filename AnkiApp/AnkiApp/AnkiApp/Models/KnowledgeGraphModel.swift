@@ -1,8 +1,8 @@
 import Foundation
 import Observation
 
-// Knowledge graph requires KG infrastructure (knowledge_graph crate + kg_repo).
-// Implement after atlas_bridge exposes kg_see_also and kg_topic_neighborhood methods.
+/// Knowledge graph requires KG infrastructure (knowledge_graph crate + kg_repo).
+/// Implement after atlas_bridge exposes kg_see_also and kg_topic_neighborhood methods.
 @Observable
 @MainActor
 final class KnowledgeGraphModel {

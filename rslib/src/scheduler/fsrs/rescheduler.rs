@@ -91,10 +91,11 @@ impl Rescheduler {
             *counts.entry(due_after).or_default() += 1;
         }
 
-        if due_before <= self.today && due_after > self.today {
-            if let Some(count) = self.due_today_by_preset.get_mut(&deck_config_id) {
-                *count -= 1;
-            }
+        if due_before <= self.today
+            && due_after > self.today
+            && let Some(count) = self.due_today_by_preset.get_mut(&deck_config_id)
+        {
+            *count -= 1;
         }
         if due_before > self.today && due_after <= self.today {
             *self.due_today_by_preset.entry(deck_config_id).or_default() += 1;

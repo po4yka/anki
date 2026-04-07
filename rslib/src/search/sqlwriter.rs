@@ -9,18 +9,13 @@ mod utils;
 use std::fmt::Write;
 
 use super::ReturnItemType;
-use super::parser::FieldSearchMode;
 use super::parser::Node;
-use super::parser::PropertyKind;
-use super::parser::RatingKind;
 use super::parser::SearchNode;
-use super::parser::StateKind;
 use super::parser::TemplateKind;
 use crate::collection::Collection;
 use crate::error::Result;
 use crate::prelude::*;
 
-pub(crate) use utils::CollectRanges;
 pub(crate) use utils::RequiredTable;
 
 pub(crate) struct SqlWriter<'a> {

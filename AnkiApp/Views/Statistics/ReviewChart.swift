@@ -1,5 +1,5 @@
-import SwiftUI
 import Charts
+import SwiftUI
 
 struct ReviewChart: View {
     let model: StatsModel
@@ -28,13 +28,15 @@ struct ReviewChart: View {
                     }
                 }
                 .chartYAxis {
-                    AxisMarks { AxisGridLine(); AxisValueLabel() }
+                    AxisMarks { AxisGridLine()
+                        AxisValueLabel()
+                    }
                 }
                 .chartForegroundStyleScale([
                     "New": Color.blue,
                     "Learn": Color.orange,
                     "Review": Color.green,
-                    "Relearn": Color.red
+                    "Relearn": Color.red,
                 ])
             }
         }

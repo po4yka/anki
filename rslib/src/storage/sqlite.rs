@@ -407,36 +407,36 @@ fn add_extract_fsrs_relative_retrievability(db: &Connection) -> rusqlite::Result
                 let review_day = due.saturating_sub(interval);
                 (today as u32).saturating_sub(review_day as u32) * 86_400
             };
-            if let Ok(card_data) = ctx.get_raw(0).as_str() {
-                if !card_data.is_empty() {
-                    let card_data = &CardData::from_str(card_data);
-                    if let (Some(state), Some(mut desired_retrievability)) =
-                        (card_data.memory_state(), card_data.fsrs_desired_retention)
+            if let Ok(card_data) = ctx.get_raw(0).as_str()
+                && !card_data.is_empty()
+            {
+                let card_data = &CardData::from_str(card_data);
+                if let (Some(state), Some(mut desired_retrievability)) =
+                    (card_data.memory_state(), card_data.fsrs_desired_retention)
+                {
+                    // avoid div by zero
+                    desired_retrievability = desired_retrievability.max(0.0001);
+                    let decay = card_data.decay.unwrap_or(FSRS5_DEFAULT_DECAY);
+
+                    let seconds_elapsed = if let Some(last_review_time) = card_data.last_review_time
                     {
-                        // avoid div by zero
-                        desired_retrievability = desired_retrievability.max(0.0001);
-                        let decay = card_data.decay.unwrap_or(FSRS5_DEFAULT_DECAY);
+                        // Don't change this to now.subtracting_sub(due) as u32
+                        // for the same reasons listed in the comment
+                        // in add_extract_fsrs_retrievability
+                        (now as u32).saturating_sub(last_review_time.0 as u32)
+                    } else {
+                        secs_elapsed
+                    };
 
-                        let seconds_elapsed =
-                            if let Some(last_review_time) = card_data.last_review_time {
-                                // Don't change this to now.subtracting_sub(due) as u32
-                                // for the same reasons listed in the comment
-                                // in add_extract_fsrs_retrievability
-                                (now as u32).saturating_sub(last_review_time.0 as u32)
-                            } else {
-                                secs_elapsed
-                            };
+                    let current_retrievability = FSRS::new(None)
+                        .unwrap()
+                        .current_retrievability_seconds(state.into(), seconds_elapsed, decay)
+                        .max(0.0001);
 
-                        let current_retrievability = FSRS::new(None)
-                            .unwrap()
-                            .current_retrievability_seconds(state.into(), seconds_elapsed, decay)
-                            .max(0.0001);
-
-                        return Ok(Some(
-                            -(current_retrievability.powf(-1.0 / decay) - 1.)
-                                / (desired_retrievability.powf(-1.0 / decay) - 1.),
-                        ));
-                    }
+                    return Ok(Some(
+                        -(current_retrievability.powf(-1.0 / decay) - 1.)
+                            / (desired_retrievability.powf(-1.0 / decay) - 1.),
+                    ));
                 }
             }
             let days_elapsed = secs_elapsed / 86_400;

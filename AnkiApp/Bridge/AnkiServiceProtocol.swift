@@ -21,10 +21,18 @@ protocol AnkiServiceProtocol: Sendable {
     func allBrowserColumns() async throws -> Anki_Search_BrowserColumns
     func browserRowForId(id: Int64) async throws -> Anki_Search_BrowserRow
     func removeNotes(noteIds: [Int64], cardIds: [Int64]) async throws -> Anki_Collection_OpChangesWithCount
-    func findAndReplace(nids: [Int64], search: String, replacement: String, regex: Bool, matchCase: Bool, fieldName: String) async throws -> Anki_Collection_OpChangesWithCount
+    func findAndReplace(
+        nids: [Int64],
+        search: String,
+        replacement: String,
+        regex: Bool,
+        matchCase: Bool,
+        fieldName: String
+    ) async throws -> Anki_Collection_OpChangesWithCount
     func setActiveBrowserColumns(columns: [String]) async throws
     func setDueDate(cardIds: [Int64], days: String) async throws -> Anki_Collection_OpChanges
-    func scheduleCardsAsNew(cardIds: [Int64], log: Bool, restorePosition: Bool, resetCounts: Bool) async throws -> Anki_Collection_OpChanges
+    func scheduleCardsAsNew(cardIds: [Int64], log: Bool, restorePosition: Bool, resetCounts: Bool) async throws
+        -> Anki_Collection_OpChanges
     func addNoteTags(noteIds: [Int64], tags: String) async throws -> Anki_Collection_OpChangesWithCount
     func removeNoteTags(noteIds: [Int64], tags: String) async throws -> Anki_Collection_OpChangesWithCount
     func getGraphs(search: String, days: UInt32) async throws -> Anki_Stats_GraphsResponse
@@ -33,5 +41,9 @@ protocol AnkiServiceProtocol: Sendable {
     func allTags() async throws -> Anki_Generic_StringList
     func getCard(id: Int64) async throws -> Anki_Cards_Card
     func updateNotes(notes: [Anki_Notes_Note]) async throws -> Anki_Collection_OpChanges
-    func buryOrSuspendCards(cardIds: [Int64], noteIds: [Int64], mode: Anki_Scheduler_BuryOrSuspendCardsRequest.Mode) async throws -> Anki_Collection_OpChangesWithCount
+    func buryOrSuspendCards(
+        cardIds: [Int64],
+        noteIds: [Int64],
+        mode: Anki_Scheduler_BuryOrSuspendCardsRequest.Mode
+    ) async throws -> Anki_Collection_OpChangesWithCount
 }

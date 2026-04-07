@@ -64,16 +64,16 @@ impl RemainingLimits {
         today: u32,
         new_cards_ignore_review_limit: bool,
     ) -> Self {
-        if let Ok(normal) = deck.normal() {
-            if let Some(config) = config {
-                return Self::new_for_normal_deck(
-                    deck,
-                    today,
-                    new_cards_ignore_review_limit,
-                    normal,
-                    config,
-                );
-            }
+        if let Ok(normal) = deck.normal()
+            && let Some(config) = config
+        {
+            return Self::new_for_normal_deck(
+                deck,
+                today,
+                new_cards_ignore_review_limit,
+                normal,
+                config,
+            );
         }
         Self::default()
     }

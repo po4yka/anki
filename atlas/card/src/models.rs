@@ -126,15 +126,15 @@ impl CardManifest {
         require_non_empty(&mut errors, "source_anchor", &source_anchor);
         require_non_empty(&mut errors, "note_id", &note_id);
         require_non_empty(&mut errors, "note_title", &note_title);
-        if let Some(ref h) = hash6 {
-            if !is_valid_hash6(h) {
-                errors.push(format!("hash6 must be exactly 6 hex chars, got '{h}'"));
-            }
+        if let Some(ref h) = hash6
+            && !is_valid_hash6(h)
+        {
+            errors.push(format!("hash6 must be exactly 6 hex chars, got '{h}'"));
         }
-        if let Some(d) = difficulty {
-            if !(0.0..=1.0).contains(&d) {
-                errors.push(format!("difficulty must be in [0.0, 1.0], got {d}"));
-            }
+        if let Some(d) = difficulty
+            && !(0.0..=1.0).contains(&d)
+        {
+            errors.push(format!("difficulty must be in [0.0, 1.0], got {d}"));
         }
 
         if !errors.is_empty() {
