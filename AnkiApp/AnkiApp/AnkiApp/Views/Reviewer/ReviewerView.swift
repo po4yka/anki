@@ -57,6 +57,10 @@ struct ReviewerView: View {
                                 .buttonStyle(.borderless)
                                 .help("Replay Audio")
                             }
+
+                            flagMenu(model: model)
+
+                            moreMenu(model: model)
                         }
                         .padding(.horizontal)
                         .padding(.top, 8)
@@ -151,6 +155,81 @@ struct ReviewerView: View {
         let fileURL = mediaFolder.appendingPathComponent(filename)
         audioPlayer = AVPlayer(url: fileURL)
         audioPlayer?.play()
+    }
+
+    private func flagMenu(model: ReviewerModel) -> some View {
+        Menu {
+            Button {
+                Task { await model.flagCard(flag: 0) }
+            } label: {
+                Label("No Flag", systemImage: "flag.slash")
+            }
+            .keyboardShortcut("1", modifiers: .command)
+
+            Button {
+                Task { await model.flagCard(flag: 1) }
+            } label: {
+                Label("Red", systemImage: "flag.fill")
+            }
+            .keyboardShortcut("2", modifiers: .command)
+
+            Button {
+                Task { await model.flagCard(flag: 2) }
+            } label: {
+                Label("Orange", systemImage: "flag.fill")
+            }
+            .keyboardShortcut("3", modifiers: .command)
+
+            Button {
+                Task { await model.flagCard(flag: 3) }
+            } label: {
+                Label("Green", systemImage: "flag.fill")
+            }
+            .keyboardShortcut("4", modifiers: .command)
+
+            Button {
+                Task { await model.flagCard(flag: 4) }
+            } label: {
+                Label("Blue", systemImage: "flag.fill")
+            }
+            .keyboardShortcut("5", modifiers: .command)
+        } label: {
+            Image(systemName: model.currentFlag > 0 ? "flag.fill" : "flag")
+                .foregroundStyle(flagColor(model.currentFlag))
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .help("Flag Card")
+    }
+
+    private func moreMenu(model: ReviewerModel) -> some View {
+        Menu {
+            Button("Bury Card") {
+                Task { await model.buryCard() }
+            }
+            Button("Bury Note") {
+                Task { await model.buryNote() }
+            }
+            Divider()
+            Button("Suspend Card") {
+                Task { await model.suspendCard() }
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .help("More Actions")
+    }
+
+    private func flagColor(_ flag: UInt32) -> Color {
+        switch flag {
+        case 1: return .red
+        case 2: return .orange
+        case 3: return .green
+        case 4: return .blue
+        default: return .primary
+        }
     }
 
     private func replayAudio() {

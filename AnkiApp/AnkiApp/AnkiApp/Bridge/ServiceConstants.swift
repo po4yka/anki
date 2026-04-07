@@ -50,8 +50,10 @@ enum DecksMethod {
     static let addDeck: UInt32 = 1
     static let deckTree: UInt32 = 4
     static let getDeck: UInt32 = 8
+    static let updateDeck: UInt32 = 9
     static let getDeckNames: UInt32 = 13
     static let removeDecks: UInt32 = 16
+    static let renameDeck: UInt32 = 18
     static let setCurrentDeck: UInt32 = 22
     static let getCurrentDeck: UInt32 = 23
 }
@@ -113,6 +115,13 @@ enum ImportExportMethod {
 enum MediaMethod {
     static let checkMedia: UInt32 = 0
     static let addMediaFile: UInt32 = 1
+}
+
+enum DeckConfigMethod {
+    static let getDeckConfig: UInt32 = 1
+    static let removeDeckConfig: UInt32 = 5
+    static let getDeckConfigsForUpdate: UInt32 = 6
+    static let updateDeckConfigs: UInt32 = 7
 }
 
 enum ConfigMethod {

@@ -285,4 +285,113 @@ actor AnkiService: AnkiServiceProtocol {
             input: auth
         )
     }
+
+    func newDeck() async throws -> Anki_Decks_Deck {
+        let req = Anki_Generic_Empty()
+        return try backend.command(
+            service: ServiceIndex.decks,
+            method: DecksMethod.newDeck,
+            input: req
+        )
+    }
+
+    func addDeck(deck: Anki_Decks_Deck) async throws -> Anki_Collection_OpChangesWithId {
+        return try backend.command(
+            service: ServiceIndex.decks,
+            method: DecksMethod.addDeck,
+            input: deck
+        )
+    }
+
+    func getDeck(id: Int64) async throws -> Anki_Decks_Deck {
+        var req = Anki_Decks_DeckId()
+        req.did = id
+        return try backend.command(
+            service: ServiceIndex.decks,
+            method: DecksMethod.getDeck,
+            input: req
+        )
+    }
+
+    func updateDeck(deck: Anki_Decks_Deck) async throws -> Anki_Collection_OpChanges {
+        return try backend.command(
+            service: ServiceIndex.decks,
+            method: DecksMethod.updateDeck,
+            input: deck
+        )
+    }
+
+    func removeDecks(ids: [Int64]) async throws -> Anki_Collection_OpChangesWithCount {
+        var req = Anki_Decks_DeckIds()
+        req.dids = ids
+        return try backend.command(
+            service: ServiceIndex.decks,
+            method: DecksMethod.removeDecks,
+            input: req
+        )
+    }
+
+    func renameDeck(deckId: Int64, newName: String) async throws -> Anki_Collection_OpChanges {
+        var req = Anki_Decks_RenameDeckRequest()
+        req.deckID = deckId
+        req.newName = newName
+        return try backend.command(
+            service: ServiceIndex.decks,
+            method: DecksMethod.renameDeck,
+            input: req
+        )
+    }
+
+    func getDeckConfigsForUpdate(deckId: Int64) async throws -> Anki_DeckConfig_DeckConfigsForUpdate {
+        var req = Anki_Decks_DeckId()
+        req.did = deckId
+        return try backend.command(
+            service: ServiceIndex.deckConfig,
+            method: DeckConfigMethod.getDeckConfigsForUpdate,
+            input: req
+        )
+    }
+
+    func updateDeckConfigs(request: Anki_DeckConfig_UpdateDeckConfigsRequest) async throws -> Anki_Collection_OpChanges {
+        return try backend.command(
+            service: ServiceIndex.deckConfig,
+            method: DeckConfigMethod.updateDeckConfigs,
+            input: request
+        )
+    }
+
+    func addMediaFile(desiredName: String, data: Data) async throws -> String {
+        var req = Anki_Media_AddMediaFileRequest()
+        req.desiredName = desiredName
+        req.data = data
+        let response: Anki_Generic_String = try backend.command(
+            service: ServiceIndex.media,
+            method: MediaMethod.addMediaFile,
+            input: req
+        )
+        return response.val
+    }
+
+    func buryOrSuspendCards(cardIds: [Int64], noteIds: [Int64], mode: Anki_Scheduler_BuryOrSuspendCardsRequest.Mode) async throws -> Anki_Collection_OpChangesWithCount {
+        var req = Anki_Scheduler_BuryOrSuspendCardsRequest()
+        req.cardIds = cardIds
+        req.noteIds = noteIds
+        req.mode = mode
+        return try backend.command(
+            service: ServiceIndex.scheduler,
+            method: SchedulerMethod.buryOrSuspendCards,
+            input: req
+        )
+    }
+
+    func setFlag(cardIds: [Int64], flag: UInt32) async throws -> Anki_Collection_OpChangesWithCount {
+        var req = Anki_Cards_SetFlagRequest()
+        req.cardIds = cardIds
+        req.flag = flag
+        return try backend.command(
+            service: ServiceIndex.cards,
+            method: CardsMethod.setFlag,
+            input: req
+        )
+    }
 }

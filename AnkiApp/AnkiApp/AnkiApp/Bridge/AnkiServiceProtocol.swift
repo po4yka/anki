@@ -35,4 +35,15 @@ protocol AnkiServiceProtocol: Sendable {
     func syncCollection(auth: Anki_Sync_SyncAuth, syncMedia: Bool) async throws -> Anki_Sync_SyncCollectionResponse
     func fullUploadOrDownload(auth: Anki_Sync_SyncAuth, upload: Bool, serverUsn: Int32?) async throws
     func syncMedia(auth: Anki_Sync_SyncAuth) async throws
+    func newDeck() async throws -> Anki_Decks_Deck
+    func addDeck(deck: Anki_Decks_Deck) async throws -> Anki_Collection_OpChangesWithId
+    func getDeck(id: Int64) async throws -> Anki_Decks_Deck
+    func updateDeck(deck: Anki_Decks_Deck) async throws -> Anki_Collection_OpChanges
+    func removeDecks(ids: [Int64]) async throws -> Anki_Collection_OpChangesWithCount
+    func renameDeck(deckId: Int64, newName: String) async throws -> Anki_Collection_OpChanges
+    func getDeckConfigsForUpdate(deckId: Int64) async throws -> Anki_DeckConfig_DeckConfigsForUpdate
+    func updateDeckConfigs(request: Anki_DeckConfig_UpdateDeckConfigsRequest) async throws -> Anki_Collection_OpChanges
+    func addMediaFile(desiredName: String, data: Data) async throws -> String
+    func buryOrSuspendCards(cardIds: [Int64], noteIds: [Int64], mode: Anki_Scheduler_BuryOrSuspendCardsRequest.Mode) async throws -> Anki_Collection_OpChangesWithCount
+    func setFlag(cardIds: [Int64], flag: UInt32) async throws -> Anki_Collection_OpChangesWithCount
 }

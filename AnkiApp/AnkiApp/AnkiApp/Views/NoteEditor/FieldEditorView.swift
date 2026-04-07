@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct FieldEditorView: View {
     let label: String
@@ -6,6 +7,7 @@ struct FieldEditorView: View {
     var isPlainText: Bool = true
     var isClozeNotetype: Bool = false
     var onCloze: (() -> Void)?
+    var onAttachImage: ((_ coordinator: RichFieldEditor.Coordinator?) -> Void)?
 
     @State private var richEditorCoordinator: RichFieldEditor.Coordinator?
 
@@ -30,7 +32,8 @@ struct FieldEditorView: View {
                         onBold: { richEditorCoordinator?.executeCommand("bold") },
                         onItalic: { richEditorCoordinator?.executeCommand("italic") },
                         onUnderline: { richEditorCoordinator?.executeCommand("underline") },
-                        onCloze: onCloze
+                        onCloze: onCloze,
+                        onAttachImage: onAttachImage != nil ? { onAttachImage?(richEditorCoordinator) } : nil
                     )
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)

@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct NoteEditorView: View {
     @Environment(AppState.self) private var appState
@@ -33,6 +34,20 @@ struct NoteEditorView: View {
                                         model.fields[index] = ClozeHelper.insertCloze(
                                             into: field, at: range, number: num
                                         )
+                                    }
+                                },
+                                onAttachImage: { coordinator in
+                                    let panel = NSOpenPanel()
+                                    panel.allowedContentTypes = [.image, .png, .jpeg, .gif, .webP]
+                                    panel.allowsMultipleSelection = false
+                                    panel.canChooseDirectories = false
+                                    guard panel.runModal() == .OK, let url = panel.url else { return }
+                                    Task {
+                                        guard let data = try? Data(contentsOf: url) else { return }
+                                        let filename = url.lastPathComponent
+                                        if let actualName = await model.attachImage(desiredName: filename, data: data) {
+                                            coordinator?.insertHTML("<img src=\"\(actualName)\">")
+                                        }
                                     }
                                 }
                             )

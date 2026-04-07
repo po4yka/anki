@@ -172,4 +172,16 @@ final class NoteEditorModel {
             return nil
         }
     }
+
+    func attachImage(desiredName: String, data: Data) async -> String? {
+        do {
+            let actualName = try await service.addMediaFile(desiredName: desiredName, data: data)
+            return actualName
+        } catch let e as AnkiError {
+            error = e
+            return nil
+        } catch {
+            return nil
+        }
+    }
 }

@@ -6,6 +6,7 @@ struct FormattingToolbar: View {
     var onItalic: () -> Void
     var onUnderline: () -> Void
     var onCloze: (() -> Void)?
+    var onAttachImage: (() -> Void)?
 
     var body: some View {
         HStack(spacing: 8) {
@@ -23,6 +24,16 @@ struct FormattingToolbar: View {
                 Image(systemName: "underline")
             }
             .help("Underline")
+
+            if let onAttachImage {
+                Divider()
+                    .frame(height: 16)
+
+                Button(action: onAttachImage) {
+                    Image(systemName: "photo")
+                }
+                .help("Attach image")
+            }
 
             if isClozeNotetype, let onCloze {
                 Divider()
@@ -44,7 +55,8 @@ struct FormattingToolbar: View {
         onBold: {},
         onItalic: {},
         onUnderline: {},
-        onCloze: {}
+        onCloze: {},
+        onAttachImage: {}
     )
     .padding()
 }

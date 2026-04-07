@@ -4,6 +4,8 @@ struct DeckBrowserView: View {
     @Environment(AppState.self) private var appState
     @State private var model: DeckBrowserModel?
     @State private var showingReviewer = false
+    @State private var showingNewDeckAlert = false
+    @State private var newDeckName = ""
 
     var body: some View {
         Group {
@@ -38,11 +40,30 @@ struct DeckBrowserView: View {
                     .navigationTitle("Decks")
                     .toolbar {
                         ToolbarItem {
+                            Button("New Deck") {
+                                newDeckName = ""
+                                showingNewDeckAlert = true
+                            }
+                            .keyboardShortcut("d", modifiers: [.command, .shift])
+                        }
+                        ToolbarItem {
                             Button("Add Note") {
                                 // TODO: open add-note window
                             }
                             .keyboardShortcut("n", modifiers: .command)
                         }
+                    }
+                    .alert("New Deck", isPresented: $showingNewDeckAlert) {
+                        TextField("Deck Name", text: $newDeckName)
+                        Button("Create") {
+                            let name = newDeckName.trimmingCharacters(in: .whitespacesAndNewlines)
+                            if !name.isEmpty {
+                                Task { await model?.createDeck(name: name) }
+                            }
+                        }
+                        Button("Cancel", role: .cancel) {}
+                    } message: {
+                        Text("Enter a name for the new deck.")
                     }
                     .sheet(isPresented: $showingReviewer) {
                         ReviewerView()

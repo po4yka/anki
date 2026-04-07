@@ -5,6 +5,10 @@ struct DeckRowView: View {
     let model: DeckBrowserModel
     @Environment(AppState.self) private var appState
     @State private var showingReviewer = false
+    @State private var showingRenameAlert = false
+    @State private var showingDeleteConfirm = false
+    @State private var showingDeckConfig = false
+    @State private var renameName = ""
 
     var body: some View {
         HStack {
@@ -28,9 +32,44 @@ struct DeckRowView: View {
             .controlSize(.small)
             .disabled(node.newCount == 0 && node.learnCount == 0 && node.reviewCount == 0)
         }
+        .contextMenu {
+            Button("Rename...") {
+                renameName = node.name
+                showingRenameAlert = true
+            }
+            Button("Delete...", role: .destructive) {
+                showingDeleteConfirm = true
+            }
+            Divider()
+            Button("Options...") {
+                showingDeckConfig = true
+            }
+        }
+        .alert("Rename Deck", isPresented: $showingRenameAlert) {
+            TextField("Deck Name", text: $renameName)
+            Button("Rename") {
+                let name = renameName.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !name.isEmpty && name != node.name {
+                    Task { await model.renameDeck(deckId: node.deckID, newName: name) }
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Enter a new name for \"\(node.name)\".")
+        }
+        .confirmationDialog("Delete \"\(node.name)\"?", isPresented: $showingDeleteConfirm) {
+            Button("Delete", role: .destructive) {
+                Task { await model.deleteDeck(deckId: node.deckID) }
+            }
+        } message: {
+            Text("This will delete the deck and all its cards. This action cannot be undone.")
+        }
         .sheet(isPresented: $showingReviewer) {
             ReviewerView()
                 .environment(appState)
+        }
+        .sheet(isPresented: $showingDeckConfig) {
+            DeckConfigView(deckId: node.deckID, deckName: node.name, service: appState.service)
         }
     }
 }

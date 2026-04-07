@@ -82,6 +82,53 @@ final class ReviewerModel {
         } catch {}
     }
 
+    var currentFlag: UInt32 {
+        queuedCards?.cards.first?.card.flags ?? 0
+    }
+
+    func buryCard() async {
+        guard let cardId = queuedCards?.cards.first?.card.id else { return }
+        do {
+            _ = try await service.buryOrSuspendCards(cardIds: [cardId], noteIds: [], mode: .buryUser)
+            await loadQueue()
+            await refreshUndoStatus()
+        } catch let e as AnkiError {
+            error = e
+        } catch {}
+    }
+
+    func buryNote() async {
+        guard let noteId = queuedCards?.cards.first?.card.noteID else { return }
+        do {
+            _ = try await service.buryOrSuspendCards(cardIds: [], noteIds: [noteId], mode: .buryUser)
+            await loadQueue()
+            await refreshUndoStatus()
+        } catch let e as AnkiError {
+            error = e
+        } catch {}
+    }
+
+    func suspendCard() async {
+        guard let cardId = queuedCards?.cards.first?.card.id else { return }
+        do {
+            _ = try await service.buryOrSuspendCards(cardIds: [cardId], noteIds: [], mode: .suspend)
+            await loadQueue()
+            await refreshUndoStatus()
+        } catch let e as AnkiError {
+            error = e
+        } catch {}
+    }
+
+    func flagCard(flag: UInt32) async {
+        guard let cardId = queuedCards?.cards.first?.card.id else { return }
+        do {
+            _ = try await service.setFlag(cardIds: [cardId], flag: flag)
+            await loadQueue()
+        } catch let e as AnkiError {
+            error = e
+        } catch {}
+    }
+
     private func refreshUndoStatus() async {
         do {
             let status = try await service.getUndoStatus()
