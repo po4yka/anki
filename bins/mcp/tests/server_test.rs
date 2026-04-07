@@ -140,7 +140,7 @@ fn test_server() -> AnkiAtlasServer {
         Arc::new(NoopSearch),
         Arc::new(NoopAnalytics),
     );
-    AnkiAtlasServer::new(Arc::new(services))
+    AnkiAtlasServer::new(Arc::new(services), None)
 }
 
 #[tokio::test]
@@ -154,15 +154,19 @@ async fn server_name_and_version_are_set() {
 async fn server_registers_expected_tool_set() {
     let server = test_server();
     let names = server.tool_names();
-    assert_eq!(server.tool_count(), 15);
+    assert_eq!(server.tool_count(), 20);
     assert_eq!(
         names,
         vec![
+            "ankiatlas_create_notetype",
+            "ankiatlas_delete_notetype",
             "ankiatlas_duplicates",
             "ankiatlas_generate",
+            "ankiatlas_get_notetype",
             "ankiatlas_index_job",
             "ankiatlas_job_cancel",
             "ankiatlas_job_status",
+            "ankiatlas_list_notetypes",
             "ankiatlas_obsidian_sync",
             "ankiatlas_search",
             "ankiatlas_search_chunks",
@@ -172,6 +176,7 @@ async fn server_registers_expected_tool_set() {
             "ankiatlas_topic_gaps",
             "ankiatlas_topic_weak_notes",
             "ankiatlas_topics",
+            "ankiatlas_update_notetype",
             "ankiatlas_validate",
         ]
     );

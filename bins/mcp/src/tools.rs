@@ -341,3 +341,157 @@ pub struct ToolError {
     pub message: String,
     pub details: Option<String>,
 }
+
+// =================== Notetype tools ===================
+
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct ListNotetypesToolInput {
+    #[serde(default)]
+    pub output_mode: OutputMode,
+}
+
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct NotetypeSummary {
+    pub id: i64,
+    pub name: String,
+    pub kind: String,
+    pub field_count: usize,
+    pub template_count: usize,
+}
+
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct ListNotetypesToolResult {
+    pub total: usize,
+    pub notetypes: Vec<NotetypeSummary>,
+}
+
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct GetNotetypeToolInput {
+    #[serde(default)]
+    pub output_mode: OutputMode,
+    pub notetype_id: Option<i64>,
+    pub notetype_name: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct FieldDetail {
+    pub ord: u32,
+    pub name: String,
+    pub sticky: bool,
+    pub rtl: bool,
+    pub plain_text: bool,
+    pub font_name: String,
+    pub font_size: u32,
+    pub description: String,
+    pub exclude_from_search: bool,
+    pub prevent_deletion: bool,
+}
+
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct TemplateDetail {
+    pub ord: u32,
+    pub name: String,
+    pub q_format: String,
+    pub a_format: String,
+    pub q_format_browser: String,
+    pub a_format_browser: String,
+    pub target_deck_id: i64,
+}
+
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct NotetypeDetailToolResult {
+    pub id: i64,
+    pub name: String,
+    pub kind: String,
+    pub css: String,
+    pub sort_field_idx: u32,
+    pub fields: Vec<FieldDetail>,
+    pub templates: Vec<TemplateDetail>,
+}
+
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct MutationToolResult {
+    pub notetype_id: i64,
+    pub notetype_name: String,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct FieldSpec {
+    pub name: String,
+    pub ord: Option<u32>,
+    #[serde(default)]
+    pub sticky: Option<bool>,
+    #[serde(default)]
+    pub rtl: Option<bool>,
+    #[serde(default)]
+    pub plain_text: Option<bool>,
+    #[serde(default)]
+    pub font_name: Option<String>,
+    #[serde(default)]
+    pub font_size: Option<u32>,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub exclude_from_search: Option<bool>,
+    #[serde(default)]
+    pub prevent_deletion: Option<bool>,
+}
+
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct TemplateSpec {
+    pub name: String,
+    pub ord: Option<u32>,
+    pub q_format: String,
+    pub a_format: String,
+    #[serde(default)]
+    pub q_format_browser: Option<String>,
+    #[serde(default)]
+    pub a_format_browser: Option<String>,
+    #[serde(default)]
+    pub target_deck_id: Option<i64>,
+}
+
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct CreateNotetypeToolInput {
+    #[serde(default)]
+    pub output_mode: OutputMode,
+    pub name: String,
+    /// One of: "basic", "basic_and_reversed", "basic_optional_reversed", "basic_typing", "cloze", "image_occlusion"
+    pub stock_kind: Option<String>,
+    /// One of: "normal", "cloze". Used only when stock_kind is not set.
+    #[serde(default)]
+    pub kind: Option<String>,
+    #[serde(default)]
+    pub fields: Option<Vec<FieldSpec>>,
+    #[serde(default)]
+    pub templates: Option<Vec<TemplateSpec>>,
+    #[serde(default)]
+    pub css: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct UpdateNotetypeToolInput {
+    #[serde(default)]
+    pub output_mode: OutputMode,
+    pub notetype_id: i64,
+    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(default)]
+    pub css: Option<String>,
+    #[serde(default)]
+    pub kind: Option<String>,
+    #[serde(default)]
+    pub sort_field_idx: Option<u32>,
+    #[serde(default)]
+    pub fields: Option<Vec<FieldSpec>>,
+    #[serde(default)]
+    pub templates: Option<Vec<TemplateSpec>>,
+}
+
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct DeleteNotetypeToolInput {
+    #[serde(default)]
+    pub output_mode: OutputMode,
+    pub notetype_id: i64,
+}

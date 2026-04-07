@@ -18,6 +18,8 @@ common = { path = "../../atlas/common" }
 jobs = { path = "../../atlas/jobs" }
 surface-contracts = { path = "../../atlas/surface-contracts" }
 surface-runtime = { path = "../../atlas/surface-runtime" }
+anki = { path = "../../rslib" }
+anki_i18n = { path = "../../rslib/i18n" }
 
 rmcp = { workspace = true }
 sqlx = { workspace = true }

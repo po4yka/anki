@@ -265,6 +265,8 @@ dependencies = [
 name = "anki-atlas-mcp"
 version = "0.0.0"
 dependencies = [
+ "anki",
+ "anki_i18n",
  "anyhow",
  "async-trait",
  "chrono",

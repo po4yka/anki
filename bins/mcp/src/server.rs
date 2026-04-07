@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use crate::collection::CollectionFacade;
 use common::logging::{LoggingConfig, init_global_logging};
 use jobs::types::{IndexJobPayload, SyncJobPayload};
 use rmcp::handler::server::{router::tool::ToolRouter, wrapper::Parameters};
@@ -20,25 +21,29 @@ use surface_runtime::{BuildSurfaceServicesOptions, SurfaceError, SurfaceServices
 use crate::formatters;
 use crate::handlers::{error_result, success_result};
 use crate::tools::{
-    ChunkSearchResultView, ChunkSearchToolInput, ChunkSearchToolResult, DuplicatesToolInput,
-    DuplicatesToolResult, GenerateToolInput, IndexJobToolInput, JobAcceptedToolResult,
-    JobCancelToolInput, JobStatusToolInput, JobStatusToolResult, ObsidianSyncToolInput,
-    SearchResultView, SearchToolInput, SearchToolResult, SyncJobToolInput, TagAuditToolInput,
-    ToolError, TopicCoverageToolInput, TopicCoverageToolResult, TopicGapsToolInput,
-    TopicGapsToolResult, TopicWeakNotesToolInput, TopicWeakNotesToolResult, TopicsToolInput,
-    TopicsToolResult, ValidateToolInput, WorkflowToolResult,
+    ChunkSearchResultView, ChunkSearchToolInput, ChunkSearchToolResult, CreateNotetypeToolInput,
+    DeleteNotetypeToolInput, DuplicatesToolInput, DuplicatesToolResult, GenerateToolInput,
+    GetNotetypeToolInput, IndexJobToolInput, JobAcceptedToolResult, JobCancelToolInput,
+    JobStatusToolInput, JobStatusToolResult, ListNotetypesToolInput, ListNotetypesToolResult,
+    MutationToolResult, ObsidianSyncToolInput, SearchResultView, SearchToolInput, SearchToolResult,
+    SyncJobToolInput, TagAuditToolInput, ToolError, TopicCoverageToolInput,
+    TopicCoverageToolResult, TopicGapsToolInput, TopicGapsToolResult, TopicWeakNotesToolInput,
+    TopicWeakNotesToolResult, TopicsToolInput, TopicsToolResult, UpdateNotetypeToolInput,
+    ValidateToolInput, WorkflowToolResult,
 };
 
 #[derive(Clone)]
 pub struct AnkiAtlasServer {
     services: Arc<SurfaceServices>,
+    collection: Option<Arc<CollectionFacade>>,
     tool_router: ToolRouter<Self>,
 }
 
 impl AnkiAtlasServer {
-    pub fn new(services: Arc<SurfaceServices>) -> Self {
+    pub fn new(services: Arc<SurfaceServices>, collection: Option<Arc<CollectionFacade>>) -> Self {
         Self {
             services,
+            collection,
             tool_router: Self::tool_router(),
         }
     }
@@ -90,6 +95,16 @@ impl AnkiAtlasServer {
             SurfaceError::Provider(message) => Self::tool_error("provider_error", message, None),
             other => Self::tool_error("internal_error", other.to_string(), None),
         }
+    }
+
+    fn col_facade(&self) -> Result<Arc<CollectionFacade>, rmcp::ErrorData> {
+        self.collection.clone().ok_or_else(|| {
+            rmcp::ErrorData::new(
+                rmcp::model::ErrorCode::INTERNAL_ERROR,
+                "ANKIATLAS_ANKI_COLLECTION_PATH is not configured",
+                None,
+            )
+        })
     }
 }
 
@@ -913,6 +928,400 @@ impl AnkiAtlasServer {
             Err(error) => error_result(input.output_mode, Self::surface_error(error)),
         }
     }
+
+    #[tool(
+        name = "ankiatlas_list_notetypes",
+        description = "List all notetypes in the Anki collection with their names, IDs, kinds, and field/template counts"
+    )]
+    async fn ankiatlas_list_notetypes(
+        &self,
+        Parameters(input): Parameters<ListNotetypesToolInput>,
+    ) -> Result<rmcp::model::CallToolResult, rmcp::ErrorData> {
+        let facade = self.col_facade()?;
+        match facade
+            .with_col(|col| {
+                let notetypes = col.get_all_notetypes()?;
+                let summaries: Vec<_> = notetypes
+                    .into_iter()
+                    .map(|nt| crate::tools::NotetypeSummary {
+                        id: nt.id.0,
+                        name: nt.name.clone(),
+                        kind: if nt.config.kind() == anki::notetype::NotetypeKind::Cloze {
+                            "cloze".into()
+                        } else {
+                            "normal".into()
+                        },
+                        field_count: nt.fields.len(),
+                        template_count: nt.templates.len(),
+                    })
+                    .collect();
+                Ok(summaries)
+            })
+            .await
+        {
+            Ok(notetypes) => {
+                let total = notetypes.len();
+                let result = ListNotetypesToolResult { total, notetypes };
+                success_result(
+                    input.output_mode,
+                    formatters::format_notetype_list(&result),
+                    &result,
+                )
+            }
+            Err(e) => error_result(
+                input.output_mode,
+                Self::tool_error("collection_error", e, None),
+            ),
+        }
+    }
+
+    #[tool(
+        name = "ankiatlas_get_notetype",
+        description = "Get full details of a notetype including all fields, templates (with front/back HTML), and CSS. Provide either notetype_id or notetype_name."
+    )]
+    async fn ankiatlas_get_notetype(
+        &self,
+        Parameters(input): Parameters<GetNotetypeToolInput>,
+    ) -> Result<rmcp::model::CallToolResult, rmcp::ErrorData> {
+        let facade = self.col_facade()?;
+        let id = input.notetype_id;
+        let name = input.notetype_name.clone();
+        match facade
+            .with_col(move |col| {
+                use anki::error::OrNotFound;
+                let nt = if let Some(ntid) = id {
+                    col.get_notetype(anki::notetype::NotetypeId(ntid))?
+                } else if let Some(ref n) = name {
+                    col.get_notetype_by_name(n)?
+                } else {
+                    use anki::error::OrInvalid;
+                    return None::<()>
+                        .or_invalid("provide notetype_id or notetype_name")
+                        .map(|_| unreachable!());
+                };
+                nt.or_not_found(0i64)
+            })
+            .await
+        {
+            Ok(nt) => {
+                let result = crate::tools::NotetypeDetailToolResult {
+                    id: nt.id.0,
+                    name: nt.name.clone(),
+                    kind: if nt.config.kind() == anki::notetype::NotetypeKind::Cloze {
+                        "cloze".into()
+                    } else {
+                        "normal".into()
+                    },
+                    css: nt.config.css.clone(),
+                    sort_field_idx: nt.config.sort_field_idx,
+                    fields: nt
+                        .fields
+                        .iter()
+                        .map(|f| crate::tools::FieldDetail {
+                            ord: f.ord.unwrap_or(0),
+                            name: f.name.clone(),
+                            sticky: f.config.sticky,
+                            rtl: f.config.rtl,
+                            plain_text: f.config.plain_text,
+                            font_name: f.config.font_name.clone(),
+                            font_size: f.config.font_size,
+                            description: f.config.description.clone(),
+                            exclude_from_search: f.config.exclude_from_search,
+                            prevent_deletion: f.config.prevent_deletion,
+                        })
+                        .collect(),
+                    templates: nt
+                        .templates
+                        .iter()
+                        .map(|t| crate::tools::TemplateDetail {
+                            ord: t.ord.unwrap_or(0),
+                            name: t.name.clone(),
+                            q_format: t.config.q_format.clone(),
+                            a_format: t.config.a_format.clone(),
+                            q_format_browser: t.config.q_format_browser.clone(),
+                            a_format_browser: t.config.a_format_browser.clone(),
+                            target_deck_id: t.config.target_deck_id,
+                        })
+                        .collect(),
+                };
+                success_result(
+                    input.output_mode,
+                    formatters::format_notetype_detail(&result),
+                    &result,
+                )
+            }
+            Err(e) => error_result(
+                input.output_mode,
+                Self::tool_error("collection_error", e, None),
+            ),
+        }
+    }
+
+    #[tool(
+        name = "ankiatlas_create_notetype",
+        description = "Create a new notetype. Use stock_kind ('basic', 'basic_and_reversed', 'basic_optional_reversed', 'basic_typing', 'cloze', 'image_occlusion') to start from a built-in template, or provide custom fields and templates."
+    )]
+    async fn ankiatlas_create_notetype(
+        &self,
+        Parameters(input): Parameters<CreateNotetypeToolInput>,
+    ) -> Result<rmcp::model::CallToolResult, rmcp::ErrorData> {
+        let facade = self.col_facade()?;
+        match facade
+            .with_col(move |col| {
+                use anki::notetype::{CardTemplate, NoteField, Notetype, NotetypeKind};
+
+                let mut nt = if let Some(ref sk) = input.stock_kind {
+                    use anki::notetype::all_stock_notetypes;
+                    let tr = anki_i18n::I18n::template_only();
+                    let mut stock = all_stock_notetypes(&tr);
+                    let idx = match sk.as_str() {
+                        "basic" => 0,
+                        "basic_and_reversed" => 1,
+                        "basic_optional_reversed" => 2,
+                        "basic_typing" => 3,
+                        "cloze" => 4,
+                        "image_occlusion" => 5,
+                        other => {
+                            use anki::error::OrInvalid;
+                            return None::<usize>.or_invalid(format!(
+                                "unknown stock_kind '{}'; use: basic, basic_and_reversed, basic_optional_reversed, basic_typing, cloze, image_occlusion",
+                                other
+                            )).map(|_| unreachable!());
+                        }
+                    };
+                    stock.remove(idx)
+                } else {
+                    let is_cloze = input.kind.as_deref() == Some("cloze");
+                    let mut nt = Notetype::default();
+                    if is_cloze {
+                        nt.config.kind = NotetypeKind::Cloze as i32;
+                    }
+                    if let Some(ref fields) = input.fields {
+                        for spec in fields {
+                            let mut f = NoteField::new(&spec.name);
+                            if let Some(v) = spec.sticky { f.config.sticky = v; }
+                            if let Some(v) = spec.rtl { f.config.rtl = v; }
+                            if let Some(v) = spec.plain_text { f.config.plain_text = v; }
+                            if let Some(ref v) = spec.font_name { f.config.font_name = v.clone(); }
+                            if let Some(v) = spec.font_size { f.config.font_size = v; }
+                            if let Some(ref v) = spec.description { f.config.description = v.clone(); }
+                            if let Some(v) = spec.exclude_from_search { f.config.exclude_from_search = v; }
+                            if let Some(v) = spec.prevent_deletion { f.config.prevent_deletion = v; }
+                            nt.fields.push(f);
+                        }
+                    }
+                    if let Some(ref templates) = input.templates {
+                        for spec in templates {
+                            let mut t = CardTemplate::new(&spec.name, &spec.q_format, &spec.a_format);
+                            if let Some(ref v) = spec.q_format_browser { t.config.q_format_browser = v.clone(); }
+                            if let Some(ref v) = spec.a_format_browser { t.config.a_format_browser = v.clone(); }
+                            if let Some(v) = spec.target_deck_id { t.config.target_deck_id = v; }
+                            nt.templates.push(t);
+                        }
+                    }
+                    nt
+                };
+                nt.name = input.name.clone();
+                if let Some(ref css) = input.css {
+                    nt.config.css = css.clone();
+                }
+                col.add_notetype(&mut nt, false)?;
+                Ok((nt.id.0, nt.name.clone()))
+            })
+            .await
+        {
+            Ok((ntid, ntname)) => {
+                let result = MutationToolResult {
+                    notetype_id: ntid,
+                    notetype_name: ntname,
+                    message: "Created".into(),
+                };
+                success_result(input.output_mode, formatters::format_notetype_mutation(&result), &result)
+            }
+            Err(e) => error_result(
+                input.output_mode,
+                Self::tool_error("collection_error", e, None),
+            ),
+        }
+    }
+
+    #[tool(
+        name = "ankiatlas_update_notetype",
+        description = "Update an existing notetype. Only provided fields are changed. For fields/templates: provide the full desired list (existing items keep their ord, new items omit ord). Handles add/remove/reorder, CSS, name, kind, sort_field_idx."
+    )]
+    async fn ankiatlas_update_notetype(
+        &self,
+        Parameters(input): Parameters<UpdateNotetypeToolInput>,
+    ) -> Result<rmcp::model::CallToolResult, rmcp::ErrorData> {
+        let facade = self.col_facade()?;
+        match facade
+            .with_col(move |col| {
+                use anki::error::OrNotFound;
+                use anki::notetype::{CardTemplate, NoteField, NotetypeId, NotetypeKind};
+
+                let ntid = NotetypeId(input.notetype_id);
+                let existing = col.get_notetype(ntid)?.or_not_found(input.notetype_id)?;
+                let mut nt = (*existing).clone();
+
+                if let Some(ref name) = input.name {
+                    nt.name = name.clone();
+                }
+                if let Some(ref css) = input.css {
+                    nt.config.css = css.clone();
+                }
+                if let Some(ref kind) = input.kind {
+                    nt.config.kind = match kind.as_str() {
+                        "cloze" => NotetypeKind::Cloze as i32,
+                        _ => NotetypeKind::Normal as i32,
+                    };
+                }
+                if let Some(idx) = input.sort_field_idx {
+                    nt.config.sort_field_idx = idx;
+                }
+                if let Some(ref field_specs) = input.fields {
+                    nt.fields = field_specs
+                        .iter()
+                        .map(|spec| {
+                            let mut f = if let Some(ord) = spec.ord {
+                                existing
+                                    .fields
+                                    .iter()
+                                    .find(|f| f.ord == Some(ord))
+                                    .cloned()
+                                    .unwrap_or_else(|| NoteField::new(&spec.name))
+                            } else {
+                                NoteField::new(&spec.name)
+                            };
+                            f.name = spec.name.clone();
+                            if let Some(v) = spec.sticky {
+                                f.config.sticky = v;
+                            }
+                            if let Some(v) = spec.rtl {
+                                f.config.rtl = v;
+                            }
+                            if let Some(v) = spec.plain_text {
+                                f.config.plain_text = v;
+                            }
+                            if let Some(ref v) = spec.font_name {
+                                f.config.font_name = v.clone();
+                            }
+                            if let Some(v) = spec.font_size {
+                                f.config.font_size = v;
+                            }
+                            if let Some(ref v) = spec.description {
+                                f.config.description = v.clone();
+                            }
+                            if let Some(v) = spec.exclude_from_search {
+                                f.config.exclude_from_search = v;
+                            }
+                            if let Some(v) = spec.prevent_deletion {
+                                f.config.prevent_deletion = v;
+                            }
+                            f
+                        })
+                        .collect();
+                }
+                if let Some(ref tmpl_specs) = input.templates {
+                    nt.templates = tmpl_specs
+                        .iter()
+                        .map(|spec| {
+                            let mut t = if let Some(ord) = spec.ord {
+                                existing
+                                    .templates
+                                    .iter()
+                                    .find(|t| t.ord == Some(ord))
+                                    .cloned()
+                                    .unwrap_or_else(|| {
+                                        CardTemplate::new(
+                                            &spec.name,
+                                            &spec.q_format,
+                                            &spec.a_format,
+                                        )
+                                    })
+                            } else {
+                                CardTemplate::new(&spec.name, &spec.q_format, &spec.a_format)
+                            };
+                            t.name = spec.name.clone();
+                            t.config.q_format = spec.q_format.clone();
+                            t.config.a_format = spec.a_format.clone();
+                            if let Some(ref v) = spec.q_format_browser {
+                                t.config.q_format_browser = v.clone();
+                            }
+                            if let Some(ref v) = spec.a_format_browser {
+                                t.config.a_format_browser = v.clone();
+                            }
+                            if let Some(v) = spec.target_deck_id {
+                                t.config.target_deck_id = v;
+                            }
+                            t
+                        })
+                        .collect();
+                }
+                col.update_notetype(&mut nt, false)?;
+                Ok((nt.id.0, nt.name.clone()))
+            })
+            .await
+        {
+            Ok((ntid, ntname)) => {
+                let result = MutationToolResult {
+                    notetype_id: ntid,
+                    notetype_name: ntname,
+                    message: "Updated".into(),
+                };
+                success_result(
+                    input.output_mode,
+                    formatters::format_notetype_mutation(&result),
+                    &result,
+                )
+            }
+            Err(e) => error_result(
+                input.output_mode,
+                Self::tool_error("collection_error", e, None),
+            ),
+        }
+    }
+
+    #[tool(
+        name = "ankiatlas_delete_notetype",
+        description = "Delete a notetype and ALL its associated notes and cards. This is destructive and cannot be undone from the MCP. If this is the last notetype, a stock Basic notetype will be created automatically."
+    )]
+    async fn ankiatlas_delete_notetype(
+        &self,
+        Parameters(input): Parameters<DeleteNotetypeToolInput>,
+    ) -> Result<rmcp::model::CallToolResult, rmcp::ErrorData> {
+        let facade = self.col_facade()?;
+        let ntid_val = input.notetype_id;
+        match facade
+            .with_col(move |col| {
+                use anki::notetype::NotetypeId;
+                let ntid = NotetypeId(ntid_val);
+                let name = col
+                    .get_notetype(ntid)?
+                    .map(|nt| nt.name.clone())
+                    .unwrap_or_else(|| format!("id:{ntid_val}"));
+                col.remove_notetype(ntid)?;
+                Ok((ntid_val, name))
+            })
+            .await
+        {
+            Ok((ntid, ntname)) => {
+                let result = MutationToolResult {
+                    notetype_id: ntid,
+                    notetype_name: ntname,
+                    message: "Deleted".into(),
+                };
+                success_result(
+                    input.output_mode,
+                    formatters::format_notetype_mutation(&result),
+                    &result,
+                )
+            }
+            Err(e) => error_result(
+                input.output_mode,
+                Self::tool_error("collection_error", e, None),
+            ),
+        }
+    }
 }
 
 pub async fn run_server() -> anyhow::Result<()> {
@@ -932,8 +1341,15 @@ pub async fn run_server() -> anyhow::Result<()> {
         .await?,
     );
 
+    let collection = settings
+        .anki_collection_path
+        .as_deref()
+        .map(|p| Arc::new(CollectionFacade::new(std::path::PathBuf::from(p))));
+
     let transport = rmcp::transport::stdio();
-    let server = AnkiAtlasServer::new(services).serve(transport).await?;
+    let server = AnkiAtlasServer::new(services, collection)
+        .serve(transport)
+        .await?;
     server.waiting().await?;
     Ok(())
 }

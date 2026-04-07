@@ -1,7 +1,8 @@
 use crate::tools::{
     ChunkSearchToolResult, DuplicatesToolResult, JobAcceptedToolResult, JobStatusToolResult,
-    SearchToolResult, TopicCoverageToolResult, TopicGapsToolResult, TopicWeakNotesToolResult,
-    TopicsToolResult, WorkflowToolResult,
+    ListNotetypesToolResult, MutationToolResult, NotetypeDetailToolResult, SearchToolResult,
+    TopicCoverageToolResult, TopicGapsToolResult, TopicWeakNotesToolResult, TopicsToolResult,
+    WorkflowToolResult,
 };
 
 pub fn format_search(result: &SearchToolResult) -> String {
@@ -102,5 +103,51 @@ pub fn format_workflow(result: &WorkflowToolResult) -> String {
     format!(
         "## Workflow Result\n\nPath: `{}`\n{}\n",
         result.path, result.summary
+    )
+}
+
+pub fn format_notetype_list(result: &ListNotetypesToolResult) -> String {
+    let mut out = format!("## Notetypes\n\nTotal: {}\n\n", result.total);
+    for nt in &result.notetypes {
+        out.push_str(&format!(
+            "- `{}` (id: {}) kind: {} fields: {} templates: {}\n",
+            nt.name, nt.id, nt.kind, nt.field_count, nt.template_count
+        ));
+    }
+    out
+}
+
+pub fn format_notetype_detail(result: &NotetypeDetailToolResult) -> String {
+    let mut out = format!(
+        "## Notetype: {}\n\nID: `{}`\nKind: {}\nSort field index: {}\n\n### Fields\n\n",
+        result.name, result.id, result.kind, result.sort_field_idx
+    );
+    for f in &result.fields {
+        out.push_str(&format!(
+            "- [{}] `{}` font: {} {}pt{}{}{}\n",
+            f.ord,
+            f.name,
+            f.font_name,
+            f.font_size,
+            if f.sticky { " sticky" } else { "" },
+            if f.rtl { " rtl" } else { "" },
+            if f.plain_text { " plain_text" } else { "" },
+        ));
+    }
+    out.push_str("\n### Templates\n\n");
+    for t in &result.templates {
+        out.push_str(&format!(
+            "#### [{}] {}\n\n**Front:**\n```html\n{}\n```\n\n**Back:**\n```html\n{}\n```\n\n",
+            t.ord, t.name, t.q_format, t.a_format
+        ));
+    }
+    out.push_str(&format!("### CSS\n\n```css\n{}\n```\n", result.css));
+    out
+}
+
+pub fn format_notetype_mutation(result: &MutationToolResult) -> String {
+    format!(
+        "## {}\n\nNotetype `{}` (id: `{}`)\n",
+        result.message, result.notetype_name, result.notetype_id
     )
 }

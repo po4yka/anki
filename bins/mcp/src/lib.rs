@@ -1,3 +1,4 @@
+pub mod collection;
 pub mod formatters;
 pub mod handlers;
 pub mod server;
