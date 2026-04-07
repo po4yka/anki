@@ -1,5 +1,6 @@
 import SwiftUI
 
+// swiftlint:disable:next type_body_length
 struct DeckConfigView: View {
     @State private var model: DeckConfigModel
     @Environment(\.dismiss) private var dismiss

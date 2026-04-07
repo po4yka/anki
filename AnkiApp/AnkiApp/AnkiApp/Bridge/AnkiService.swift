@@ -1,4 +1,5 @@
-// swiftlint:disable type_body_length
+// swiftlint:disable file_length
+// swiftlint:disable:next type_body_length
 actor AnkiService: AnkiServiceProtocol {
     private let backend: AnkiBackend
 
@@ -58,6 +59,7 @@ actor AnkiService: AnkiServiceProtocol {
         )
     }
 
+    // swiftlint:disable:next function_parameter_count
     func answerCard(
         cardId: Int64,
         rating: Anki_Scheduler_CardAnswer.Rating,
@@ -153,6 +155,7 @@ actor AnkiService: AnkiServiceProtocol {
         )
     }
 
+    // swiftlint:disable:next function_parameter_count
     func findAndReplace(
         nids: [Int64],
         search: String,
@@ -197,8 +200,7 @@ actor AnkiService: AnkiServiceProtocol {
     }
 
     func scheduleCardsAsNew(cardIds: [Int64], log: Bool, restorePosition: Bool,
-                            resetCounts: Bool) async throws -> Anki_Collection_OpChanges
-    {
+                            resetCounts: Bool) async throws -> Anki_Collection_OpChanges {
         var req = Anki_Scheduler_ScheduleCardsAsNewRequest()
         req.cardIds = cardIds
         req.log = log
@@ -465,8 +467,7 @@ actor AnkiService: AnkiServiceProtocol {
     }
 
     func updateDeckConfigs(request: Anki_DeckConfig_UpdateDeckConfigsRequest) async throws
-        -> Anki_Collection_OpChanges
-    {
+        -> Anki_Collection_OpChanges {
         try backend.command(
             service: ServiceIndex.deckConfig,
             method: DeckConfigMethod.updateDeckConfigs,
@@ -515,8 +516,7 @@ actor AnkiService: AnkiServiceProtocol {
 
     func importAnkiPackage(path: String,
                            options: Anki_ImportExport_ImportAnkiPackageOptions) async throws
-        -> Anki_ImportExport_ImportResponse
-    {
+        -> Anki_ImportExport_ImportResponse {
         var req = Anki_ImportExport_ImportAnkiPackageRequest()
         req.packagePath = path
         req.options = options
@@ -565,8 +565,7 @@ actor AnkiService: AnkiServiceProtocol {
     }
 
     func importCsv(path: String,
-                   metadata: Anki_ImportExport_CsvMetadata) async throws -> Anki_ImportExport_ImportResponse
-    {
+                   metadata: Anki_ImportExport_CsvMetadata) async throws -> Anki_ImportExport_ImportResponse {
         var req = Anki_ImportExport_ImportCsvRequest()
         req.path = path
         req.metadata = metadata
@@ -660,8 +659,7 @@ actor AnkiService: AnkiServiceProtocol {
     }
 
     func addImageOcclusionNote(request: Anki_ImageOcclusion_AddImageOcclusionNoteRequest) async throws
-        -> Anki_Collection_OpChanges
-    {
+        -> Anki_Collection_OpChanges {
         try backend.command(
             service: ServiceIndex.imageOcclusion,
             method: ImageOcclusionMethod.addImageOcclusionNote,
@@ -670,8 +668,7 @@ actor AnkiService: AnkiServiceProtocol {
     }
 
     func updateImageOcclusionNote(request: Anki_ImageOcclusion_UpdateImageOcclusionNoteRequest) async throws
-        -> Anki_Collection_OpChanges
-    {
+        -> Anki_Collection_OpChanges {
         try backend.command(
             service: ServiceIndex.imageOcclusion,
             method: ImageOcclusionMethod.updateImageOcclusionNote,

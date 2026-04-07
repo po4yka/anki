@@ -5,6 +5,7 @@ struct RichFieldEditor: NSViewRepresentable {
     @Binding var html: String
     var onContentChange: ((String) -> Void)?
 
+    // swiftlint:disable:next function_body_length
     func makeNSView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
         let contentController = WKUserContentController()

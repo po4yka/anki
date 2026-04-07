@@ -72,6 +72,7 @@ struct ImageOcclusionView: View {
         .padding(8)
     }
 
+    // swiftlint:disable:next function_body_length
     private func canvasView(model: ImageOcclusionModel, image: NSImage) -> some View {
         GeometryReader { geo in
             let imageSize = image.size
@@ -140,6 +141,7 @@ struct ImageOcclusionView: View {
         }
     }
 
+    // swiftlint:disable:next function_body_length
     private func sidePanel(model: ImageOcclusionModel) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Note Fields")

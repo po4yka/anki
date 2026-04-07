@@ -1,6 +1,8 @@
+// swiftlint:disable file_length
 import AVFoundation
 import SwiftUI
 
+// swiftlint:disable:next type_body_length
 struct ReviewerView: View {
     @Environment(AppState.self) private var appState
     @State private var model: ReviewerModel?
@@ -111,6 +113,7 @@ struct ReviewerView: View {
 
     // MARK: - Toolbar
 
+    // swiftlint:disable:next function_body_length
     private func toolbar(model: ReviewerModel) -> some View {
         HStack {
             ReviewProgress(
@@ -216,8 +219,7 @@ struct ReviewerView: View {
         cancelAutoTasks()
         showingAnswer = false
         if let card = model.queuedCards?.cards.first,
-           card.hasStates
-        {
+           card.hasStates {
             let states = card.states
             let newState: Anki_Scheduler_SchedulingState = switch rating {
                 case .again: states.again

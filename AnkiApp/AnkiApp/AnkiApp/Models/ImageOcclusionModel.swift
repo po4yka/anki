@@ -73,7 +73,7 @@ final class ImageOcclusionModel {
                 "left": rect.originX / imageSize.width,
                 "top": rect.originY / imageSize.height,
                 "width": rect.width / imageSize.width,
-                "height": rect.height / imageSize.height,
+                "height": rect.height / imageSize.height
             ]
             shapes.append(normalized)
         }

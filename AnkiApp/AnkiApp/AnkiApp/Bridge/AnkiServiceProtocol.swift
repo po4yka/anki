@@ -5,6 +5,7 @@ protocol AnkiServiceProtocol: Sendable {
     func closeCollection(downgrade: Bool) async throws
     func getDeckTree(now: Int64) async throws -> Anki_Decks_DeckTreeNode
     func getQueuedCards(fetchLimit: UInt32) async throws -> Anki_Scheduler_QueuedCards
+    // swiftlint:disable:next function_parameter_count
     func answerCard(
         cardId: Int64,
         rating: Anki_Scheduler_CardAnswer.Rating,
@@ -21,6 +22,7 @@ protocol AnkiServiceProtocol: Sendable {
     func allBrowserColumns() async throws -> Anki_Search_BrowserColumns
     func browserRowForId(id: Int64) async throws -> Anki_Search_BrowserRow
     func removeNotes(noteIds: [Int64], cardIds: [Int64]) async throws -> Anki_Collection_OpChangesWithCount
+    // swiftlint:disable:next function_parameter_count
     func findAndReplace(
         nids: [Int64],
         search: String,

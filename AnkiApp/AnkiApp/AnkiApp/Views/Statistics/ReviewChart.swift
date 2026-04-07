@@ -46,7 +46,7 @@ struct ReviewChart: View {
                     "Learn": .orange,
                     "Relearn": .red,
                     "Young": .green,
-                    "Mature": .teal,
+                    "Mature": .teal
                 ])
                 .chartXAxisLabel("Days Ago")
                 .chartYAxisLabel("Reviews")

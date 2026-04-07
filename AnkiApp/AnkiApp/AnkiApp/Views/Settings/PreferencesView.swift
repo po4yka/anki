@@ -234,6 +234,7 @@ struct ProfilesSettingsView: View {
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
         panel.canChooseFiles = true
+        // swiftlint:disable:next force_unwrapping
         panel.allowedContentTypes = [.init(filenameExtension: "anki2")!]
         if panel.runModal() == .OK {
             newProfilePath = panel.url?.path ?? ""

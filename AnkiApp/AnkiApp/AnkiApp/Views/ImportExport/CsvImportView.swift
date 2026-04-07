@@ -157,11 +157,13 @@ struct CsvImportView: View {
 
     private func selectFile(_ model: CsvImportModel) {
         let panel = NSOpenPanel()
+        // swiftlint:disable force_unwrapping
         panel.allowedContentTypes = [
             .init(filenameExtension: "csv")!,
             .init(filenameExtension: "tsv")!,
-            .init(filenameExtension: "txt")!,
+            .init(filenameExtension: "txt")!
         ]
+        // swiftlint:enable force_unwrapping
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
         panel.message = "Select a CSV file to import"

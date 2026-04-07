@@ -18,7 +18,7 @@ struct GeneralSettingsView: View {
         ("pl", "Polski"),
         ("pt", "Português"),
         ("ru", "Русский"),
-        ("zh", "中文"),
+        ("zh", "中文")
     ]
 
     var body: some View {
@@ -62,6 +62,7 @@ struct GeneralSettingsView: View {
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
         panel.canChooseFiles = true
+        // swiftlint:disable:next force_unwrapping
         panel.allowedContentTypes = [.init(filenameExtension: "anki2")!]
         if panel.runModal() == .OK {
             collectionPath = panel.url?.path ?? ""

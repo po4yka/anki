@@ -7,6 +7,7 @@ excluded:
 disabled_rules:
   - trailing_whitespace
   - line_length
+  - switch_case_alignment
 
 opt_in_rules:
   - force_unwrapping
@@ -18,8 +19,10 @@ opt_in_rules:
   - modifier_order
   - redundant_nil_coalescing
   - sorted_first_last
-  - unused_import
   - vertical_whitespace_closing_braces
+
+analyzer_rules:
+  - unused_import
 
 custom_rules:
   no_observable_object:

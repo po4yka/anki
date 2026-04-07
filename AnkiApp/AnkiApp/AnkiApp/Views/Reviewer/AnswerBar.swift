@@ -32,6 +32,7 @@ private struct AnswerButton: View {
             Text(label)
                 .frame(minWidth: 80)
         }
+        // swiftlint:disable:next force_unwrapping
         .keyboardShortcut(KeyEquivalent(shortcut.first!), modifiers: [])
         .buttonStyle(.borderedProminent)
         .tint(color)

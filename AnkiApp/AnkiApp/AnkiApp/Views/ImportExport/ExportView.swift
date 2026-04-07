@@ -20,6 +20,7 @@ struct ExportView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    // swiftlint:disable:next function_body_length
     private func exportContent(_ model: ExportModel) -> some View {
         VStack(spacing: 24) {
             Image(systemName: "square.and.arrow.up")
@@ -92,6 +93,7 @@ struct ExportView: View {
 
     private func selectAndExport(_ model: ExportModel) {
         let panel = NSSavePanel()
+        // swiftlint:disable:next force_unwrapping
         panel.allowedContentTypes = [.init(filenameExtension: "apkg")!]
         panel.nameFieldStringValue = "collection.apkg"
         panel.message = "Choose where to save the exported package"

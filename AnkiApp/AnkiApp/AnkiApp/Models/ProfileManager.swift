@@ -25,8 +25,7 @@ final class ProfileManager {
 
     func loadProfiles() {
         if let data = UserDefaults.standard.data(forKey: Self.profilesKey),
-           let decoded = try? JSONDecoder().decode([Profile].self, from: data)
-        {
+           let decoded = try? JSONDecoder().decode([Profile].self, from: data) {
             profiles = decoded
         }
         activeProfilePath = UserDefaults.standard.string(forKey: Self.activeProfileKey) ?? ""

@@ -54,7 +54,7 @@ struct SidebarView: View {
         .stats,
         .importPkg,
         .exportPkg,
-        .sync,
+        .sync
     ]
     private let atlasItems: [SidebarItem] = [.atlasSearch, .analytics, .generator, .obsidian]
 

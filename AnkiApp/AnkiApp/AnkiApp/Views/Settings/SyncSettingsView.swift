@@ -9,7 +9,7 @@ struct SyncSettingsView: View {
         (0, "Never"),
         (15, "Every 15 minutes"),
         (30, "Every 30 minutes"),
-        (60, "Every hour"),
+        (60, "Every hour")
     ]
 
     var body: some View {

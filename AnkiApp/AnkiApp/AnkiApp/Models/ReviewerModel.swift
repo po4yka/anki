@@ -100,8 +100,7 @@ final class ReviewerModel {
             let update = try await service.getDeckConfigsForUpdate(deckId: card.deckID)
             let configId = update.currentDeck.configID
             if let matched = update.allConfig.first(where: { $0.config.id == configId }),
-               matched.hasConfig
-            {
+               matched.hasConfig {
                 let inner = matched.config.config
                 showTimer = inner.showTimer
                 autoShowAnswerDelay = inner.secondsToShowQuestion

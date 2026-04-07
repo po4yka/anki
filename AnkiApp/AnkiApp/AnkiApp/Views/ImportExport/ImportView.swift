@@ -20,6 +20,7 @@ struct ImportView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    // swiftlint:disable:next function_body_length
     private func importContent(_ model: ImportModel) -> some View {
         VStack(spacing: 24) {
             Image(systemName: "square.and.arrow.down")
@@ -111,6 +112,7 @@ struct ImportView: View {
 
     private func selectAndImport(_ model: ImportModel) {
         let panel = NSOpenPanel()
+        // swiftlint:disable:next force_unwrapping
         panel.allowedContentTypes = [.init(filenameExtension: "apkg")!]
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
