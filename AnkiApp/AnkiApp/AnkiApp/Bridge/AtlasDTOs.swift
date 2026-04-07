@@ -83,7 +83,9 @@ struct SearchResultItem: Codable, Identifiable {
     var matchAssetRelPath: String?
     var matchPreviewLabel: String?
 
-    var id: Int64 { noteId }
+    var id: Int64 {
+        noteId
+    }
 
     enum CodingKeys: String, CodingKey {
         case noteId = "note_id"
@@ -172,7 +174,9 @@ struct TopicGap: Codable, Identifiable {
     var noteCount: Int64
     var threshold: Int64
 
-    var id: Int64 { topicId }
+    var id: Int64 {
+        topicId
+    }
 
     enum CodingKeys: String, CodingKey {
         case topicId = "topic_id"
@@ -193,7 +197,9 @@ struct WeakNote: Codable, Identifiable {
     var failRate: Double?
     var normalizedText: String
 
-    var id: Int64 { noteId }
+    var id: Int64 {
+        noteId
+    }
 
     enum CodingKeys: String, CodingKey {
         case noteId = "note_id"
@@ -212,7 +218,9 @@ struct DuplicateDetail: Codable, Identifiable {
     var deckNames: [String]
     var tags: [String]
 
-    var id: Int64 { noteId }
+    var id: Int64 {
+        noteId
+    }
 
     enum CodingKeys: String, CodingKey {
         case noteId = "note_id"
@@ -230,9 +238,13 @@ struct DuplicateCluster: Codable, Identifiable {
     var deckNames: [String]
     var tags: [String]
 
-    var id: Int64 { representativeId }
+    var id: Int64 {
+        representativeId
+    }
 
-    var size: Int { 1 + duplicates.count }
+    var size: Int {
+        1 + duplicates.count
+    }
 
     enum CodingKeys: String, CodingKey {
         case representativeId = "representative_id"
@@ -252,7 +264,9 @@ struct TaxonomyNode: Codable, Identifiable {
     var noteCount: Int
     var children: [TaxonomyNode]
 
-    var id: Int64 { topicId }
+    var id: Int64 {
+        topicId
+    }
 
     enum CodingKeys: String, CodingKey {
         case topicId = "topic_id"
@@ -279,7 +293,9 @@ struct ObsidianNotePreview: Codable, Identifiable {
     var sectionCount: Int
     var generatedCardCount: Int
 
-    var id: String { path }
+    var id: String {
+        path
+    }
 
     enum CodingKeys: String, CodingKey {
         case path
@@ -317,7 +333,9 @@ struct PreviewCard: Codable, Identifiable {
     var cardType: String
     var confidence: Double?
 
-    var id: String { front }
+    var id: String {
+        front
+    }
 
     enum CodingKeys: String, CodingKey {
         case front

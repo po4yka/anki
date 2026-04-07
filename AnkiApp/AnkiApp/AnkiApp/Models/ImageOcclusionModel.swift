@@ -1,23 +1,23 @@
+import AppKit
 import Foundation
 import Observation
-import AppKit
 
 struct OcclusionRect: Identifiable {
     let id = UUID()
-    var x: CGFloat
-    var y: CGFloat
+    var originX: CGFloat
+    var originY: CGFloat
     var width: CGFloat
     var height: CGFloat
 
     var cgRect: CGRect {
-        CGRect(x: x, y: y, width: width, height: height)
+        CGRect(x: originX, y: originY, width: width, height: height)
     }
 }
 
 @Observable
 @MainActor
 final class ImageOcclusionModel {
-    var image: NSImage? = nil
+    var image: NSImage?
     var imagePath: String = ""
     var imageName: String = ""
     var rectangles: [OcclusionRect] = []
@@ -26,7 +26,7 @@ final class ImageOcclusionModel {
     var tags: [String] = []
     var notetypeId: Int64 = 0
     var isLoading: Bool = false
-    var error: AnkiError? = nil
+    var error: AnkiError?
     var isSaved: Bool = false
 
     private let service: AnkiServiceProtocol
@@ -46,8 +46,8 @@ final class ImageOcclusionModel {
             rectangles = []
             isSaved = false
             error = nil
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 
@@ -70,10 +70,10 @@ final class ImageOcclusionModel {
         var shapes: [[String: Any]] = []
         for rect in rectangles {
             let normalized: [String: Any] = [
-                "left": rect.x / imageSize.width,
-                "top": rect.y / imageSize.height,
+                "left": rect.originX / imageSize.width,
+                "top": rect.originY / imageSize.height,
                 "width": rect.width / imageSize.width,
-                "height": rect.height / imageSize.height
+                "height": rect.height / imageSize.height,
             ]
             shapes.append(normalized)
         }
@@ -97,8 +97,8 @@ final class ImageOcclusionModel {
             _ = try await service.addImageOcclusionNote(request: req)
             isSaved = true
             error = nil
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 

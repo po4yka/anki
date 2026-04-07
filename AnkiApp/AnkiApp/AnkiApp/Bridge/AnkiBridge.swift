@@ -22,13 +22,13 @@ class AnkiBackend {
         guard let backend else {
             throw AnkiError.initFailed
         }
-        self.ptr = backend
+        ptr = backend
     }
 
-    func command<Input: SwiftProtobuf.Message, Output: SwiftProtobuf.Message>(
+    func command<Output: SwiftProtobuf.Message>(
         service: UInt32,
         method: UInt32,
-        input: Input
+        input: some SwiftProtobuf.Message
     ) throws -> Output {
         let inputData = try input.serializedData()
         var isError = false

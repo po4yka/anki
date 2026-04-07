@@ -4,19 +4,19 @@ import Observation
 @Observable
 @MainActor
 final class ReviewerModel {
-    var queuedCards: Anki_Scheduler_QueuedCards? = nil
-    var currentCardHTML: Anki_CardRendering_RenderCardResponse? = nil
+    var queuedCards: Anki_Scheduler_QueuedCards?
+    var currentCardHTML: Anki_CardRendering_RenderCardResponse?
     var currentAvTags: [Anki_CardRendering_AVTag] = []
-    var undoLabel: String? = nil
+    var undoLabel: String?
     var isLoading: Bool = false
-    var error: AnkiError? = nil
+    var error: AnkiError?
     var lastDeckId: Int64 = 0
 
     // Type-answer
     var isTypeAnswerCard: Bool = false
     var typeAnswerField: String = ""
     var typedAnswer: String = ""
-    var comparisonHTML: String? = nil
+    var comparisonHTML: String?
 
     // Auto-advance
     var autoShowAnswerDelay: Float = 0
@@ -29,8 +29,8 @@ final class ReviewerModel {
     var showTimer: Bool = false
     private var timerTask: Task<Void, Never>?
 
-    // Card info
-    var cardStats: Anki_Stats_CardStatsResponse? = nil
+    /// Card info
+    var cardStats: Anki_Stats_CardStatsResponse?
 
     private let service: AnkiServiceProtocol
 
@@ -56,8 +56,8 @@ final class ReviewerModel {
             comparisonHTML = nil
             typedAnswer = ""
             error = nil
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 
@@ -100,7 +100,8 @@ final class ReviewerModel {
             let update = try await service.getDeckConfigsForUpdate(deckId: card.deckID)
             let configId = update.currentDeck.configID
             if let matched = update.allConfig.first(where: { $0.config.id == configId }),
-               matched.hasConfig {
+               matched.hasConfig
+            {
                 let inner = matched.config.config
                 showTimer = inner.showTimer
                 autoShowAnswerDelay = inner.secondsToShowQuestion
@@ -151,10 +152,10 @@ final class ReviewerModel {
 
     func autoAnswerRating() -> Anki_Scheduler_CardAnswer.Rating? {
         switch answerAction {
-        case .answerAgain: return .again
-        case .answerHard: return .hard
-        case .answerGood: return .good
-        default: return nil
+            case .answerAgain: .again
+            case .answerHard: .hard
+            case .answerGood: .good
+            default: nil
         }
     }
 
@@ -207,20 +208,20 @@ final class ReviewerModel {
     ) async {
         do {
             let now = Int64(Date().timeIntervalSince1970 * 1000)
-            let ms = UInt32(elapsedSeconds * 1000)
+            let milliseconds = UInt32(elapsedSeconds * 1000)
             _ = try await service.answerCard(
                 cardId: cardId,
                 rating: rating,
                 currentState: currentState,
                 newState: newState,
                 answeredAtMillis: now,
-                millisecondsTaken: ms
+                millisecondsTaken: milliseconds
             )
             stopTimer()
             await loadQueue()
             await refreshUndoStatus()
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 
@@ -229,8 +230,8 @@ final class ReviewerModel {
             _ = try await service.undo()
             await loadQueue()
             await refreshUndoStatus()
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 
@@ -244,8 +245,8 @@ final class ReviewerModel {
             _ = try await service.buryOrSuspendCards(cardIds: [cardId], noteIds: [], mode: .buryUser)
             await loadQueue()
             await refreshUndoStatus()
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 
@@ -255,8 +256,8 @@ final class ReviewerModel {
             _ = try await service.buryOrSuspendCards(cardIds: [], noteIds: [noteId], mode: .buryUser)
             await loadQueue()
             await refreshUndoStatus()
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 
@@ -266,8 +267,8 @@ final class ReviewerModel {
             _ = try await service.buryOrSuspendCards(cardIds: [cardId], noteIds: [], mode: .suspend)
             await loadQueue()
             await refreshUndoStatus()
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 
@@ -276,8 +277,8 @@ final class ReviewerModel {
         do {
             _ = try await service.setFlag(cardIds: [cardId], flag: flag)
             await loadQueue()
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 

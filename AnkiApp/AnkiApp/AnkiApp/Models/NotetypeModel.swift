@@ -5,9 +5,9 @@ import Observation
 @MainActor
 final class NotetypeModel {
     var notetypes: [Anki_Notetypes_NotetypeNameIdUseCount] = []
-    var selectedNotetype: Anki_Notetypes_Notetype? = nil
+    var selectedNotetype: Anki_Notetypes_Notetype?
     var isLoading: Bool = false
-    var error: AnkiError? = nil
+    var error: AnkiError?
 
     private let service: AnkiServiceProtocol
 
@@ -22,8 +22,8 @@ final class NotetypeModel {
             let response = try await service.getNotetypeNamesAndCounts()
             notetypes = response.entries
             error = nil
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 
@@ -31,8 +31,8 @@ final class NotetypeModel {
         do {
             selectedNotetype = try await service.getNotetype(id: id)
             error = nil
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 
@@ -71,8 +71,8 @@ final class NotetypeModel {
 
             _ = try await service.addNotetype(notetype: notetype)
             await load()
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 
@@ -83,8 +83,8 @@ final class NotetypeModel {
             source.name = newName
             _ = try await service.addNotetype(notetype: source)
             await load()
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 
@@ -95,8 +95,8 @@ final class NotetypeModel {
                 selectedNotetype = nil
             }
             await load()
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 
@@ -114,22 +114,22 @@ final class NotetypeModel {
     func removeField(at index: Int) async {
         guard var notetype = selectedNotetype, notetype.fields.count > 1 else { return }
         notetype.fields.remove(at: index)
-        for i in 0..<notetype.fields.count {
+        for idx in 0 ..< notetype.fields.count {
             var ord = Anki_Generic_UInt32()
-            ord.val = UInt32(i)
-            notetype.fields[i].ord = ord
+            ord.val = UInt32(idx)
+            notetype.fields[idx].ord = ord
         }
         await saveNotetype(notetype)
     }
 
-    func moveField(from: Int, to: Int) async {
+    func moveField(from: Int, to destination: Int) async {
         guard var notetype = selectedNotetype else { return }
         let field = notetype.fields.remove(at: from)
-        notetype.fields.insert(field, at: to)
-        for i in 0..<notetype.fields.count {
+        notetype.fields.insert(field, at: destination)
+        for idx in 0 ..< notetype.fields.count {
             var ord = Anki_Generic_UInt32()
-            ord.val = UInt32(i)
-            notetype.fields[i].ord = ord
+            ord.val = UInt32(idx)
+            notetype.fields[idx].ord = ord
         }
         await saveNotetype(notetype)
     }
@@ -157,8 +157,8 @@ final class NotetypeModel {
             _ = try await service.updateNotetype(notetype: notetype)
             selectedNotetype = notetype
             await load()
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 }

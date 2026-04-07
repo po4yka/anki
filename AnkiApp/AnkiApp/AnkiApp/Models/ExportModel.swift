@@ -41,10 +41,10 @@ final class ExportModel {
 
         var limit = Anki_ImportExport_ExportLimit()
         switch exportScope {
-        case .wholeCollection:
-            limit.wholeCollection = Anki_Generic_Empty()
-        case .deck(let id, _):
-            limit.deckID = id
+            case .wholeCollection:
+                limit.wholeCollection = Anki_Generic_Empty()
+            case let .deck(id, _):
+                limit.deckID = id
         }
 
         do {

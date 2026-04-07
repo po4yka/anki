@@ -20,7 +20,6 @@ struct ImportView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    @ViewBuilder
     private func importContent(_ model: ImportModel) -> some View {
         VStack(spacing: 24) {
             Image(systemName: "square.and.arrow.down")
@@ -69,9 +68,9 @@ struct ImportView: View {
             }
             .frame(maxWidth: 400)
 
-            Button(action: { selectAndImport(model) }) {
+            Button(action: { selectAndImport(model) }, label: {
                 Label("Choose .apkg File...", systemImage: "doc.badge.plus")
-            }
+            })
             .buttonStyle(.borderedProminent)
             .disabled(model.isImporting)
 

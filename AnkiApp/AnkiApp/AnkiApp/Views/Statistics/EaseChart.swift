@@ -1,5 +1,5 @@
-import SwiftUI
 import Charts
+import SwiftUI
 
 struct EaseChart: View {
     let model: StatsModel
@@ -8,7 +8,11 @@ struct EaseChart: View {
         VStack(alignment: .leading, spacing: 16) {
             let data = model.easeData
             if data.isEmpty {
-                ContentUnavailableView("No Data", systemImage: "gauge.medium", description: Text("No ease data available."))
+                ContentUnavailableView(
+                    "No Data",
+                    systemImage: "gauge.medium",
+                    description: Text("No ease data available.")
+                )
             } else {
                 HStack {
                     Text("Ease Factor")

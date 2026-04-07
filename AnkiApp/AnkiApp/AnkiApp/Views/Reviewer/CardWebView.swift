@@ -1,12 +1,12 @@
+import AVFoundation
 import SwiftUI
 import WebKit
-import AVFoundation
 
 struct CardWebView: NSViewRepresentable {
     let html: String
     let css: String
     let baseURL: URL?
-    var onPlayAudio: ((String) -> Void)? = nil
+    var onPlayAudio: ((String) -> Void)?
 
     func makeCoordinator() -> Coordinator {
         Coordinator(onPlayAudio: onPlayAudio)
@@ -35,7 +35,7 @@ struct CardWebView: NSViewRepresentable {
             self.onPlayAudio = onPlayAudio
         }
 
-        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        func userContentController(_: WKUserContentController, didReceive message: WKScriptMessage) {
             if message.name == "ankiPlay", let filename = message.body as? String {
                 onPlayAudio?(filename)
             }

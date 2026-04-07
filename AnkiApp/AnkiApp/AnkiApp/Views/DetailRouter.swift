@@ -5,30 +5,30 @@ struct DetailRouter: View {
 
     var body: some View {
         switch appState.selectedSidebarItem {
-        case .decks:
-            DeckBrowserView()
-        case .browse:
-            SearchView()
-        case .notetypes:
-            NotetypeListView()
-        case .imageOcclusion:
-            ImageOcclusionView()
-        case .stats:
-            StatisticsView()
-        case .importPkg:
-            ImportView()
-        case .exportPkg:
-            ExportView()
-        case .sync:
-            SyncView()
-        case .atlasSearch:
-            AtlasSearchView()
-        case .analytics:
-            AnalyticsDashboardView()
-        case .generator:
-            CardGeneratorView()
-        case .obsidian:
-            VaultBrowserView()
+            case .decks:
+                DeckBrowserView()
+            case .browse:
+                SearchView()
+            case .notetypes:
+                NotetypeListView()
+            case .imageOcclusion:
+                ImageOcclusionView()
+            case .stats:
+                StatisticsView()
+            case .importPkg:
+                ImportView()
+            case .exportPkg:
+                ExportView()
+            case .sync:
+                SyncView()
+            case .atlasSearch:
+                AtlasSearchView()
+            case .analytics:
+                AnalyticsDashboardView()
+            case .generator:
+                CardGeneratorView()
+            case .obsidian:
+                VaultBrowserView()
         }
     }
 }

@@ -12,10 +12,10 @@ struct CardGeneratorView: View {
                 description: Text("Configure Atlas in Settings to use Card Generator.")
             ))
         }
-        let m = model ?? CardGeneratorModel(atlas: atlas)
-        return AnyView(GeneratorContentView(model: m)
+        let generatorModel = model ?? CardGeneratorModel(atlas: atlas)
+        return AnyView(GeneratorContentView(model: generatorModel)
             .onAppear {
-                if model == nil { model = m }
+                if model == nil { model = generatorModel }
             })
     }
 }

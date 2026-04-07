@@ -20,7 +20,6 @@ struct MediaCheckView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    @ViewBuilder
     private func mediaContent(_ model: MediaCheckModel) -> some View {
         VStack(spacing: 24) {
             Image(systemName: "photo.stack")
@@ -32,9 +31,9 @@ struct MediaCheckView: View {
 
             Button(action: {
                 Task { await model.checkMedia() }
-            }) {
+            }, label: {
                 Label("Check Media", systemImage: "magnifyingglass")
-            }
+            })
             .buttonStyle(.borderedProminent)
             .disabled(model.isChecking || model.isProcessing)
 
@@ -90,25 +89,25 @@ struct MediaCheckView: View {
             if !result.unused.isEmpty {
                 Button(action: {
                     Task { await model.trashUnused() }
-                }) {
+                }, label: {
                     Label("Trash Unused", systemImage: "trash")
-                }
+                })
                 .disabled(model.isProcessing)
             }
 
             if result.haveTrash {
                 Button(action: {
                     Task { await model.restoreTrash() }
-                }) {
+                }, label: {
                     Label("Restore Trash", systemImage: "arrow.uturn.backward")
-                }
+                })
                 .disabled(model.isProcessing)
 
                 Button(role: .destructive, action: {
                     Task { await model.emptyTrash() }
-                }) {
+                }, label: {
                     Label("Empty Trash", systemImage: "trash.slash")
-                }
+                })
                 .disabled(model.isProcessing)
             }
         }

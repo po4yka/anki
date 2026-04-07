@@ -5,7 +5,7 @@ struct DuplicatesView: View {
 
     var body: some View {
         VStack {
-            if model.duplicateClusters.isEmpty && !model.isLoading {
+            if model.duplicateClusters.isEmpty, !model.isLoading {
                 ContentUnavailableView(
                     "No Duplicates Found",
                     systemImage: "doc.on.doc",

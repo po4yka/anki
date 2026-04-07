@@ -39,9 +39,9 @@ struct DeckOverviewView: View {
                 }
 
                 HStack(spacing: 24) {
-                    CountBadge(label: "New", count: node.newCount, color: .blue)
-                    CountBadge(label: "Learn", count: node.learnCount, color: .orange)
-                    CountBadge(label: "Review", count: node.reviewCount, color: .green)
+                    CountBadge(label: "New", cardCount: node.newCount, color: .blue)
+                    CountBadge(label: "Learn", cardCount: node.learnCount, color: .orange)
+                    CountBadge(label: "Review", cardCount: node.reviewCount, color: .green)
                 }
 
                 Divider()
@@ -70,8 +70,8 @@ struct DeckOverviewView: View {
                                 Task {
                                     do {
                                         _ = try await service.rebuildFilteredDeck(deckId: node.deckID)
-                                    } catch let e as AnkiError {
-                                        error = e
+                                    } catch let ankiError as AnkiError {
+                                        error = ankiError
                                     } catch {}
                                 }
                             }
@@ -79,8 +79,8 @@ struct DeckOverviewView: View {
                                 Task {
                                     do {
                                         _ = try await service.emptyFilteredDeck(deckId: node.deckID)
-                                    } catch let e as AnkiError {
-                                        error = e
+                                    } catch let ankiError as AnkiError {
+                                        error = ankiError
                                     } catch {}
                                 }
                             }
@@ -119,14 +119,14 @@ struct DeckOverviewView: View {
 
 private struct CountBadge: View {
     let label: String
-    let count: UInt32
+    let cardCount: UInt32
     let color: Color
 
     var body: some View {
         VStack(spacing: 4) {
-            Text("\(count)")
+            Text("\(cardCount)")
                 .font(.title.bold())
-                .foregroundStyle(count > 0 ? color : .secondary)
+                .foregroundStyle(cardCount != 0 ? color : .secondary)
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.secondary)

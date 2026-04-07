@@ -14,29 +14,31 @@ enum SidebarItem: String, CaseIterable, Identifiable {
     case generator = "Generator"
     case obsidian = "Obsidian"
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
     var systemImage: String {
         switch self {
-        case .decks: "rectangle.stack"
-        case .browse: "magnifyingglass"
-        case .notetypes: "doc.on.doc"
-        case .imageOcclusion: "photo.on.rectangle"
-        case .stats: "chart.bar"
-        case .importPkg: "square.and.arrow.down"
-        case .exportPkg: "square.and.arrow.up"
-        case .sync: "arrow.triangle.2.circlepath"
-        case .atlasSearch: "sparkle.magnifyingglass"
-        case .analytics: "brain.head.profile"
-        case .generator: "wand.and.stars"
-        case .obsidian: "doc.text.magnifyingglass"
+            case .decks: "rectangle.stack"
+            case .browse: "magnifyingglass"
+            case .notetypes: "doc.on.doc"
+            case .imageOcclusion: "photo.on.rectangle"
+            case .stats: "chart.bar"
+            case .importPkg: "square.and.arrow.down"
+            case .exportPkg: "square.and.arrow.up"
+            case .sync: "arrow.triangle.2.circlepath"
+            case .atlasSearch: "sparkle.magnifyingglass"
+            case .analytics: "brain.head.profile"
+            case .generator: "wand.and.stars"
+            case .obsidian: "doc.text.magnifyingglass"
         }
     }
 
     var isAtlas: Bool {
         switch self {
-        case .atlasSearch, .analytics, .generator, .obsidian: true
-        default: false
+            case .atlasSearch, .analytics, .generator, .obsidian: true
+            default: false
         }
     }
 }
@@ -44,7 +46,16 @@ enum SidebarItem: String, CaseIterable, Identifiable {
 struct SidebarView: View {
     @Environment(AppState.self) private var appState
 
-    private let ankiItems: [SidebarItem] = [.decks, .browse, .notetypes, .imageOcclusion, .stats, .importPkg, .exportPkg, .sync]
+    private let ankiItems: [SidebarItem] = [
+        .decks,
+        .browse,
+        .notetypes,
+        .imageOcclusion,
+        .stats,
+        .importPkg,
+        .exportPkg,
+        .sync,
+    ]
     private let atlasItems: [SidebarItem] = [.atlasSearch, .analytics, .generator, .obsidian]
 
     var body: some View {

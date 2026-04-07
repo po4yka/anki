@@ -138,8 +138,8 @@ struct KnowledgeGraphView: View {
 
             for (index, tagName) in topLevelTags.sorted().enumerated() {
                 let childTags = allTags.filter { $0.hasPrefix(tagName + "::") || $0 == tagName }
-                let relatedIndices = builtConcepts.indices.filter { i in
-                    builtConcepts[i].tags.contains(where: { childTags.contains($0) })
+                let relatedIndices = builtConcepts.indices.filter { idx in
+                    builtConcepts[idx].tags.contains(where: { childTags.contains($0) })
                 }
                 builtConcepts.append(Concept(
                     id: Int64(index),
@@ -157,40 +157,43 @@ struct KnowledgeGraphView: View {
 private struct FlowLayout: Layout {
     var spacing: CGFloat = 4
 
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache _: inout ()) -> CGSize {
         let result = arrange(proposal: proposal, subviews: subviews)
         return result.size
     }
 
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache _: inout ()) {
         let result = arrange(proposal: proposal, subviews: subviews)
         for (index, position) in result.positions.enumerated() {
-            subviews[index].place(at: CGPoint(x: bounds.minX + position.x, y: bounds.minY + position.y), proposal: .unspecified)
+            subviews[index].place(
+                at: CGPoint(x: bounds.minX + position.x, y: bounds.minY + position.y),
+                proposal: .unspecified
+            )
         }
     }
 
     private func arrange(proposal: ProposedViewSize, subviews: Subviews) -> (positions: [CGPoint], size: CGSize) {
         let maxWidth = proposal.width ?? .infinity
         var positions: [CGPoint] = []
-        var x: CGFloat = 0
-        var y: CGFloat = 0
+        var currentX: CGFloat = 0
+        var currentY: CGFloat = 0
         var rowHeight: CGFloat = 0
         var maxX: CGFloat = 0
 
         for subview in subviews {
             let size = subview.sizeThatFits(.unspecified)
-            if x + size.width > maxWidth && x > 0 {
-                x = 0
-                y += rowHeight + spacing
+            if currentX + size.width > maxWidth, currentX > 0 {
+                currentX = 0
+                currentY += rowHeight + spacing
                 rowHeight = 0
             }
-            positions.append(CGPoint(x: x, y: y))
+            positions.append(CGPoint(x: currentX, y: currentY))
             rowHeight = max(rowHeight, size.height)
-            x += size.width + spacing
-            maxX = max(maxX, x)
+            currentX += size.width + spacing
+            maxX = max(maxX, currentX)
         }
 
-        return (positions, CGSize(width: maxX, height: y + rowHeight))
+        return (positions, CGSize(width: maxX, height: currentY + rowHeight))
     }
 }
 

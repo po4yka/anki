@@ -21,7 +21,6 @@ struct CsvImportView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    @ViewBuilder
     private func csvContent(_ model: CsvImportModel) -> some View {
         VStack(spacing: 24) {
             Image(systemName: "tablecells")
@@ -31,9 +30,9 @@ struct CsvImportView: View {
             Text("Import CSV File")
                 .font(.title2)
 
-            Button(action: { selectFile(model) }) {
+            Button(action: { selectFile(model) }, label: {
                 Label("Choose CSV File...", systemImage: "doc.badge.plus")
-            }
+            })
             .buttonStyle(.borderedProminent)
             .disabled(model.isLoading || model.isImporting)
 
@@ -73,7 +72,6 @@ struct CsvImportView: View {
         }
     }
 
-    @ViewBuilder
     private func metadataSection(_ model: CsvImportModel, metadata: Anki_ImportExport_CsvMetadata) -> some View {
         GroupBox("Options") {
             VStack(alignment: .leading, spacing: 12) {
@@ -141,9 +139,9 @@ struct CsvImportView: View {
     private func importButton(_ model: CsvImportModel, path: String) -> some View {
         Button(action: {
             Task { await model.importCsv(path: path) }
-        }) {
+        }, label: {
             Label("Import", systemImage: "square.and.arrow.down")
-        }
+        })
         .buttonStyle(.borderedProminent)
         .disabled(model.isImporting)
     }

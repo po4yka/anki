@@ -5,7 +5,10 @@ import Observation
 @MainActor
 final class ProfileManager {
     struct Profile: Identifiable, Codable, Hashable {
-        var id: String { path }
+        var id: String {
+            path
+        }
+
         let name: String
         let path: String
     }
@@ -22,7 +25,8 @@ final class ProfileManager {
 
     func loadProfiles() {
         if let data = UserDefaults.standard.data(forKey: Self.profilesKey),
-           let decoded = try? JSONDecoder().decode([Profile].self, from: data) {
+           let decoded = try? JSONDecoder().decode([Profile].self, from: data)
+        {
             profiles = decoded
         }
         activeProfilePath = UserDefaults.standard.string(forKey: Self.activeProfileKey) ?? ""

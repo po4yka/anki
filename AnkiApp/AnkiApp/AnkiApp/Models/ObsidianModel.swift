@@ -5,10 +5,10 @@ import Observation
 @Observable
 @MainActor
 final class ObsidianModel {
-    var vaultPath: URL? = nil
-    var scanPreview: ObsidianScanPreview? = nil
+    var vaultPath: URL?
+    var scanPreview: ObsidianScanPreview?
     var isScanning: Bool = false
-    var error: String? = nil
+    var error: String?
 
     private let atlas: AtlasService
 

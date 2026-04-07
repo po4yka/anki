@@ -31,7 +31,11 @@ struct RetentionView: View {
                 .padding()
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
             } else {
-                ContentUnavailableView("No Data", systemImage: "checkmark.circle", description: Text("No retention data available."))
+                ContentUnavailableView(
+                    "No Data",
+                    systemImage: "checkmark.circle",
+                    description: Text("No retention data available.")
+                )
             }
         }
         .padding()
@@ -42,10 +46,21 @@ private struct RetentionRow: View {
     let label: String
     let data: Anki_Stats_GraphsResponse.TrueRetentionStats.TrueRetention
 
-    private var youngTotal: UInt32 { data.youngPassed + data.youngFailed }
-    private var matureTotal: UInt32 { data.maturePassed + data.matureFailed }
-    private var totalPassed: UInt32 { data.youngPassed + data.maturePassed }
-    private var totalAll: UInt32 { youngTotal + matureTotal }
+    private var youngTotal: UInt32 {
+        data.youngPassed + data.youngFailed
+    }
+
+    private var matureTotal: UInt32 {
+        data.maturePassed + data.matureFailed
+    }
+
+    private var totalPassed: UInt32 {
+        data.youngPassed + data.maturePassed
+    }
+
+    private var totalAll: UInt32 {
+        youngTotal + matureTotal
+    }
 
     var body: some View {
         GridRow {

@@ -9,16 +9,16 @@ struct DeckItem {
 @Observable
 @MainActor
 final class NoteEditorModel {
-    var note: Anki_Notes_Note? = nil
-    var notetypeNames: Anki_Notetypes_NotetypeNames? = nil
+    var note: Anki_Notes_Note?
+    var notetypeNames: Anki_Notetypes_NotetypeNames?
     var isSaving: Bool = false
     var isLoading: Bool = false
-    var error: AnkiError? = nil
-    var editingNoteId: Int64? = nil
+    var error: AnkiError?
+    var editingNoteId: Int64?
     var selectedDeckId: Int64 = 0
-    var deckTree: Anki_Decks_DeckTreeNode? = nil
+    var deckTree: Anki_Decks_DeckTreeNode?
     var selectedNotetypeId: Int64 = 0
-    var currentNotetype: Anki_Notetypes_Notetype? = nil
+    var currentNotetype: Anki_Notetypes_Notetype?
     var isClozeNotetype: Bool = false
 
     var availableNotetypes: [Anki_Notetypes_NotetypeNameId] {
@@ -31,7 +31,7 @@ final class NoteEditorModel {
     }
 
     var fieldNames: [String] {
-        currentNotetype?.fields.map { $0.name } ?? []
+        currentNotetype?.fields.map(\.name) ?? []
     }
 
     var availableDecks: [DeckItem] {
@@ -39,9 +39,13 @@ final class NoteEditorModel {
         var result: [DeckItem] = []
         func collect(_ node: Anki_Decks_DeckTreeNode) {
             result.append(DeckItem(id: node.deckID, name: node.name))
-            for child in node.children { collect(child) }
+            for child in node.children {
+                collect(child)
+            }
         }
-        for child in tree.children { collect(child) }
+        for child in tree.children {
+            collect(child)
+        }
         return result
     }
 
@@ -70,8 +74,8 @@ final class NoteEditorModel {
                 selectedDeckId = card.deckID
             }
             error = nil
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 
@@ -111,8 +115,8 @@ final class NoteEditorModel {
         do {
             notetypeNames = try await service.getNotetypeNames()
             error = nil
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 
@@ -137,8 +141,8 @@ final class NoteEditorModel {
         do {
             _ = try await service.addNote(note: note, deckId: deckId)
             error = nil
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 
@@ -148,8 +152,8 @@ final class NoteEditorModel {
         do {
             _ = try await service.updateNotes(notes: [note])
             error = nil
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 
@@ -175,10 +179,9 @@ final class NoteEditorModel {
 
     func attachImage(desiredName: String, data: Data) async -> String? {
         do {
-            let actualName = try await service.addMediaFile(desiredName: desiredName, data: data)
-            return actualName
-        } catch let e as AnkiError {
-            error = e
+            return try await service.addMediaFile(desiredName: desiredName, data: data)
+        } catch let ankiError as AnkiError {
+            error = ankiError
             return nil
         } catch {
             return nil

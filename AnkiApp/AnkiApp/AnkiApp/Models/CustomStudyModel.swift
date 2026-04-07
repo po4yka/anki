@@ -9,7 +9,9 @@ enum CustomStudyMode: String, CaseIterable, Identifiable {
     case previewNew = "Preview new cards"
     case cramDue = "Study by card state or tag"
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 }
 
 @Observable
@@ -47,8 +49,8 @@ final class CustomStudyModel {
             newLimitDelta = Int32(response.extendNew)
             reviewLimitDelta = Int32(response.extendReview)
             error = nil
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 
@@ -57,29 +59,29 @@ final class CustomStudyModel {
             var req = Anki_Scheduler_CustomStudyRequest()
             req.deckID = deckId
             switch selectedMode {
-            case .increaseNewLimit:
-                req.newLimitDelta = newLimitDelta
-            case .increaseReviewLimit:
-                req.reviewLimitDelta = reviewLimitDelta
-            case .reviewForgotten:
-                req.forgotDays = forgotDays
-            case .reviewAhead:
-                req.reviewAheadDays = reviewAheadDays
-            case .previewNew:
-                req.previewDays = previewDays
-            case .cramDue:
-                var cram = Anki_Scheduler_CustomStudyRequest.Cram()
-                cram.kind = cramKind
-                cram.cardLimit = cramCardLimit
-                cram.tagsToInclude = tagsToInclude
-                cram.tagsToExclude = tagsToExclude
-                req.cram = cram
+                case .increaseNewLimit:
+                    req.newLimitDelta = newLimitDelta
+                case .increaseReviewLimit:
+                    req.reviewLimitDelta = reviewLimitDelta
+                case .reviewForgotten:
+                    req.forgotDays = forgotDays
+                case .reviewAhead:
+                    req.reviewAheadDays = reviewAheadDays
+                case .previewNew:
+                    req.previewDays = previewDays
+                case .cramDue:
+                    var cram = Anki_Scheduler_CustomStudyRequest.Cram()
+                    cram.kind = cramKind
+                    cram.cardLimit = cramCardLimit
+                    cram.tagsToInclude = tagsToInclude
+                    cram.tagsToExclude = tagsToExclude
+                    req.cram = cram
             }
             _ = try await service.customStudy(request: req)
             error = nil
             return true
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
             return false
         } catch {
             return false

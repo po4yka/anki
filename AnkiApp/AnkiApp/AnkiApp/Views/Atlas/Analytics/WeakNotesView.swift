@@ -5,7 +5,7 @@ struct WeakNotesView: View {
 
     var body: some View {
         VStack {
-            if model.weakNotes.isEmpty && !model.isLoading {
+            if model.weakNotes.isEmpty, !model.isLoading {
                 ContentUnavailableView(
                     "No Weak Notes",
                     systemImage: "checkmark.seal",

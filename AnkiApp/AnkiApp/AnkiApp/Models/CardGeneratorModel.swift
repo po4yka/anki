@@ -6,9 +6,9 @@ import Observation
 final class CardGeneratorModel {
     var sourceText: String = ""
     var topic: String = ""
-    var preview: GeneratePreview? = nil
+    var preview: GeneratePreview?
     var isGenerating: Bool = false
-    var error: String? = nil
+    var error: String?
 
     private let atlas: AtlasService
 

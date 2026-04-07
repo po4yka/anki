@@ -35,10 +35,15 @@ struct BackupSettingsView: View {
             }
 
             Section("Backup Limits") {
-                Stepper("Daily backups: \(dailyLimit)", value: $dailyLimit, in: 0...30)
-                Stepper("Weekly backups: \(weeklyLimit)", value: $weeklyLimit, in: 0...30)
-                Stepper("Monthly backups: \(monthlyLimit)", value: $monthlyLimit, in: 0...30)
-                Stepper("Minimum interval (minutes): \(minimumIntervalMins)", value: $minimumIntervalMins, in: 5...1440, step: 5)
+                Stepper("Daily backups: \(dailyLimit)", value: $dailyLimit, in: 0 ... 30)
+                Stepper("Weekly backups: \(weeklyLimit)", value: $weeklyLimit, in: 0 ... 30)
+                Stepper("Monthly backups: \(monthlyLimit)", value: $monthlyLimit, in: 0 ... 30)
+                Stepper(
+                    "Minimum interval (minutes): \(minimumIntervalMins)",
+                    value: $minimumIntervalMins,
+                    in: 5 ... 1440,
+                    step: 5
+                )
             }
 
             Section {
@@ -62,7 +67,7 @@ struct BackupSettingsView: View {
         backupResult = nil
         do {
             let backupFolder = (appState.collectionPath as NSString).deletingLastPathComponent + "/backups"
-            let _ = try await appState.service.createBackup(
+            _ = try await appState.service.createBackup(
                 backupFolder: backupFolder,
                 force: true,
                 waitForCompletion: true
@@ -76,24 +81,24 @@ struct BackupSettingsView: View {
 
     private func loadPreferences() async {
         do {
-            let p = try await appState.service.getPreferences()
-            prefs = p
-            dailyLimit = p.backups.daily
-            weeklyLimit = p.backups.weekly
-            monthlyLimit = p.backups.monthly
-            minimumIntervalMins = p.backups.minimumIntervalMins
+            let preferences = try await appState.service.getPreferences()
+            prefs = preferences
+            dailyLimit = preferences.backups.daily
+            weeklyLimit = preferences.backups.weekly
+            monthlyLimit = preferences.backups.monthly
+            minimumIntervalMins = preferences.backups.minimumIntervalMins
         } catch {}
     }
 
     private func saveBackupSettings() async {
-        guard var p = prefs else { return }
-        p.backups.daily = dailyLimit
-        p.backups.weekly = weeklyLimit
-        p.backups.monthly = monthlyLimit
-        p.backups.minimumIntervalMins = minimumIntervalMins
+        guard var preferences = prefs else { return }
+        preferences.backups.daily = dailyLimit
+        preferences.backups.weekly = weeklyLimit
+        preferences.backups.monthly = monthlyLimit
+        preferences.backups.minimumIntervalMins = minimumIntervalMins
         do {
-            try await appState.service.setPreferences(prefs: p)
-            prefs = p
+            try await appState.service.setPreferences(prefs: preferences)
+            prefs = preferences
         } catch {}
     }
 }

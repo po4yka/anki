@@ -28,10 +28,10 @@ private struct CardTypeBadge: View {
 
     var color: Color {
         switch cardType.lowercased() {
-        case "basic": return .blue
-        case "cloze": return .purple
-        case "mcq": return .green
-        default: return .secondary
+            case "basic": .blue
+            case "cloze": .purple
+            case "mcq": .green
+            default: .secondary
         }
     }
 

@@ -1,12 +1,12 @@
-import SwiftUI
 import AVFoundation
+import SwiftUI
 
 struct ReviewerView: View {
     @Environment(AppState.self) private var appState
     @State private var model: ReviewerModel?
     @State private var showingAnswer = false
     @State private var audioPlayer: AVPlayer?
-    @State private var editingNoteId: Int64? = nil
+    @State private var editingNoteId: Int64?
     @State private var showCardInfo = false
     @State private var autoShowTask: Task<Void, Never>?
     @State private var autoAdvanceTask: Task<Void, Never>?
@@ -216,17 +216,16 @@ struct ReviewerView: View {
         cancelAutoTasks()
         showingAnswer = false
         if let card = model.queuedCards?.cards.first,
-           card.hasStates {
+           card.hasStates
+        {
             let states = card.states
-            let newState: Anki_Scheduler_SchedulingState = {
-                switch rating {
-                case .again: return states.again
-                case .hard: return states.hard
-                case .good: return states.good
-                case .easy: return states.easy
-                default: return states.good
-                }
-            }()
+            let newState: Anki_Scheduler_SchedulingState = switch rating {
+                case .again: states.again
+                case .hard: states.hard
+                case .good: states.good
+                case .easy: states.easy
+                default: states.good
+            }
             Task {
                 await model.answerCard(
                     cardId: card.card.id,
@@ -328,18 +327,18 @@ struct ReviewerView: View {
 
     private func flagColor(_ flag: UInt32) -> Color {
         switch flag {
-        case 1: return .red
-        case 2: return .orange
-        case 3: return .green
-        case 4: return .blue
-        default: return .primary
+            case 1: .red
+            case 2: .orange
+            case 3: .green
+            case 4: .blue
+            default: .primary
         }
     }
 
     private func replayAudio() {
         guard let model else { return }
         for tag in model.currentAvTags {
-            if case .soundOrVideo(let filename) = tag.value {
+            if case let .soundOrVideo(filename) = tag.value {
                 playAudioFile(filename)
                 return
             }
@@ -461,7 +460,9 @@ private struct CardInfoSidebar: View {
 
 private struct ReviewEditNoteItem: Identifiable {
     let noteId: Int64
-    var id: Int64 { noteId }
+    var id: Int64 {
+        noteId
+    }
 }
 
 #Preview {

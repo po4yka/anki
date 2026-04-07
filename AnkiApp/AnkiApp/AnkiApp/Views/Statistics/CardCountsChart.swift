@@ -1,19 +1,19 @@
-import SwiftUI
 import Charts
+import SwiftUI
 
 struct CardCountsChart: View {
     let model: StatsModel
 
     private var segments: [(label: String, count: UInt32, color: Color)] {
-        guard let c = model.cardCountsData else { return [] }
+        guard let counts = model.cardCountsData else { return [] }
         return [
-            ("New", c.newCards, .blue),
-            ("Learn", c.learn, .orange),
-            ("Relearn", c.relearn, .red),
-            ("Young", c.young, .green),
-            ("Mature", c.mature, .teal),
-            ("Suspended", c.suspended, .gray),
-            ("Buried", c.buried, .brown),
+            ("New", counts.newCards, .blue),
+            ("Learn", counts.learn, .orange),
+            ("Relearn", counts.relearn, .red),
+            ("Young", counts.young, .green),
+            ("Mature", counts.mature, .teal),
+            ("Suspended", counts.suspended, .gray),
+            ("Buried", counts.buried, .brown),
         ]
     }
 
@@ -45,7 +45,11 @@ struct CardCountsChart: View {
                     }
                 }
             } else {
-                ContentUnavailableView("No Data", systemImage: "rectangle.stack", description: Text("No card count data available."))
+                ContentUnavailableView(
+                    "No Data",
+                    systemImage: "rectangle.stack",
+                    description: Text("No card count data available.")
+                )
             }
         }
         .padding()

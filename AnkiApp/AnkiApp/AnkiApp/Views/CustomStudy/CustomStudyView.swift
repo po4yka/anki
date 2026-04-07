@@ -22,18 +22,18 @@ struct CustomStudyView: View {
                 }
 
                 switch model.selectedMode {
-                case .increaseNewLimit:
-                    newLimitSection
-                case .increaseReviewLimit:
-                    reviewLimitSection
-                case .reviewForgotten:
-                    forgotSection
-                case .reviewAhead:
-                    reviewAheadSection
-                case .previewNew:
-                    previewSection
-                case .cramDue:
-                    cramSection
+                    case .increaseNewLimit:
+                        newLimitSection
+                    case .increaseReviewLimit:
+                        reviewLimitSection
+                    case .reviewForgotten:
+                        forgotSection
+                    case .reviewAhead:
+                        reviewAheadSection
+                    case .previewNew:
+                        previewSection
+                    case .cramDue:
+                        cramSection
                 }
             }
             .formStyle(.grouped)
@@ -71,7 +71,7 @@ struct CustomStudyView: View {
     @ViewBuilder
     private var newLimitSection: some View {
         let available = model.defaults.map { $0.availableNew + $0.availableNewInChildren } ?? 0
-        Stepper("Increase by: \(model.newLimitDelta)", value: $model.newLimitDelta, in: 1...999)
+        Stepper("Increase by: \(model.newLimitDelta)", value: $model.newLimitDelta, in: 1 ... 999)
         Text("Available new cards: \(available)")
             .foregroundStyle(.secondary)
             .font(.caption)
@@ -80,25 +80,22 @@ struct CustomStudyView: View {
     @ViewBuilder
     private var reviewLimitSection: some View {
         let available = model.defaults.map { $0.availableReview + $0.availableReviewInChildren } ?? 0
-        Stepper("Increase by: \(model.reviewLimitDelta)", value: $model.reviewLimitDelta, in: 1...999)
+        Stepper("Increase by: \(model.reviewLimitDelta)", value: $model.reviewLimitDelta, in: 1 ... 999)
         Text("Available review cards: \(available)")
             .foregroundStyle(.secondary)
             .font(.caption)
     }
 
-    @ViewBuilder
     private var forgotSection: some View {
-        Stepper("Cards forgotten in last \(model.forgotDays) days", value: $model.forgotDays, in: 1...365)
+        Stepper("Cards forgotten in last \(model.forgotDays) days", value: $model.forgotDays, in: 1 ... 365)
     }
 
-    @ViewBuilder
     private var reviewAheadSection: some View {
-        Stepper("Review cards due in next \(model.reviewAheadDays) days", value: $model.reviewAheadDays, in: 1...365)
+        Stepper("Review cards due in next \(model.reviewAheadDays) days", value: $model.reviewAheadDays, in: 1 ... 365)
     }
 
-    @ViewBuilder
     private var previewSection: some View {
-        Stepper("Preview cards added in last \(model.previewDays) days", value: $model.previewDays, in: 1...365)
+        Stepper("Preview cards added in last \(model.previewDays) days", value: $model.previewDays, in: 1 ... 365)
     }
 
     @ViewBuilder
@@ -109,7 +106,7 @@ struct CustomStudyView: View {
             Text("Review cards").tag(Anki_Scheduler_CustomStudyRequest.Cram.CramKind.review)
             Text("All cards").tag(Anki_Scheduler_CustomStudyRequest.Cram.CramKind.all)
         }
-        Stepper("Card limit: \(model.cramCardLimit)", value: $model.cramCardLimit, in: 1...9999)
+        Stepper("Card limit: \(model.cramCardLimit)", value: $model.cramCardLimit, in: 1 ... 9999)
         tagSelector
     }
 

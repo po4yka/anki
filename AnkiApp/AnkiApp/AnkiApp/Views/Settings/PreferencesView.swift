@@ -43,13 +43,13 @@ struct SchedulingPreferencesView: View {
     var body: some View {
         Form {
             Section("Day Boundary") {
-                Stepper("Next day starts at: \(rollover):00", value: $rollover, in: 0...23)
+                Stepper("Next day starts at: \(rollover):00", value: $rollover, in: 0 ... 23)
                     .help("Hour at which the next day starts (default 4 AM)")
             }
 
             Section("Learn Ahead") {
                 let minutes = learnAheadSecs / 60
-                Stepper("Learn ahead limit: \(minutes) minutes", value: $learnAheadSecs, in: 0...7200, step: 60)
+                Stepper("Learn ahead limit: \(minutes) minutes", value: $learnAheadSecs, in: 0 ... 7200, step: 60)
             }
 
             Section("Card Order") {
@@ -76,24 +76,24 @@ struct SchedulingPreferencesView: View {
 
     private func loadPreferences() async {
         do {
-            let p = try await appState.service.getPreferences()
-            prefs = p
-            rollover = p.scheduling.rollover
-            learnAheadSecs = p.scheduling.learnAheadSecs
-            newReviewMix = p.scheduling.newReviewMix
-            dayLearnFirst = p.scheduling.dayLearnFirst
+            let preferences = try await appState.service.getPreferences()
+            prefs = preferences
+            rollover = preferences.scheduling.rollover
+            learnAheadSecs = preferences.scheduling.learnAheadSecs
+            newReviewMix = preferences.scheduling.newReviewMix
+            dayLearnFirst = preferences.scheduling.dayLearnFirst
         } catch {}
     }
 
     private func savePreferences() async {
-        guard var p = prefs else { return }
-        p.scheduling.rollover = rollover
-        p.scheduling.learnAheadSecs = learnAheadSecs
-        p.scheduling.newReviewMix = newReviewMix
-        p.scheduling.dayLearnFirst = dayLearnFirst
+        guard var preferences = prefs else { return }
+        preferences.scheduling.rollover = rollover
+        preferences.scheduling.learnAheadSecs = learnAheadSecs
+        preferences.scheduling.newReviewMix = newReviewMix
+        preferences.scheduling.dayLearnFirst = dayLearnFirst
         do {
-            try await appState.service.setPreferences(prefs: p)
-            prefs = p
+            try await appState.service.setPreferences(prefs: preferences)
+            prefs = preferences
         } catch {}
     }
 }
@@ -121,7 +121,7 @@ struct ReviewPreferencesView: View {
 
             Section("Time Limit") {
                 let minutes = timeLimitSecs / 60
-                Stepper("Time limit per card: \(minutes) min", value: $timeLimitSecs, in: 0...3600, step: 60)
+                Stepper("Time limit per card: \(minutes) min", value: $timeLimitSecs, in: 0 ... 3600, step: 60)
                     .help("0 means no limit")
             }
 
@@ -140,26 +140,26 @@ struct ReviewPreferencesView: View {
 
     private func loadPreferences() async {
         do {
-            let p = try await appState.service.getPreferences()
-            prefs = p
-            showRemainingDueCounts = p.reviewing.showRemainingDueCounts
-            showIntervalsOnButtons = p.reviewing.showIntervalsOnButtons
-            hideAudioPlayButtons = p.reviewing.hideAudioPlayButtons
-            interruptAudioWhenAnswering = p.reviewing.interruptAudioWhenAnswering
-            timeLimitSecs = p.reviewing.timeLimitSecs
+            let preferences = try await appState.service.getPreferences()
+            prefs = preferences
+            showRemainingDueCounts = preferences.reviewing.showRemainingDueCounts
+            showIntervalsOnButtons = preferences.reviewing.showIntervalsOnButtons
+            hideAudioPlayButtons = preferences.reviewing.hideAudioPlayButtons
+            interruptAudioWhenAnswering = preferences.reviewing.interruptAudioWhenAnswering
+            timeLimitSecs = preferences.reviewing.timeLimitSecs
         } catch {}
     }
 
     private func savePreferences() async {
-        guard var p = prefs else { return }
-        p.reviewing.showRemainingDueCounts = showRemainingDueCounts
-        p.reviewing.showIntervalsOnButtons = showIntervalsOnButtons
-        p.reviewing.hideAudioPlayButtons = hideAudioPlayButtons
-        p.reviewing.interruptAudioWhenAnswering = interruptAudioWhenAnswering
-        p.reviewing.timeLimitSecs = timeLimitSecs
+        guard var preferences = prefs else { return }
+        preferences.reviewing.showRemainingDueCounts = showRemainingDueCounts
+        preferences.reviewing.showIntervalsOnButtons = showIntervalsOnButtons
+        preferences.reviewing.hideAudioPlayButtons = hideAudioPlayButtons
+        preferences.reviewing.interruptAudioWhenAnswering = interruptAudioWhenAnswering
+        preferences.reviewing.timeLimitSecs = timeLimitSecs
         do {
-            try await appState.service.setPreferences(prefs: p)
-            prefs = p
+            try await appState.service.setPreferences(prefs: preferences)
+            prefs = preferences
         } catch {}
     }
 }

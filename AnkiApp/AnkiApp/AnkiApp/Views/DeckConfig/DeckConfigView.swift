@@ -13,7 +13,7 @@ struct DeckConfigView: View {
             if model.isLoading {
                 ProgressView("Loading config...")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let _ = model.configsForUpdate {
+            } else if model.configsForUpdate != nil {
                 presetPicker
                     .padding()
 
@@ -81,7 +81,9 @@ struct DeckConfigView: View {
                 LabeledContent("Learning Steps") {
                     TextField("Steps", text: stepsBinding(
                         get: { model.selectedConfig?.config.learnSteps ?? [] },
-                        set: { steps in config.learnSteps = steps; updateConfig(config) }
+                        set: { steps in config.learnSteps = steps
+                            updateConfig(config)
+                        }
                     ))
                     .frame(width: 200)
                 }
@@ -89,9 +91,11 @@ struct DeckConfigView: View {
                     HStack {
                         TextField("", value: Binding(
                             get: { model.selectedConfig?.config.graduatingIntervalGood ?? 1 },
-                            set: { val in config.graduatingIntervalGood = val; updateConfig(config) }
+                            set: { val in config.graduatingIntervalGood = val
+                                updateConfig(config)
+                            }
                         ), format: .number)
-                        .frame(width: 80)
+                            .frame(width: 80)
                         Text("days")
                     }
                 }
@@ -99,18 +103,22 @@ struct DeckConfigView: View {
                     HStack {
                         TextField("", value: Binding(
                             get: { model.selectedConfig?.config.graduatingIntervalEasy ?? 4 },
-                            set: { val in config.graduatingIntervalEasy = val; updateConfig(config) }
+                            set: { val in config.graduatingIntervalEasy = val
+                                updateConfig(config)
+                            }
                         ), format: .number)
-                        .frame(width: 80)
+                            .frame(width: 80)
                         Text("days")
                     }
                 }
                 LabeledContent("New Cards/Day") {
                     TextField("", value: Binding(
                         get: { model.selectedConfig?.config.newPerDay ?? 20 },
-                        set: { val in config.newPerDay = val; updateConfig(config) }
+                        set: { val in config.newPerDay = val
+                            updateConfig(config)
+                        }
                     ), format: .number)
-                    .frame(width: 80)
+                        .frame(width: 80)
                 }
             }
         }
@@ -124,24 +132,30 @@ struct DeckConfigView: View {
                 LabeledContent("Maximum Reviews/Day") {
                     TextField("", value: Binding(
                         get: { model.selectedConfig?.config.reviewsPerDay ?? 200 },
-                        set: { val in config.reviewsPerDay = val; updateConfig(config) }
+                        set: { val in config.reviewsPerDay = val
+                            updateConfig(config)
+                        }
                     ), format: .number)
-                    .frame(width: 80)
+                        .frame(width: 80)
                 }
                 LabeledContent("Maximum Interval") {
                     HStack {
                         TextField("", value: Binding(
                             get: { model.selectedConfig?.config.maximumReviewInterval ?? 36500 },
-                            set: { val in config.maximumReviewInterval = val; updateConfig(config) }
+                            set: { val in config.maximumReviewInterval = val
+                                updateConfig(config)
+                            }
                         ), format: .number)
-                        .frame(width: 80)
+                            .frame(width: 80)
                         Text("days")
                     }
                 }
                 LabeledContent("Bury Related Reviews") {
                     Toggle("", isOn: Binding(
                         get: { model.selectedConfig?.config.buryReviews ?? false },
-                        set: { val in config.buryReviews = val; updateConfig(config) }
+                        set: { val in config.buryReviews = val
+                            updateConfig(config)
+                        }
                     ))
                     .labelsHidden()
                 }
@@ -157,7 +171,9 @@ struct DeckConfigView: View {
                 LabeledContent("Relearning Steps") {
                     TextField("Steps", text: stepsBinding(
                         get: { model.selectedConfig?.config.relearnSteps ?? [] },
-                        set: { steps in config.relearnSteps = steps; updateConfig(config) }
+                        set: { steps in config.relearnSteps = steps
+                            updateConfig(config)
+                        }
                     ))
                     .frame(width: 200)
                 }
@@ -165,23 +181,29 @@ struct DeckConfigView: View {
                     HStack {
                         TextField("", value: Binding(
                             get: { model.selectedConfig?.config.minimumLapseInterval ?? 1 },
-                            set: { val in config.minimumLapseInterval = val; updateConfig(config) }
+                            set: { val in config.minimumLapseInterval = val
+                                updateConfig(config)
+                            }
                         ), format: .number)
-                        .frame(width: 80)
+                            .frame(width: 80)
                         Text("days")
                     }
                 }
                 LabeledContent("Leech Threshold") {
                     TextField("", value: Binding(
                         get: { model.selectedConfig?.config.leechThreshold ?? 8 },
-                        set: { val in config.leechThreshold = val; updateConfig(config) }
+                        set: { val in config.leechThreshold = val
+                            updateConfig(config)
+                        }
                     ), format: .number)
-                    .frame(width: 80)
+                        .frame(width: 80)
                 }
                 LabeledContent("Leech Action") {
                     Picker("", selection: Binding(
                         get: { model.selectedConfig?.config.leechAction ?? .suspend },
-                        set: { val in config.leechAction = val; updateConfig(config) }
+                        set: { val in config.leechAction = val
+                            updateConfig(config)
+                        }
                     )) {
                         Text("Suspend Card").tag(Anki_DeckConfig_DeckConfig.Config.LeechAction.suspend)
                         Text("Tag Only").tag(Anki_DeckConfig_DeckConfig.Config.LeechAction.tagOnly)
@@ -201,35 +223,45 @@ struct DeckConfigView: View {
                 LabeledContent("Interval Multiplier") {
                     TextField("", value: Binding(
                         get: { model.selectedConfig?.config.intervalMultiplier ?? 1.0 },
-                        set: { val in config.intervalMultiplier = val; updateConfig(config) }
+                        set: { val in config.intervalMultiplier = val
+                            updateConfig(config)
+                        }
                     ), format: .number)
-                    .frame(width: 80)
+                        .frame(width: 80)
                 }
                 LabeledContent("Hard Multiplier") {
                     TextField("", value: Binding(
                         get: { model.selectedConfig?.config.hardMultiplier ?? 1.2 },
-                        set: { val in config.hardMultiplier = val; updateConfig(config) }
+                        set: { val in config.hardMultiplier = val
+                            updateConfig(config)
+                        }
                     ), format: .number)
-                    .frame(width: 80)
+                        .frame(width: 80)
                 }
                 LabeledContent("Easy Multiplier") {
                     TextField("", value: Binding(
                         get: { model.selectedConfig?.config.easyMultiplier ?? 1.3 },
-                        set: { val in config.easyMultiplier = val; updateConfig(config) }
+                        set: { val in config.easyMultiplier = val
+                            updateConfig(config)
+                        }
                     ), format: .number)
-                    .frame(width: 80)
+                        .frame(width: 80)
                 }
                 LabeledContent("Show Timer") {
                     Toggle("", isOn: Binding(
                         get: { model.selectedConfig?.config.showTimer ?? false },
-                        set: { val in config.showTimer = val; updateConfig(config) }
+                        set: { val in config.showTimer = val
+                            updateConfig(config)
+                        }
                     ))
                     .labelsHidden()
                 }
                 LabeledContent("Bury New Siblings") {
                     Toggle("", isOn: Binding(
                         get: { model.selectedConfig?.config.buryNew ?? false },
-                        set: { val in config.buryNew = val; updateConfig(config) }
+                        set: { val in config.buryNew = val
+                            updateConfig(config)
+                        }
                     ))
                     .labelsHidden()
                 }

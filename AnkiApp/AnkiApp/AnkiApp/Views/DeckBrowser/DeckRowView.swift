@@ -53,7 +53,7 @@ struct DeckRowView: View {
             TextField("Deck Name", text: $renameName)
             Button("Rename") {
                 let name = renameName.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !name.isEmpty && name != node.name {
+                if !name.isEmpty, name != node.name {
                     Task { await model.renameDeck(deckId: node.deckID, newName: name) }
                 }
             }

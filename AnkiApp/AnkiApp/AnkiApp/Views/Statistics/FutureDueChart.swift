@@ -1,5 +1,5 @@
-import SwiftUI
 import Charts
+import SwiftUI
 
 struct FutureDueChart: View {
     let model: StatsModel
@@ -8,7 +8,11 @@ struct FutureDueChart: View {
         VStack(alignment: .leading, spacing: 16) {
             let data = model.futureDueData
             if data.isEmpty {
-                ContentUnavailableView("No Data", systemImage: "calendar.badge.clock", description: Text("No future due data available."))
+                ContentUnavailableView(
+                    "No Data",
+                    systemImage: "calendar.badge.clock",
+                    description: Text("No future due data available.")
+                )
             } else {
                 Text("Future Due")
                     .font(.headline)

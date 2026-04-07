@@ -12,7 +12,8 @@ struct AnkiApp: App {
         .commands {
             CommandGroup(replacing: .undoRedo) {
                 Button(appState.undoStatus?.undo.isEmpty == false
-                       ? "Undo \(appState.undoStatus!.undo)" : "Undo") {
+                    ? "Undo \(appState.undoStatus!.undo)" : "Undo")
+                {
                     Task {
                         do {
                             _ = try await appState.service.undo()
@@ -24,7 +25,8 @@ struct AnkiApp: App {
                 .disabled(appState.undoStatus?.undo.isEmpty ?? true)
 
                 Button(appState.undoStatus?.redo.isEmpty == false
-                       ? "Redo \(appState.undoStatus!.redo)" : "Redo") {
+                    ? "Redo \(appState.undoStatus!.redo)" : "Redo")
+                {
                     Task {
                         do {
                             _ = try await appState.service.redo()
@@ -38,7 +40,7 @@ struct AnkiApp: App {
 
             CommandGroup(after: .newItem) {
                 Button("Add Note") {
-                    // TODO: open add-note window
+                    // Open add-note window (not yet implemented)
                 }
                 .keyboardShortcut("n", modifiers: .command)
             }
@@ -62,7 +64,7 @@ struct AnkiApp: App {
 
             CommandMenu("Study") {
                 Button("Start Review") {
-                    // TODO: start review for current deck
+                    // Start review for current deck (not yet implemented)
                 }
                 .keyboardShortcut("r", modifiers: .command)
 

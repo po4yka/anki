@@ -1,5 +1,5 @@
-import SwiftUI
 import Charts
+import SwiftUI
 
 struct IntervalChart: View {
     let model: StatsModel
@@ -8,7 +8,11 @@ struct IntervalChart: View {
         VStack(alignment: .leading, spacing: 16) {
             let data = model.intervalData
             if data.isEmpty {
-                ContentUnavailableView("No Data", systemImage: "clock", description: Text("No interval data available."))
+                ContentUnavailableView(
+                    "No Data",
+                    systemImage: "clock",
+                    description: Text("No interval data available.")
+                )
             } else {
                 Text("Card Intervals")
                     .font(.headline)

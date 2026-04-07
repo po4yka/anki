@@ -1,5 +1,5 @@
-import SwiftUI
 import Charts
+import SwiftUI
 
 struct StatisticsView: View {
     @Environment(AppState.self) private var appState
@@ -57,7 +57,10 @@ struct StatisticsView: View {
                                 .tag(StatsTab.cards)
 
                             IntervalChart(model: model)
-                                .tabItem { Label(StatsTab.intervals.rawValue, systemImage: StatsTab.intervals.systemImage) }
+                                .tabItem { Label(
+                                    StatsTab.intervals.rawValue,
+                                    systemImage: StatsTab.intervals.systemImage
+                                ) }
                                 .tag(StatsTab.intervals)
 
                             EaseChart(model: model)
@@ -65,7 +68,10 @@ struct StatisticsView: View {
                                 .tag(StatsTab.ease)
 
                             FutureDueChart(model: model)
-                                .tabItem { Label(StatsTab.futureDue.rawValue, systemImage: StatsTab.futureDue.systemImage) }
+                                .tabItem { Label(
+                                    StatsTab.futureDue.rawValue,
+                                    systemImage: StatsTab.futureDue.systemImage
+                                ) }
                                 .tag(StatsTab.futureDue)
 
                             AddedChart(model: model)
@@ -73,7 +79,10 @@ struct StatisticsView: View {
                                 .tag(StatsTab.added)
 
                             RetentionView(model: model)
-                                .tabItem { Label(StatsTab.retention.rawValue, systemImage: StatsTab.retention.systemImage) }
+                                .tabItem { Label(
+                                    StatsTab.retention.rawValue,
+                                    systemImage: StatsTab.retention.systemImage
+                                ) }
                                 .tag(StatsTab.retention)
                         }
                     }

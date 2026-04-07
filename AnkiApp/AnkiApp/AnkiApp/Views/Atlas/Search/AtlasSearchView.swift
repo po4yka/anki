@@ -83,9 +83,9 @@ private struct SourceBadge: View {
 
     var color: Color {
         switch source {
-        case "semantic": return .purple
-        case "fts": return .blue
-        default: return .green
+            case "semantic": .purple
+            case "fts": .blue
+            default: .green
         }
     }
 

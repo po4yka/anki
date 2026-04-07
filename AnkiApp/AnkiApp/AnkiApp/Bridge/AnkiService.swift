@@ -1,8 +1,9 @@
+// swiftlint:disable type_body_length
 actor AnkiService: AnkiServiceProtocol {
     private let backend: AnkiBackend
 
     init(langs: [String] = ["en"]) throws {
-        self.backend = try AnkiBackend(preferredLangs: langs)
+        backend = try AnkiBackend(preferredLangs: langs)
     }
 
     func openCollection(path: String, mediaFolder: String, mediaDb: String) async throws {
@@ -152,7 +153,14 @@ actor AnkiService: AnkiServiceProtocol {
         )
     }
 
-    func findAndReplace(nids: [Int64], search: String, replacement: String, regex: Bool, matchCase: Bool, fieldName: String) async throws -> Anki_Collection_OpChangesWithCount {
+    func findAndReplace(
+        nids: [Int64],
+        search: String,
+        replacement: String,
+        regex: Bool,
+        matchCase: Bool,
+        fieldName: String
+    ) async throws -> Anki_Collection_OpChangesWithCount {
         var req = Anki_Search_FindAndReplaceRequest()
         req.nids = nids
         req.search = search
@@ -188,7 +196,9 @@ actor AnkiService: AnkiServiceProtocol {
         )
     }
 
-    func scheduleCardsAsNew(cardIds: [Int64], log: Bool, restorePosition: Bool, resetCounts: Bool) async throws -> Anki_Collection_OpChanges {
+    func scheduleCardsAsNew(cardIds: [Int64], log: Bool, restorePosition: Bool,
+                            resetCounts: Bool) async throws -> Anki_Collection_OpChanges
+    {
         var req = Anki_Scheduler_ScheduleCardsAsNewRequest()
         req.cardIds = cardIds
         req.log = log
@@ -321,7 +331,7 @@ actor AnkiService: AnkiServiceProtocol {
     }
 
     func clozeNumbersInNote(note: Anki_Notes_Note) async throws -> Anki_Notes_ClozeNumbersInNoteResponse {
-        return try backend.command(
+        try backend.command(
             service: ServiceIndex.notes,
             method: NotesMethod.clozeNumbersInNote,
             input: note
@@ -329,7 +339,7 @@ actor AnkiService: AnkiServiceProtocol {
     }
 
     func noteFieldsCheck(note: Anki_Notes_Note) async throws -> Anki_Notes_NoteFieldsCheckResponse {
-        return try backend.command(
+        try backend.command(
             service: ServiceIndex.notes,
             method: NotesMethod.noteFieldsCheck,
             input: note
@@ -348,7 +358,7 @@ actor AnkiService: AnkiServiceProtocol {
     }
 
     func syncStatus(auth: Anki_Sync_SyncAuth) async throws -> Anki_Sync_SyncStatusResponse {
-        return try backend.command(
+        try backend.command(
             service: ServiceIndex.sync,
             method: SyncMethod.syncStatus,
             input: auth
@@ -398,7 +408,7 @@ actor AnkiService: AnkiServiceProtocol {
     }
 
     func addDeck(deck: Anki_Decks_Deck) async throws -> Anki_Collection_OpChangesWithId {
-        return try backend.command(
+        try backend.command(
             service: ServiceIndex.decks,
             method: DecksMethod.addDeck,
             input: deck
@@ -416,7 +426,7 @@ actor AnkiService: AnkiServiceProtocol {
     }
 
     func updateDeck(deck: Anki_Decks_Deck) async throws -> Anki_Collection_OpChanges {
-        return try backend.command(
+        try backend.command(
             service: ServiceIndex.decks,
             method: DecksMethod.updateDeck,
             input: deck
@@ -454,8 +464,10 @@ actor AnkiService: AnkiServiceProtocol {
         )
     }
 
-    func updateDeckConfigs(request: Anki_DeckConfig_UpdateDeckConfigsRequest) async throws -> Anki_Collection_OpChanges {
-        return try backend.command(
+    func updateDeckConfigs(request: Anki_DeckConfig_UpdateDeckConfigsRequest) async throws
+        -> Anki_Collection_OpChanges
+    {
+        try backend.command(
             service: ServiceIndex.deckConfig,
             method: DeckConfigMethod.updateDeckConfigs,
             input: request
@@ -474,7 +486,11 @@ actor AnkiService: AnkiServiceProtocol {
         return response.val
     }
 
-    func buryOrSuspendCards(cardIds: [Int64], noteIds: [Int64], mode: Anki_Scheduler_BuryOrSuspendCardsRequest.Mode) async throws -> Anki_Collection_OpChangesWithCount {
+    func buryOrSuspendCards(
+        cardIds: [Int64],
+        noteIds: [Int64],
+        mode: Anki_Scheduler_BuryOrSuspendCardsRequest.Mode
+    ) async throws -> Anki_Collection_OpChangesWithCount {
         var req = Anki_Scheduler_BuryOrSuspendCardsRequest()
         req.cardIds = cardIds
         req.noteIds = noteIds
@@ -497,7 +513,10 @@ actor AnkiService: AnkiServiceProtocol {
         )
     }
 
-    func importAnkiPackage(path: String, options: Anki_ImportExport_ImportAnkiPackageOptions) async throws -> Anki_ImportExport_ImportResponse {
+    func importAnkiPackage(path: String,
+                           options: Anki_ImportExport_ImportAnkiPackageOptions) async throws
+        -> Anki_ImportExport_ImportResponse
+    {
         var req = Anki_ImportExport_ImportAnkiPackageRequest()
         req.packagePath = path
         req.options = options
@@ -508,7 +527,11 @@ actor AnkiService: AnkiServiceProtocol {
         )
     }
 
-    func exportAnkiPackage(outPath: String, options: Anki_ImportExport_ExportAnkiPackageOptions, limit: Anki_ImportExport_ExportLimit) async throws -> UInt32 {
+    func exportAnkiPackage(
+        outPath: String,
+        options: Anki_ImportExport_ExportAnkiPackageOptions,
+        limit: Anki_ImportExport_ExportLimit
+    ) async throws -> UInt32 {
         var req = Anki_ImportExport_ExportAnkiPackageRequest()
         req.outPath = outPath
         req.options = options
@@ -521,7 +544,13 @@ actor AnkiService: AnkiServiceProtocol {
         return response.val
     }
 
-    func getCsvMetadata(path: String, delimiter: Anki_ImportExport_CsvMetadata.Delimiter?, notetypeId: Int64?, deckId: Int64?, isHtml: Bool?) async throws -> Anki_ImportExport_CsvMetadata {
+    func getCsvMetadata(
+        path: String,
+        delimiter: Anki_ImportExport_CsvMetadata.Delimiter?,
+        notetypeId: Int64?,
+        deckId: Int64?,
+        isHtml: Bool?
+    ) async throws -> Anki_ImportExport_CsvMetadata {
         var req = Anki_ImportExport_CsvMetadataRequest()
         req.path = path
         if let delimiter { req.delimiter = delimiter }
@@ -535,7 +564,9 @@ actor AnkiService: AnkiServiceProtocol {
         )
     }
 
-    func importCsv(path: String, metadata: Anki_ImportExport_CsvMetadata) async throws -> Anki_ImportExport_ImportResponse {
+    func importCsv(path: String,
+                   metadata: Anki_ImportExport_CsvMetadata) async throws -> Anki_ImportExport_ImportResponse
+    {
         var req = Anki_ImportExport_ImportCsvRequest()
         req.path = path
         req.metadata = metadata
@@ -584,7 +615,7 @@ actor AnkiService: AnkiServiceProtocol {
     }
 
     func addNotetype(notetype: Anki_Notetypes_Notetype) async throws -> Anki_Collection_OpChangesWithId {
-        return try backend.command(
+        try backend.command(
             service: ServiceIndex.notetypes,
             method: NotetypesMethod.addNotetype,
             input: notetype
@@ -592,7 +623,7 @@ actor AnkiService: AnkiServiceProtocol {
     }
 
     func updateNotetype(notetype: Anki_Notetypes_Notetype) async throws -> Anki_Collection_OpChanges {
-        return try backend.command(
+        try backend.command(
             service: ServiceIndex.notetypes,
             method: NotetypesMethod.updateNotetype,
             input: notetype
@@ -628,16 +659,20 @@ actor AnkiService: AnkiServiceProtocol {
         )
     }
 
-    func addImageOcclusionNote(request: Anki_ImageOcclusion_AddImageOcclusionNoteRequest) async throws -> Anki_Collection_OpChanges {
-        return try backend.command(
+    func addImageOcclusionNote(request: Anki_ImageOcclusion_AddImageOcclusionNoteRequest) async throws
+        -> Anki_Collection_OpChanges
+    {
+        try backend.command(
             service: ServiceIndex.imageOcclusion,
             method: ImageOcclusionMethod.addImageOcclusionNote,
             input: request
         )
     }
 
-    func updateImageOcclusionNote(request: Anki_ImageOcclusion_UpdateImageOcclusionNoteRequest) async throws -> Anki_Collection_OpChanges {
-        return try backend.command(
+    func updateImageOcclusionNote(request: Anki_ImageOcclusion_UpdateImageOcclusionNoteRequest) async throws
+        -> Anki_Collection_OpChanges
+    {
+        try backend.command(
             service: ServiceIndex.imageOcclusion,
             method: ImageOcclusionMethod.updateImageOcclusionNote,
             input: request
@@ -645,7 +680,7 @@ actor AnkiService: AnkiServiceProtocol {
     }
 
     func customStudy(request: Anki_Scheduler_CustomStudyRequest) async throws -> Anki_Collection_OpChanges {
-        return try backend.command(
+        try backend.command(
             service: ServiceIndex.scheduler,
             method: SchedulerMethod.customStudy,
             input: request

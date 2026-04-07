@@ -36,16 +36,15 @@ struct NotetypeEditorView: View {
         }
     }
 
-    @ViewBuilder
     private func fieldsTab(notetype: Anki_Notetypes_Notetype) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Fields")
                     .font(.headline)
                 Spacer()
-                Button(action: { showAddField = true }) {
+                Button(action: { showAddField = true }, label: {
                     Image(systemName: "plus")
-                }
+                })
                 .buttonStyle(.borderless)
             }
 
@@ -70,20 +69,23 @@ struct NotetypeEditorView: View {
                         }
                     }
                 }
-                .onMove { from, to in
+                .onMove { from, destination in
                     guard let source = from.first else { return }
-                    Task { await model.moveField(from: source, to: to) }
+                    Task { await model.moveField(from: source, to: destination) }
                 }
             }
             .listStyle(.inset)
         }
     }
 
-    @ViewBuilder
     private func templatesTab(notetype: Anki_Notetypes_Notetype) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             if notetype.templates.isEmpty {
-                ContentUnavailableView("No Templates", systemImage: "doc.plaintext", description: Text("This note type has no templates."))
+                ContentUnavailableView(
+                    "No Templates",
+                    systemImage: "doc.plaintext",
+                    description: Text("This note type has no templates.")
+                )
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
@@ -99,7 +101,6 @@ struct NotetypeEditorView: View {
         }
     }
 
-    @ViewBuilder
     private func templateEditor(index: Int, template: Anki_Notetypes_Notetype.Template) -> some View {
         GroupBox(template.name) {
             VStack(alignment: .leading, spacing: 8) {
@@ -133,7 +134,6 @@ struct NotetypeEditorView: View {
         }
     }
 
-    @ViewBuilder
     private func cssEditor(notetype: Anki_Notetypes_Notetype) -> some View {
         GroupBox("Styling (CSS)") {
             TextEditor(text: Binding(

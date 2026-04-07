@@ -42,7 +42,6 @@ struct SyncView: View {
         ))
     }
 
-    @ViewBuilder
     private func loginView(model: SyncModel) -> some View {
         VStack(spacing: 20) {
             Image(systemName: "person.circle")
@@ -71,7 +70,7 @@ struct SyncView: View {
             }
             .frame(maxWidth: 280)
 
-            if case .syncing(let message) = model.state {
+            if case let .syncing(message) = model.state {
                 VStack(spacing: 8) {
                     ProgressView()
                     Text(message)
@@ -86,7 +85,7 @@ struct SyncView: View {
                 .disabled(username.isEmpty || password.isEmpty)
             }
 
-            if case .error(let message) = model.state {
+            if case let .error(message) = model.state {
                 Text(message)
                     .foregroundStyle(.red)
                     .font(.caption)
@@ -95,7 +94,6 @@ struct SyncView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    @ViewBuilder
     private func authenticatedView(model: SyncModel) -> some View {
         VStack(spacing: 24) {
             Image(systemName: "arrow.triangle.2.circlepath")
@@ -128,7 +126,9 @@ struct SyncView: View {
         .alert("Full Sync Required", isPresented: $showFullSyncAlert) {
             fullSyncAlertActions(model: model)
         } message: {
-            Text("Your collection has diverged from the server. Would you like to upload your local collection or download the server's version?")
+            Text(
+                "Your collection has diverged from the server. Would you like to upload your local collection or download the server's version?"
+            )
         }
         .onChange(of: model.state) { _, newState in
             if case .fullSyncRequired = newState {
@@ -140,26 +140,25 @@ struct SyncView: View {
     @ViewBuilder
     private func syncStateView(model: SyncModel) -> some View {
         switch model.state {
-        case .syncing(let message):
-            VStack(spacing: 12) {
-                ProgressView()
-                Text(message)
-                    .foregroundStyle(.secondary)
-            }
-            .animation(.default, value: message)
-        case .error(let message):
-            VStack(spacing: 8) {
-                Text(message)
-                    .foregroundStyle(.red)
-                    .font(.caption)
+            case let .syncing(message):
+                VStack(spacing: 12) {
+                    ProgressView()
+                    Text(message)
+                        .foregroundStyle(.secondary)
+                }
+                .animation(.default, value: message)
+            case let .error(message):
+                VStack(spacing: 8) {
+                    Text(message)
+                        .foregroundStyle(.red)
+                        .font(.caption)
+                    syncButton(model: model)
+                }
+            default:
                 syncButton(model: model)
-            }
-        default:
-            syncButton(model: model)
         }
     }
 
-    @ViewBuilder
     private func syncButton(model: SyncModel) -> some View {
         Button("Sync Now") {
             Task { await model.sync() }
@@ -170,7 +169,7 @@ struct SyncView: View {
 
     @ViewBuilder
     private func fullSyncAlertActions(model: SyncModel) -> some View {
-        if case .fullSyncRequired(let upload, let serverMediaUsn) = model.state {
+        if case let .fullSyncRequired(upload, serverMediaUsn) = model.state {
             if upload == nil {
                 Button("Upload to AnkiWeb") {
                     Task { await model.performFullSync(upload: true, serverMediaUsn: serverMediaUsn) }

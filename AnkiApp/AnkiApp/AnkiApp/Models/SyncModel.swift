@@ -13,15 +13,15 @@ enum SyncState: Equatable {
 @MainActor
 final class SyncModel {
     var state: SyncState = .loggedOut
-    var lastSyncError: AnkiError? = nil
-    var serverMessage: String? = nil
+    var lastSyncError: AnkiError?
+    var serverMessage: String?
 
     private let service: AnkiServiceProtocol
     private(set) var auth: Anki_Sync_SyncAuth?
 
     init(service: AnkiServiceProtocol) {
         self.service = service
-        self.auth = KeychainHelper.loadAuth()
+        auth = KeychainHelper.loadAuth()
         if auth != nil {
             state = .idle
         }
@@ -35,12 +35,12 @@ final class SyncModel {
         state = .syncing("Logging in...")
         do {
             let authResponse = try await service.syncLogin(username: username, password: password)
-            self.auth = authResponse
+            auth = authResponse
             KeychainHelper.saveAuth(authResponse)
             state = .idle
-        } catch let e as AnkiError {
+        } catch let ankiError as AnkiError {
             state = .loggedOut
-            lastSyncError = e
+            lastSyncError = ankiError
         } catch {
             state = .loggedOut
             state = .error(error.localizedDescription)
@@ -65,27 +65,27 @@ final class SyncModel {
             let statusResponse = try await service.syncStatus(auth: currentAuth)
             if statusResponse.hasNewEndpoint {
                 currentAuth.endpoint = statusResponse.newEndpoint
-                self.auth = currentAuth
+                auth = currentAuth
                 KeychainHelper.saveAuth(currentAuth)
             }
 
             switch statusResponse.required {
-            case .noChanges:
-                state = .idle
-                serverMessage = nil
-                return
-            case .normalSync:
-                try await performNormalSync(auth: currentAuth)
-            case .fullSync:
-                state = .fullSyncRequired(upload: nil, serverMediaUsn: 0)
-                return
-            case .UNRECOGNIZED:
-                state = .error("Unrecognized sync status")
-                return
+                case .noChanges:
+                    state = .idle
+                    serverMessage = nil
+                    return
+                case .normalSync:
+                    try await performNormalSync(auth: currentAuth)
+                case .fullSync:
+                    state = .fullSyncRequired(upload: nil, serverMediaUsn: 0)
+                    return
+                case .UNRECOGNIZED:
+                    state = .error("Unrecognized sync status")
+                    return
             }
-        } catch let e as AnkiError {
+        } catch let ankiError as AnkiError {
             state = .idle
-            lastSyncError = e
+            lastSyncError = ankiError
         } catch {
             state = .idle
             state = .error(error.localizedDescription)
@@ -108,16 +108,16 @@ final class SyncModel {
         }
 
         switch response.required {
-        case .noChanges, .normalSync:
-            state = .idle
-        case .fullSync:
-            state = .fullSyncRequired(upload: nil, serverMediaUsn: response.serverMediaUsn)
-        case .fullDownload:
-            state = .fullSyncRequired(upload: false, serverMediaUsn: response.serverMediaUsn)
-        case .fullUpload:
-            state = .fullSyncRequired(upload: true, serverMediaUsn: response.serverMediaUsn)
-        case .UNRECOGNIZED:
-            state = .error("Unrecognized sync response")
+            case .noChanges, .normalSync:
+                state = .idle
+            case .fullSync:
+                state = .fullSyncRequired(upload: nil, serverMediaUsn: response.serverMediaUsn)
+            case .fullDownload:
+                state = .fullSyncRequired(upload: false, serverMediaUsn: response.serverMediaUsn)
+            case .fullUpload:
+                state = .fullSyncRequired(upload: true, serverMediaUsn: response.serverMediaUsn)
+            case .UNRECOGNIZED:
+                state = .error("Unrecognized sync response")
         }
     }
 
@@ -137,9 +137,9 @@ final class SyncModel {
             state = .syncing("Syncing media...")
             try await service.syncMedia(auth: currentAuth)
             state = .idle
-        } catch let e as AnkiError {
+        } catch let ankiError as AnkiError {
             state = .idle
-            lastSyncError = e
+            lastSyncError = ankiError
         } catch {
             state = .idle
             state = .error(error.localizedDescription)

@@ -11,18 +11,20 @@ enum StatsTab: String, CaseIterable, Identifiable {
     case added = "Added"
     case retention = "Retention"
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
     var systemImage: String {
         switch self {
-        case .today: "calendar"
-        case .reviews: "chart.bar"
-        case .cards: "rectangle.stack"
-        case .intervals: "clock"
-        case .ease: "gauge.medium"
-        case .futureDue: "calendar.badge.clock"
-        case .added: "plus.circle"
-        case .retention: "checkmark.circle"
+            case .today: "calendar"
+            case .reviews: "chart.bar"
+            case .cards: "rectangle.stack"
+            case .intervals: "clock"
+            case .ease: "gauge.medium"
+            case .futureDue: "calendar.badge.clock"
+            case .added: "plus.circle"
+            case .retention: "checkmark.circle"
         }
     }
 }
@@ -33,14 +35,16 @@ enum StatsTimeRange: String, CaseIterable, Identifiable {
     case oneYear = "1Y"
     case allTime = "All"
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
     var days: UInt32 {
         switch self {
-        case .oneMonth: 30
-        case .threeMonths: 90
-        case .oneYear: 365
-        case .allTime: 0
+            case .oneMonth: 30
+            case .threeMonths: 90
+            case .oneYear: 365
+            case .allTime: 0
         }
     }
 }
@@ -48,9 +52,9 @@ enum StatsTimeRange: String, CaseIterable, Identifiable {
 @Observable
 @MainActor
 final class StatsModel {
-    var graphs: Anki_Stats_GraphsResponse? = nil
+    var graphs: Anki_Stats_GraphsResponse?
     var isLoading: Bool = false
-    var error: AnkiError? = nil
+    var error: AnkiError?
 
     var search: String = ""
     var days: UInt32 = 365
@@ -70,8 +74,8 @@ final class StatsModel {
         do {
             graphs = try await service.getGraphs(search: search, days: selectedTimeRange.days)
             error = nil
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 
@@ -88,8 +92,8 @@ final class StatsModel {
 
     var reviewCountData: [ReviewDataPoint] {
         guard let reviews = graphs?.reviews else { return [] }
-        return reviews.count.sorted(by: { $0.key < $1.key }).map { (day, r) in
-            ReviewDataPoint(day: Int(day), learn: r.learn, relearn: r.relearn, young: r.young, mature: r.mature)
+        return reviews.count.sorted(by: { $0.key < $1.key }).map { day, reviewCount in
+            ReviewDataPoint(day: Int(day), learn: reviewCount.learn, relearn: reviewCount.relearn, young: reviewCount.young, mature: reviewCount.mature)
         }
     }
 
@@ -100,8 +104,8 @@ final class StatsModel {
     }
 
     var totalCards: UInt32 {
-        guard let c = cardCountsData else { return 0 }
-        return c.newCards + c.learn + c.relearn + c.young + c.mature + c.suspended + c.buried
+        guard let counts = cardCountsData else { return 0 }
+        return counts.newCards + counts.learn + counts.relearn + counts.young + counts.mature + counts.suspended + counts.buried
     }
 
     // MARK: - Intervals

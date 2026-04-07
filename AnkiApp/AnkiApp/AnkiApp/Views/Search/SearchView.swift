@@ -3,7 +3,7 @@ import SwiftUI
 struct SearchView: View {
     @Environment(AppState.self) private var appState
     @State private var model: SearchModel?
-    @State private var editingNoteId: Int64? = nil
+    @State private var editingNoteId: Int64?
     @State private var showingSetDueDate = false
     @State private var showingAddTags = false
     @State private var showingRemoveTags = false
@@ -15,7 +15,7 @@ struct SearchView: View {
     @State private var showingColumnPicker = false
     @State private var showingSaveSearch = false
     @State private var saveSearchName = ""
-    @State private var renamingSearchId: UUID? = nil
+    @State private var renamingSearchId: UUID?
     @State private var renameSearchText = ""
 
     var body: some View {
@@ -45,131 +45,131 @@ struct SearchView: View {
                         .frame(minWidth: 160, maxWidth: 220)
 
                         VStack(spacing: 0) {
-                        SearchBar(model: model)
-                            .padding()
+                            SearchBar(model: model)
+                                .padding()
 
-                        Divider()
+                            Divider()
 
-                        HStack {
-                            Picker("Mode", selection: Binding(
-                                get: { model.searchMode },
-                                set: { mode in
-                                    model.searchMode = mode
-                                    Task { await model.search() }
+                            HStack {
+                                Picker("Mode", selection: Binding(
+                                    get: { model.searchMode },
+                                    set: { mode in
+                                        model.searchMode = mode
+                                        Task { await model.search() }
+                                    }
+                                )) {
+                                    ForEach(BrowserSearchMode.allCases, id: \.self) { mode in
+                                        Text(mode.rawValue).tag(mode)
+                                    }
                                 }
-                            )) {
-                                ForEach(BrowserSearchMode.allCases, id: \.self) { mode in
-                                    Text(mode.rawValue).tag(mode)
-                                }
-                            }
-                            .pickerStyle(.segmented)
-                            .frame(width: 200)
+                                .pickerStyle(.segmented)
+                                .frame(width: 200)
 
-                            Spacer()
+                                Spacer()
 
-                            Text("\(model.cardIds.count) results")
-                                .foregroundStyle(.secondary)
-                                .font(.caption)
-
-                            if !model.selectedCardIds.isEmpty {
-                                Text("\(model.selectedCardIds.count) selected")
-                                    .foregroundStyle(.blue)
+                                Text("\(model.cardIds.count) results")
+                                    .foregroundStyle(.secondary)
                                     .font(.caption)
+
+                                if !model.selectedCardIds.isEmpty {
+                                    Text("\(model.selectedCardIds.count) selected")
+                                        .foregroundStyle(.blue)
+                                        .font(.caption)
+                                }
                             }
-                        }
-                        .padding(.horizontal)
-                        .padding(.vertical, 6)
+                            .padding(.horizontal)
+                            .padding(.vertical, 6)
 
-                        Divider()
+                            Divider()
 
-                        if model.cardIds.isEmpty && !model.isSearching {
-                            ContentUnavailableView(
-                                "Search Notes",
-                                systemImage: "magnifyingglass",
-                                description: Text("Enter a query above and press Return to search.")
-                            )
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        } else {
-                            Table(model.results, selection: Binding(
-                                get: { model.selectedCardIds },
-                                set: { model.selectedCardIds = $0 }
-                            )) {
-                                TableColumn("Question") { row in
-                                    Text(row.questionPreview)
-                                        .lineLimit(1)
+                            if model.cardIds.isEmpty, !model.isSearching {
+                                ContentUnavailableView(
+                                    "Search Notes",
+                                    systemImage: "magnifyingglass",
+                                    description: Text("Enter a query above and press Return to search.")
+                                )
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            } else {
+                                Table(model.results, selection: Binding(
+                                    get: { model.selectedCardIds },
+                                    set: { model.selectedCardIds = $0 }
+                                )) {
+                                    TableColumn("Question") { row in
+                                        Text(row.questionPreview)
+                                            .lineLimit(1)
+                                    }
+                                    .width(min: 200)
+
+                                    TableColumn("Deck") { row in
+                                        Text(row.deckName)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .width(min: 100)
+
+                                    TableColumn("Due") { row in
+                                        Text(row.due)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .width(min: 80)
                                 }
-                                .width(min: 200)
-
-                                TableColumn("Deck") { row in
-                                    Text(row.deckName)
-                                        .foregroundStyle(.secondary)
-                                }
-                                .width(min: 100)
-
-                                TableColumn("Due") { row in
-                                    Text(row.due)
-                                        .foregroundStyle(.secondary)
-                                }
-                                .width(min: 80)
-                            }
-                            .contextMenu(forSelectionType: Int64.self) { ids in
-                                if !ids.isEmpty {
-                                    Button("Edit Note") {
-                                        if let cardId = ids.first {
-                                            Task {
-                                                let card = try? await appState.service.getCard(id: cardId)
-                                                if let noteId = card?.noteID {
-                                                    editingNoteId = noteId
+                                .contextMenu(forSelectionType: Int64.self) { ids in
+                                    if !ids.isEmpty {
+                                        Button("Edit Note") {
+                                            if let cardId = ids.first {
+                                                Task {
+                                                    let card = try? await appState.service.getCard(id: cardId)
+                                                    if let noteId = card?.noteID {
+                                                        editingNoteId = noteId
+                                                    }
                                                 }
                                             }
                                         }
+                                        Divider()
+                                        Button("Set Due Date...") {
+                                            dueDateInput = ""
+                                            showingSetDueDate = true
+                                        }
+                                        Button("Add Tags...") {
+                                            tagInput = ""
+                                            showingAddTags = true
+                                        }
+                                        Button("Remove Tags...") {
+                                            tagInput = ""
+                                            showingRemoveTags = true
+                                        }
+                                        Divider()
+                                        Button("Suspend") {
+                                            Task { await model.suspendSelected() }
+                                        }
+                                        Button("Bury") {
+                                            Task { await model.burySelected() }
+                                        }
+                                        Button("Forget") {
+                                            Task { await model.forgetSelected() }
+                                        }
+                                        Divider()
+                                        Button("Find and Replace...") {
+                                            findText = ""
+                                            replaceText = ""
+                                            showingFindReplace = true
+                                        }
+                                        Divider()
+                                        Button("Delete", role: .destructive) {
+                                            Task { await model.deleteSelected() }
+                                        }
                                     }
-                                    Divider()
-                                    Button("Set Due Date...") {
-                                        dueDateInput = ""
-                                        showingSetDueDate = true
-                                    }
-                                    Button("Add Tags...") {
-                                        tagInput = ""
-                                        showingAddTags = true
-                                    }
-                                    Button("Remove Tags...") {
-                                        tagInput = ""
-                                        showingRemoveTags = true
-                                    }
-                                    Divider()
-                                    Button("Suspend") {
-                                        Task { await model.suspendSelected() }
-                                    }
-                                    Button("Bury") {
-                                        Task { await model.burySelected() }
-                                    }
-                                    Button("Forget") {
-                                        Task { await model.forgetSelected() }
-                                    }
-                                    Divider()
-                                    Button("Find and Replace...") {
-                                        findText = ""
-                                        replaceText = ""
-                                        showingFindReplace = true
-                                    }
-                                    Divider()
-                                    Button("Delete", role: .destructive) {
-                                        Task { await model.deleteSelected() }
-                                    }
-                                }
-                            } primaryAction: { ids in
-                                if let cardId = ids.first {
-                                    Task {
-                                        let card = try? await appState.service.getCard(id: cardId)
-                                        if let noteId = card?.noteID {
-                                            editingNoteId = noteId
+                                } primaryAction: { ids in
+                                    if let cardId = ids.first {
+                                        Task {
+                                            let card = try? await appState.service.getCard(id: cardId)
+                                            if let noteId = card?.noteID {
+                                                editingNoteId = noteId
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
-                    }
                     } // end HSplitView
                     .navigationTitle("Browse")
                     .toolbar {
@@ -263,7 +263,9 @@ struct SearchView: View {
 
 private struct EditNoteItem: Identifiable {
     let noteId: Int64
-    var id: Int64 { noteId }
+    var id: Int64 {
+        noteId
+    }
 }
 
 private struct SearchBar: View {

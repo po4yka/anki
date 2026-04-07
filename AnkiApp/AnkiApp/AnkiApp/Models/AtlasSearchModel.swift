@@ -8,7 +8,7 @@ final class AtlasSearchModel {
     var searchMode: SearchMode = .hybrid
     var results: [SearchResultItem] = []
     var isSearching: Bool = false
-    var error: String? = nil
+    var error: String?
 
     private let atlas: AtlasService
 

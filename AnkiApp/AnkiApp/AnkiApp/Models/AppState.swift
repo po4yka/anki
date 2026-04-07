@@ -6,18 +6,20 @@ import Observation
 final class AppState {
     var isCollectionOpen: Bool = false
     var collectionPath: String = ""
-    var mediaFolderURL: URL? = nil
+    var mediaFolderURL: URL?
     var selectedSidebarItem: SidebarItem = .decks
-    var error: AnkiError? = nil
+    var error: AnkiError?
     var undoStatus: Anki_Collection_UndoStatus?
 
     let service: AnkiService
-    var atlasService: AtlasService? = nil
-    var isAtlasAvailable: Bool { atlasService != nil }
+    var atlasService: AtlasService?
+    var isAtlasAvailable: Bool {
+        atlasService != nil
+    }
 
     init() {
         do {
-            self.service = try AnkiService(langs: Locale.preferredLanguages)
+            service = try AnkiService(langs: Locale.preferredLanguages)
         } catch {
             fatalError("Failed to initialize Anki backend: \(error)")
         }
@@ -31,10 +33,10 @@ final class AppState {
             collectionPath = path
             mediaFolderURL = URL(fileURLWithPath: mediaFolder, isDirectory: true)
             isCollectionOpen = true
-            self.error = nil
+            error = nil
             await refreshUndoStatus()
-        } catch let e as AnkiError {
-            self.error = e
+        } catch let error as AnkiError {
+            self.error = error
         } catch {}
     }
 
@@ -50,8 +52,8 @@ final class AppState {
         do {
             try await service.closeCollection(downgrade: false)
             isCollectionOpen = false
-        } catch let e as AnkiError {
-            self.error = e
+        } catch let error as AnkiError {
+            self.error = error
         } catch {}
     }
 }

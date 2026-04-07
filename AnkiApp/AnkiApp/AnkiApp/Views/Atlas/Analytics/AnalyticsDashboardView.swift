@@ -12,12 +12,12 @@ struct AnalyticsDashboardView: View {
                 description: Text("Configure Atlas in Settings to use Analytics.")
             ))
         }
-        let m = model ?? AnalyticsModel(atlas: atlas)
-        return AnyView(DashboardTabView(model: m)
+        let analyticsModel = model ?? AnalyticsModel(atlas: atlas)
+        return AnyView(DashboardTabView(model: analyticsModel)
             .onAppear {
                 if model == nil {
-                    model = m
-                    Task { await m.loadTaxonomyTree() }
+                    model = analyticsModel
+                    Task { await analyticsModel.loadTaxonomyTree() }
                 }
             })
     }

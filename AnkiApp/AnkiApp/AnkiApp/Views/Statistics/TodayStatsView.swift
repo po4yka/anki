@@ -34,7 +34,11 @@ struct TodayStatsView: View {
                 }
                 .padding()
             } else {
-                ContentUnavailableView("No Data", systemImage: "chart.bar.xaxis", description: Text("No statistics available for today."))
+                ContentUnavailableView(
+                    "No Data",
+                    systemImage: "chart.bar.xaxis",
+                    description: Text("No statistics available for today.")
+                )
             }
         }
     }

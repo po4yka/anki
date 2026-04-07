@@ -1,5 +1,5 @@
-import SwiftUI
 import Charts
+import SwiftUI
 
 struct AddedChart: View {
     let model: StatsModel
@@ -8,7 +8,11 @@ struct AddedChart: View {
         VStack(alignment: .leading, spacing: 16) {
             let data = model.addedData
             if data.isEmpty {
-                ContentUnavailableView("No Data", systemImage: "plus.circle", description: Text("No added card data available."))
+                ContentUnavailableView(
+                    "No Data",
+                    systemImage: "plus.circle",
+                    description: Text("No added card data available.")
+                )
             } else {
                 Text("Cards Added")
                     .font(.headline)

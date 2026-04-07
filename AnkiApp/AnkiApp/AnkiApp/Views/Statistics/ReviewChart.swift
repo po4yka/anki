@@ -1,5 +1,5 @@
-import SwiftUI
 import Charts
+import SwiftUI
 
 struct ReviewChart: View {
     let model: StatsModel
@@ -8,7 +8,11 @@ struct ReviewChart: View {
         VStack(alignment: .leading, spacing: 16) {
             let data = model.reviewCountData
             if data.isEmpty {
-                ContentUnavailableView("No Data", systemImage: "chart.bar", description: Text("No review data available."))
+                ContentUnavailableView(
+                    "No Data",
+                    systemImage: "chart.bar",
+                    description: Text("No review data available.")
+                )
             } else {
                 Text("Review Counts")
                     .font(.headline)

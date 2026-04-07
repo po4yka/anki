@@ -109,7 +109,7 @@ struct RichFieldEditor: NSViewRepresentable {
         }
 
         func userContentController(
-            _ userContentController: WKUserContentController,
+            _: WKUserContentController,
             didReceive message: WKScriptMessage
         ) {
             guard let content = message.body as? String else { return }
@@ -135,7 +135,7 @@ struct RichFieldEditor: NSViewRepresentable {
         func wrapSelectionWithLatex(display: Bool = false) {
             let open = display ? "\\\\[" : "\\\\("
             let close = display ? "\\\\]" : "\\\\)"
-            let js = """
+            let jsScript = """
             (function() {
                 var sel = window.getSelection();
                 if (sel.rangeCount > 0) {
@@ -146,7 +146,7 @@ struct RichFieldEditor: NSViewRepresentable {
                 }
             })()
             """
-            webView?.evaluateJavaScript(js)
+            webView?.evaluateJavaScript(jsScript)
         }
     }
 }

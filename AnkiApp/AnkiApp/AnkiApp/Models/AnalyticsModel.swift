@@ -5,13 +5,13 @@ import Observation
 @MainActor
 final class AnalyticsModel {
     var taxonomyTree: [TaxonomyNode] = []
-    var selectedTopicPath: String? = nil
-    var coverage: TopicCoverage? = nil
+    var selectedTopicPath: String?
+    var coverage: TopicCoverage?
     var gaps: [TopicGap] = []
     var weakNotes: [WeakNote] = []
     var duplicateClusters: [DuplicateCluster] = []
     var isLoading: Bool = false
-    var error: String? = nil
+    var error: String?
 
     private let atlas: AtlasService
 

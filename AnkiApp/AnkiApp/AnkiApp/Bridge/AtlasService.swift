@@ -20,11 +20,11 @@ actor AtlasService {
             atlas_init(bytes.baseAddress?.assumingMemoryBound(to: UInt8.self), bytes.count)
         }
         guard let ptr else { throw AtlasError.initFailed }
-        self.handle = ptr
+        handle = ptr
     }
 
-    func command<Req: Encodable, Resp: Decodable>(
-        method: String, request: Req
+    func command<Resp: Decodable>(
+        method: String, request: some Encodable
     ) throws -> Resp {
         let input: Data
         do {

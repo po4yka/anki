@@ -5,7 +5,7 @@ struct GapDetectionView: View {
 
     var body: some View {
         VStack {
-            if model.gaps.isEmpty && !model.isLoading {
+            if model.gaps.isEmpty, !model.isLoading {
                 ContentUnavailableView(
                     "No Gaps Detected",
                     systemImage: "checkmark.circle",
@@ -49,9 +49,9 @@ private struct GapKindBadge: View {
 
     var color: Color {
         switch kind.lowercased() {
-        case "missing": return .red
-        case "undercovered": return .orange
-        default: return .secondary
+            case "missing": .red
+            case "undercovered": .orange
+            default: .secondary
         }
     }
 

@@ -3,8 +3,8 @@ import SwiftUI
 struct ImageOcclusionView: View {
     @Environment(AppState.self) private var appState
     @State private var model: ImageOcclusionModel?
-    @State private var dragStart: CGPoint? = nil
-    @State private var currentDragRect: CGRect? = nil
+    @State private var dragStart: CGPoint?
+    @State private var currentDragRect: CGRect?
 
     var body: some View {
         Group {
@@ -19,7 +19,6 @@ struct ImageOcclusionView: View {
         }
     }
 
-    @ViewBuilder
     private func contentView(model: ImageOcclusionModel) -> some View {
         VStack(spacing: 0) {
             toolbar(model: model)
@@ -39,7 +38,6 @@ struct ImageOcclusionView: View {
         .navigationTitle("Image Occlusion")
     }
 
-    @ViewBuilder
     private func toolbar(model: ImageOcclusionModel) -> some View {
         HStack {
             Button("Open Image") {
@@ -74,7 +72,6 @@ struct ImageOcclusionView: View {
         .padding(8)
     }
 
-    @ViewBuilder
     private func canvasView(model: ImageOcclusionModel, image: NSImage) -> some View {
         GeometryReader { geo in
             let imageSize = image.size
@@ -94,8 +91,8 @@ struct ImageOcclusionView: View {
                 Canvas { context, _ in
                     for rect in model.rectangles {
                         let scaled = CGRect(
-                            x: rect.x * scale + offsetX,
-                            y: rect.y * scale + offsetY,
+                            x: rect.originX * scale + offsetX,
+                            y: rect.originY * scale + offsetY,
                             width: rect.width * scale,
                             height: rect.height * scale
                         )
@@ -118,20 +115,20 @@ struct ImageOcclusionView: View {
                             if let start = dragStart {
                                 let minX = min(start.x, value.location.x)
                                 let minY = min(start.y, value.location.y)
-                                let w = abs(value.location.x - start.x)
-                                let h = abs(value.location.y - start.y)
-                                currentDragRect = CGRect(x: minX, y: minY, width: w, height: h)
+                                let dragWidth = abs(value.location.x - start.x)
+                                let dragHeight = abs(value.location.y - start.y)
+                                currentDragRect = CGRect(x: minX, y: minY, width: dragWidth, height: dragHeight)
                             }
                         }
                         .onEnded { _ in
                             if let dragRect = currentDragRect {
                                 let rect = OcclusionRect(
-                                    x: (dragRect.origin.x - offsetX) / scale,
-                                    y: (dragRect.origin.y - offsetY) / scale,
+                                    originX: (dragRect.origin.x - offsetX) / scale,
+                                    originY: (dragRect.origin.y - offsetY) / scale,
                                     width: dragRect.width / scale,
                                     height: dragRect.height / scale
                                 )
-                                if rect.width > 5 && rect.height > 5 {
+                                if rect.width > 5, rect.height > 5 {
                                     model.addRectangle(rect)
                                 }
                             }
@@ -143,7 +140,6 @@ struct ImageOcclusionView: View {
         }
     }
 
-    @ViewBuilder
     private func sidePanel(model: ImageOcclusionModel) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Note Fields")
@@ -213,7 +209,6 @@ struct ImageOcclusionView: View {
         .padding()
     }
 
-    @ViewBuilder
     private func emptyState(model: ImageOcclusionModel) -> some View {
         ContentUnavailableView {
             Label("No Image", systemImage: "photo")

@@ -42,8 +42,8 @@ final class DeckConfigModel {
             if let currentConfigId = configsForUpdate?.currentDeck.configID {
                 selectedConfigIndex = allConfigs.firstIndex { $0.config.id == currentConfigId } ?? 0
             }
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 
@@ -59,8 +59,8 @@ final class DeckConfigModel {
             req.newCardsIgnoreReviewLimit = configsForUpdate.newCardsIgnoreReviewLimit
             req.applyAllParentLimits = configsForUpdate.applyAllParentLimits
             _ = try await service.updateDeckConfigs(request: req)
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 }

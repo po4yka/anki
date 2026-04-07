@@ -4,9 +4,9 @@ import Observation
 @Observable
 @MainActor
 final class DeckBrowserModel {
-    var deckTree: Anki_Decks_DeckTreeNode? = nil
+    var deckTree: Anki_Decks_DeckTreeNode?
     var isLoading: Bool = false
-    var error: AnkiError? = nil
+    var error: AnkiError?
 
     private let service: AnkiServiceProtocol
 
@@ -21,8 +21,8 @@ final class DeckBrowserModel {
             let now = Int64(Date().timeIntervalSince1970)
             deckTree = try await service.getDeckTree(now: now)
             error = nil
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 
@@ -32,8 +32,8 @@ final class DeckBrowserModel {
             deck.name = name
             _ = try await service.addDeck(deck: deck)
             await load()
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 
@@ -41,8 +41,8 @@ final class DeckBrowserModel {
         do {
             _ = try await service.renameDeck(deckId: deckId, newName: newName)
             await load()
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 
@@ -50,8 +50,8 @@ final class DeckBrowserModel {
         do {
             _ = try await service.removeDecks(ids: [deckId])
             await load()
-        } catch let e as AnkiError {
-            error = e
+        } catch let ankiError as AnkiError {
+            error = ankiError
         } catch {}
     }
 }

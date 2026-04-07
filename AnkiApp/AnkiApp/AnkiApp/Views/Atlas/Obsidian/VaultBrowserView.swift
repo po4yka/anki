@@ -1,5 +1,5 @@
-import SwiftUI
 import AppKit
+import SwiftUI
 
 struct VaultBrowserView: View {
     @Environment(AppState.self) private var appState
@@ -13,10 +13,10 @@ struct VaultBrowserView: View {
                 description: Text("Configure Atlas in Settings to use Obsidian integration.")
             ))
         }
-        let m = model ?? ObsidianModel(atlas: atlas)
-        return AnyView(VaultBrowserContentView(model: m)
+        let obsidianModel = model ?? ObsidianModel(atlas: atlas)
+        return AnyView(VaultBrowserContentView(model: obsidianModel)
             .onAppear {
-                if model == nil { model = m }
+                if model == nil { model = obsidianModel }
             })
     }
 }

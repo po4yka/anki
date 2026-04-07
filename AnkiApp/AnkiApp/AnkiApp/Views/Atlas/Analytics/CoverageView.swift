@@ -16,7 +16,7 @@ struct CoverageView: View {
                 Text("\(coverage.matureCount)")
             }
             LabeledRow(label: "Confidence") {
-                Gauge(value: coverage.avgConfidence, in: 0...1) {
+                Gauge(value: coverage.avgConfidence, in: 0 ... 1) {
                     EmptyView()
                 } currentValueLabel: {
                     Text(String(format: "%.0f%%", coverage.avgConfidence * 100))

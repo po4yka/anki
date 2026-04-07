@@ -20,7 +20,6 @@ struct ExportView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    @ViewBuilder
     private func exportContent(_ model: ExportModel) -> some View {
         VStack(spacing: 24) {
             Image(systemName: "square.and.arrow.up")
@@ -68,9 +67,9 @@ struct ExportView: View {
             }
             .frame(maxWidth: 400)
 
-            Button(action: { selectAndExport(model) }) {
+            Button(action: { selectAndExport(model) }, label: {
                 Label("Export .apkg File...", systemImage: "square.and.arrow.up")
-            }
+            })
             .buttonStyle(.borderedProminent)
             .disabled(model.isExporting)
 
