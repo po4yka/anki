@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Pre-commit hook: runs Rust formatting and linting checks.
+# Install: git config core.hooksPath .githooks
+# Bypass: SKIP_HOOKS=1 git commit -m "..."
+
+set -euo pipefail
+
+if [ "${SKIP_HOOKS:-0}" = "1" ]; then
+    echo "[pre-commit] SKIP_HOOKS=1 -- skipping all checks"
+    exit 0
+fi
+
+echo "[pre-commit] Running cargo fmt check..."
+cargo fmt --all -- --check || {
+    echo "[pre-commit] cargo fmt failed. Run 'cargo fmt --all' to fix."
+    exit 1
+}
+
+echo "[pre-commit] Running cargo clippy..."
+cargo clippy --workspace -- -D warnings || {
+    echo "[pre-commit] cargo clippy failed. Fix warnings before committing."
+    exit 1
+}
+
+# SwiftLint (optional, non-blocking)
+if command -v swiftlint &>/dev/null; then
+    echo "[pre-commit] Running swiftlint..."
+    swiftlint lint --quiet AnkiApp/ || echo "[pre-commit] swiftlint warnings found (non-blocking)"
+fi
+
+echo "[pre-commit] All checks passed."

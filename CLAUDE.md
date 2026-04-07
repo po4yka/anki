@@ -115,6 +115,44 @@ better error context. Use them when possible.
 - `docs/migration/swift-ffi.md` -- Swift FFI bridge design
 - `docs/migration/atlas-integration.md` -- atlas crate integration
 
+## Pre-commit hooks
+
+Enable the project's pre-commit hooks:
+```bash
+git config core.hooksPath .githooks
+```
+
+This runs formatting checks, lint, and convention audits before each commit.
+
+## Custom commands
+
+The following slash commands are available in Claude Code:
+
+- `/build` -- cargo check + build the FFI bridge
+- `/test` -- run the full test suite
+- `/lint` -- clippy + format check
+- `/proto-gen` -- regenerate Swift protobuf types
+- `/audit` -- run convention audit checks
+- `/sync-server` -- start local sync server
+
+Command definitions are in `.claude/commands/`.
+
+## Custom skills
+
+Domain-specific skills are available in `.claude/skills/`:
+
+- **rust-ffi** -- C-ABI bridge patterns, ByteBuffer, memory ownership
+- **swiftui-patterns** -- @Observable, NavigationSplitView, Swift Testing
+- **proto-workflow** -- step-by-step guide for adding new RPCs
+- **atlas-integration** -- how atlas crates connect to rslib
+- **build-verify** -- full build verification sequence
+- **convention-audit** -- code quality rules for Rust and Swift
+
+## See also
+
+- `CONTRIBUTING.md` -- contributor guidelines and development workflow
+- `AGENTS.md` -- agent role definitions for multi-agent workflows
+
 ## Individual preferences
 
 See @.claude/user.md
