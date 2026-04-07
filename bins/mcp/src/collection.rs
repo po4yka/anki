@@ -24,13 +24,11 @@ impl CollectionFacade {
         let col_arc = self.col.clone();
         let col_path = self.col_path.clone();
         tokio::task::spawn_blocking(move || {
-            let mut guard = col_arc
-                .lock()
-                .map_err(|e| format!("mutex poisoned: {e}"))?;
+            let mut guard = col_arc.lock().map_err(|e| format!("mutex poisoned: {e}"))?;
             if guard.is_none() {
-                let col = CollectionBuilder::new(&col_path)
-                    .build()
-                    .map_err(|e| format!("failed to open collection at {}: {e}", col_path.display()))?;
+                let col = CollectionBuilder::new(&col_path).build().map_err(|e| {
+                    format!("failed to open collection at {}: {e}", col_path.display())
+                })?;
                 *guard = Some(col);
             }
             let col = guard.as_mut().unwrap();
