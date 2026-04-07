@@ -2,12 +2,10 @@
 // License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
 use std::collections::HashMap;
 
-use anki_proto::generic;
 use rayon::iter::IntoParallelIterator;
 use rayon::iter::ParallelIterator;
 
 use crate::collection::Collection;
-use crate::deckconfig::DeckConfSchema11;
 use crate::deckconfig::DeckConfig;
 use crate::deckconfig::DeckConfigId;
 use crate::deckconfig::UpdateDeckConfigsRequest;
@@ -16,31 +14,6 @@ use crate::scheduler::fsrs::params::ignore_revlogs_before_date_to_ms;
 use crate::scheduler::fsrs::simulator::is_included_card;
 
 impl crate::services::DeckConfigService for Collection {
-    fn add_or_update_deck_config_legacy(
-        &mut self,
-        input: generic::Json,
-    ) -> Result<anki_proto::deck_config::DeckConfigId> {
-        let conf: DeckConfSchema11 = serde_json::from_slice(&input.json)?;
-        let mut conf: DeckConfig = conf.into();
-
-        self.transact_no_undo(|col| {
-            col.add_or_update_deck_config_legacy(&mut conf)?;
-            Ok(anki_proto::deck_config::DeckConfigId { dcid: conf.id.0 })
-        })
-    }
-
-    fn all_deck_config_legacy(&mut self) -> Result<generic::Json> {
-        let conf: Vec<DeckConfSchema11> = self
-            .storage
-            .all_deck_config()?
-            .into_iter()
-            .map(Into::into)
-            .collect();
-        serde_json::to_vec(&conf)
-            .map_err(Into::into)
-            .map(Into::into)
-    }
-
     fn get_deck_config(
         &mut self,
         input: anki_proto::deck_config::DeckConfigId,
@@ -48,21 +21,6 @@ impl crate::services::DeckConfigService for Collection {
         Ok(Collection::get_deck_config(self, input.into(), true)?
             .unwrap()
             .into())
-    }
-
-    fn get_deck_config_legacy(
-        &mut self,
-        input: anki_proto::deck_config::DeckConfigId,
-    ) -> Result<generic::Json> {
-        let conf = Collection::get_deck_config(self, input.into(), true)?.unwrap();
-        let conf: DeckConfSchema11 = conf.into();
-        Ok(serde_json::to_vec(&conf)?.into())
-    }
-
-    fn new_deck_config_legacy(&mut self) -> Result<generic::Json> {
-        serde_json::to_vec(&DeckConfSchema11::default())
-            .map_err(Into::into)
-            .map(Into::into)
     }
 
     fn remove_deck_config(&mut self, input: anki_proto::deck_config::DeckConfigId) -> Result<()> {

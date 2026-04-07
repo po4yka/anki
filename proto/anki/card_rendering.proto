@@ -3,7 +3,6 @@
 
 syntax = "proto3";
 
-option java_multiple_files = true;
 
 package anki.card_rendering;
 
@@ -18,8 +17,6 @@ service CardRenderingService {
   rpc RenderExistingCard(RenderExistingCardRequest)
       returns (RenderCardResponse);
   rpc RenderUncommittedCard(RenderUncommittedCardRequest)
-      returns (RenderCardResponse);
-  rpc RenderUncommittedCardLegacy(RenderUncommittedCardLegacyRequest)
       returns (RenderCardResponse);
   rpc StripAvTags(generic.String) returns (generic.String);
   rpc RenderMarkdown(RenderMarkdownRequest) returns (generic.String);
@@ -111,16 +108,6 @@ message RenderUncommittedCardRequest {
   bool partial_render = 5;
 }
 
-message RenderUncommittedCardLegacyRequest {
-  notes.Note note = 1;
-  uint32 card_ord = 2;
-  bytes template = 3;
-  bool fill_empty = 4;
-  // If true, rendering will stop when an unknown filter is encountered,
-  // and caller will need to complete rendering. This is done to allow
-  // Python code to modify the rendering.
-  bool partial_render = 5;
-}
 
 message RenderCardResponse {
   repeated RenderedTemplateNode question_nodes = 1;

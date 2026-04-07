@@ -15,7 +15,6 @@ use crate::latex::extract_latex;
 use crate::latex::extract_latex_expanding_clozes;
 use crate::latex::ExtractedLatex;
 use crate::markdown::render_markdown;
-use crate::notetype::CardTemplateSchema11;
 use crate::notetype::RenderCardOutput;
 use crate::template::RenderedNode;
 use crate::text::decode_iri_paths;
@@ -99,20 +98,6 @@ impl crate::services::CardRenderingService for Collection {
         input: anki_proto::card_rendering::RenderUncommittedCardRequest,
     ) -> Result<anki_proto::card_rendering::RenderCardResponse> {
         let template = input.template.or_invalid("missing template")?.into();
-        let mut note = input.note.or_invalid("missing note")?.into();
-        let ord = input.card_ord as u16;
-        let fill_empty = input.fill_empty;
-
-        self.render_uncommitted_card(&mut note, &template, ord, fill_empty, input.partial_render)
-            .map(Into::into)
-    }
-
-    fn render_uncommitted_card_legacy(
-        &mut self,
-        input: anki_proto::card_rendering::RenderUncommittedCardLegacyRequest,
-    ) -> Result<anki_proto::card_rendering::RenderCardResponse> {
-        let schema11: CardTemplateSchema11 = serde_json::from_slice(&input.template)?;
-        let template = schema11.into();
         let mut note = input.note.or_invalid("missing note")?.into();
         let ord = input.card_ord as u16;
         let fill_empty = input.fill_empty;

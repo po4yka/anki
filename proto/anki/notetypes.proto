@@ -3,7 +3,6 @@
 
 syntax = "proto3";
 
-option java_multiple_files = true;
 
 package anki.notetypes;
 
@@ -13,13 +12,8 @@ import "anki/collection.proto";
 service NotetypesService {
   rpc AddNotetype(Notetype) returns (collection.OpChangesWithId);
   rpc UpdateNotetype(Notetype) returns (collection.OpChanges);
-  rpc AddNotetypeLegacy(generic.Json) returns (collection.OpChangesWithId);
-  rpc UpdateNotetypeLegacy(UpdateNotetypeLegacyRequest)
-      returns (collection.OpChanges);
   rpc AddOrUpdateNotetype(AddOrUpdateNotetypeRequest) returns (NotetypeId);
-  rpc GetStockNotetypeLegacy(StockNotetype) returns (generic.Json);
   rpc GetNotetype(NotetypeId) returns (Notetype);
-  rpc GetNotetypeLegacy(NotetypeId) returns (generic.Json);
   rpc GetNotetypeNames(generic.Empty) returns (NotetypeNames);
   rpc GetNotetypeNamesAndCounts(generic.Empty) returns (NotetypeUseCounts);
   rpc GetNotetypeIdByName(generic.String) returns (NotetypeId);
@@ -134,11 +128,6 @@ message AddOrUpdateNotetypeRequest {
   bytes json = 1;
   bool preserve_usn_and_mtime = 2;
   bool skip_checks = 3;
-}
-
-message UpdateNotetypeLegacyRequest {
-  bytes json = 1;
-  bool skip_checks = 2;
 }
 
 message StockNotetype {

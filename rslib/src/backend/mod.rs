@@ -2,13 +2,9 @@
 // License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
 
 mod adding;
-mod ankidroid;
-mod ankihub;
-mod ankiweb;
 mod card_rendering;
 mod collection;
 mod config;
-pub(crate) mod dbproxy;
 mod error;
 mod i18n;
 mod import_export;
@@ -28,7 +24,6 @@ use reqwest::Client;
 use tokio::runtime;
 use tokio::runtime::Runtime;
 
-use crate::backend::dbproxy::db_command_bytes;
 use crate::backend::sync::SyncState;
 use crate::prelude::*;
 use crate::progress::Progress;
@@ -100,15 +95,6 @@ impl Backend {
         &self.tr
     }
 
-    pub fn run_db_command_bytes(&self, input: &[u8]) -> result::Result<Vec<u8>, Vec<u8>> {
-        self.db_command(input).map_err(|err| {
-            let backend_err = err.into_protobuf(&self.tr);
-            let mut bytes = Vec::new();
-            backend_err.encode(&mut bytes).unwrap();
-            bytes
-        })
-    }
-
     /// If collection is open, run the provided closure while holding
     /// the mutex.
     /// If collection is not open, return an error.
@@ -178,10 +164,6 @@ impl Backend {
         web_client
             .get_or_insert_with(|| Client::builder().http1_only().build().unwrap())
             .clone()
-    }
-
-    fn db_command(&self, input: &[u8]) -> Result<Vec<u8>> {
-        self.with_col(|col| db_command_bytes(col, input))
     }
 
     /// Useful for operations that function with a closed collection, such as

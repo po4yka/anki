@@ -9,7 +9,6 @@ use crate::error;
 use crate::error::OrInvalid;
 use crate::error::OrNotFound;
 use crate::notes::NoteId;
-use crate::notetype::stock::get_stock_notetype;
 use crate::notetype::ChangeNotetypeInput;
 use crate::notetype::Notetype;
 use crate::notetype::NotetypeChangeInfo;
@@ -38,29 +37,6 @@ impl crate::services::NotetypesService for Collection {
         self.update_notetype(&mut notetype, false).map(Into::into)
     }
 
-    fn add_notetype_legacy(
-        &mut self,
-        input: generic::Json,
-    ) -> error::Result<anki_proto::collection::OpChangesWithId> {
-        let legacy: NotetypeSchema11 = serde_json::from_slice(&input.json)?;
-        let mut notetype: Notetype = legacy.into();
-
-        Ok(self
-            .add_notetype(&mut notetype, false)?
-            .map(|_| notetype.id.0)
-            .into())
-    }
-
-    fn update_notetype_legacy(
-        &mut self,
-        input: anki_proto::notetypes::UpdateNotetypeLegacyRequest,
-    ) -> error::Result<anki_proto::collection::OpChanges> {
-        let legacy: NotetypeSchema11 = serde_json::from_slice(&input.json)?;
-        let mut notetype: Notetype = legacy.into();
-        self.update_notetype(&mut notetype, input.skip_checks)
-            .map(Into::into)
-    }
-
     fn add_or_update_notetype(
         &mut self,
         input: anki_proto::notetypes::AddOrUpdateNotetypeRequest,
@@ -80,17 +56,6 @@ impl crate::services::NotetypesService for Collection {
         Ok(anki_proto::notetypes::NotetypeId { ntid: nt.id.0 })
     }
 
-    fn get_stock_notetype_legacy(
-        &mut self,
-        input: anki_proto::notetypes::StockNotetype,
-    ) -> error::Result<generic::Json> {
-        let nt = get_stock_notetype(input.kind(), &self.tr);
-        let schema11: NotetypeSchema11 = nt.into();
-        serde_json::to_vec(&schema11)
-            .map_err(Into::into)
-            .map(Into::into)
-    }
-
     fn get_notetype(
         &mut self,
         input: anki_proto::notetypes::NotetypeId,
@@ -101,17 +66,6 @@ impl crate::services::NotetypesService for Collection {
             .get_notetype(ntid)?
             .or_not_found(ntid)
             .map(Into::into)
-    }
-
-    fn get_notetype_legacy(
-        &mut self,
-        input: anki_proto::notetypes::NotetypeId,
-    ) -> error::Result<generic::Json> {
-        let ntid = input.into();
-
-        let schema11: NotetypeSchema11 =
-            self.storage.get_notetype(ntid)?.or_not_found(ntid)?.into();
-        Ok(serde_json::to_vec(&schema11)?.into())
     }
 
     fn get_notetype_names(&mut self) -> error::Result<anki_proto::notetypes::NotetypeNames> {

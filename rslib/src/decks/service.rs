@@ -7,7 +7,6 @@ use crate::collection::Collection;
 use crate::decks::filtered::search_order_labels;
 use crate::decks::Deck;
 use crate::decks::DeckId;
-use crate::decks::DeckSchema11;
 use crate::decks::NativeDeckName;
 use crate::error;
 use crate::error::AnkiError;
@@ -30,34 +29,6 @@ impl crate::services::DecksService for Collection {
         Ok(self.add_deck(&mut deck)?.map(|_| deck.id.0).into())
     }
 
-    fn add_deck_legacy(
-        &mut self,
-        input: generic::Json,
-    ) -> error::Result<anki_proto::collection::OpChangesWithId> {
-        let schema11: DeckSchema11 = serde_json::from_slice(&input.json)?;
-        let mut deck: Deck = schema11.into();
-
-        let output = self.add_deck(&mut deck)?;
-        Ok(output.map(|_| deck.id.0).into())
-    }
-
-    fn add_or_update_deck_legacy(
-        &mut self,
-        input: anki_proto::decks::AddOrUpdateDeckLegacyRequest,
-    ) -> error::Result<anki_proto::decks::DeckId> {
-        let schema11: DeckSchema11 = serde_json::from_slice(&input.deck)?;
-        let mut deck: Deck = schema11.into();
-        if input.preserve_usn_and_mtime {
-            self.transact_no_undo(|col| {
-                let usn = col.usn()?;
-                col.add_or_update_single_deck_with_existing_id(&mut deck, usn)
-            })?;
-        } else {
-            self.add_or_update_deck(&mut deck)?;
-        }
-        Ok(anki_proto::decks::DeckId { did: deck.id.0 })
-    }
-
     fn deck_tree(
         &mut self,
         input: anki_proto::decks::DeckTreeRequest,
@@ -68,20 +39,6 @@ impl crate::services::DecksService for Collection {
             Some(TimestampSecs(input.now))
         };
         self.deck_tree(now)
-    }
-
-    fn deck_tree_legacy(&mut self) -> error::Result<generic::Json> {
-        let tree = self.legacy_deck_tree()?;
-        serde_json::to_vec(&tree)
-            .map_err(Into::into)
-            .map(Into::into)
-    }
-
-    fn get_all_decks_legacy(&mut self) -> error::Result<generic::Json> {
-        let decks = self.storage.get_all_decks_as_schema11()?;
-        serde_json::to_vec(&decks)
-            .map_err(Into::into)
-            .map(Into::into)
     }
 
     fn get_deck_id_by_name(
@@ -110,27 +67,6 @@ impl crate::services::DecksService for Collection {
         self.update_deck(&mut deck).map(Into::into)
     }
 
-    fn update_deck_legacy(
-        &mut self,
-        input: generic::Json,
-    ) -> error::Result<anki_proto::collection::OpChanges> {
-        let deck: DeckSchema11 = serde_json::from_slice(&input.json)?;
-        let mut deck = deck.into();
-        self.update_deck(&mut deck).map(Into::into)
-    }
-
-    fn get_deck_legacy(
-        &mut self,
-        input: anki_proto::decks::DeckId,
-    ) -> error::Result<generic::Json> {
-        let did = input.into();
-
-        let deck: DeckSchema11 = self.storage.get_deck(did)?.or_not_found(did)?.into();
-        serde_json::to_vec(&deck)
-            .map_err(Into::into)
-            .map(Into::into)
-    }
-
     fn get_deck_names(
         &mut self,
         input: anki_proto::decks::GetDeckNamesRequest,
@@ -149,18 +85,6 @@ impl crate::services::DecksService for Collection {
         input: anki_proto::decks::DeckId,
     ) -> error::Result<anki_proto::decks::DeckNames> {
         Collection::get_deck_and_child_names(self, input.did.into()).map(deck_names_to_proto)
-    }
-
-    fn new_deck_legacy(&mut self, input: generic::Bool) -> error::Result<generic::Json> {
-        let deck = if input.val {
-            Deck::new_filtered()
-        } else {
-            Deck::new_normal()
-        };
-        let schema11: DeckSchema11 = deck.into();
-        serde_json::to_vec(&schema11)
-            .map_err(Into::into)
-            .map(Into::into)
     }
 
     fn remove_decks(

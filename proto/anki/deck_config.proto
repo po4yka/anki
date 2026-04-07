@@ -3,7 +3,6 @@
 
 syntax = "proto3";
 
-option java_multiple_files = true;
 // the DeckConfig message clashes with the name of the file
 option java_outer_classname = "DeckConf";
 
@@ -14,11 +13,7 @@ import "anki/collection.proto";
 import "anki/decks.proto";
 
 service DeckConfigService {
-  rpc AddOrUpdateDeckConfigLegacy(generic.Json) returns (DeckConfigId);
   rpc GetDeckConfig(DeckConfigId) returns (DeckConfig);
-  rpc AllDeckConfigLegacy(generic.Empty) returns (generic.Json);
-  rpc GetDeckConfigLegacy(DeckConfigId) returns (generic.Json);
-  rpc NewDeckConfigLegacy(generic.Empty) returns (generic.Json);
   rpc RemoveDeckConfig(DeckConfigId) returns (generic.Empty);
   rpc GetDeckConfigsForUpdate(decks.DeckId) returns (DeckConfigsForUpdate);
   rpc UpdateDeckConfigs(UpdateDeckConfigsRequest)

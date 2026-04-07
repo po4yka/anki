@@ -131,9 +131,6 @@ pub struct CollectionState {
     pub(crate) scheduler_info: Option<SchedulerInfo>,
     pub(crate) card_queues: Option<CardQueues>,
     pub(crate) active_browser_columns: Option<Arc<Vec<browser_table::Column>>>,
-    /// True if legacy Python code has executed SQL that has modified the
-    /// database, requiring modification time to be bumped.
-    pub(crate) modified_by_dbproxy: bool,
     /// The modification time at the last backup, so we don't create multiple
     /// identical backups.
     pub(crate) last_backup_modified: Option<TimestampMillis>,

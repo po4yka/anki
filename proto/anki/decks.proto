@@ -3,7 +3,6 @@
 
 syntax = "proto3";
 
-option java_multiple_files = true;
 
 package anki.decks;
 
@@ -13,20 +12,13 @@ import "anki/collection.proto";
 service DecksService {
   rpc NewDeck(generic.Empty) returns (Deck);
   rpc AddDeck(Deck) returns (collection.OpChangesWithId);
-  rpc AddDeckLegacy(generic.Json) returns (collection.OpChangesWithId);
-  rpc AddOrUpdateDeckLegacy(AddOrUpdateDeckLegacyRequest) returns (DeckId);
   rpc DeckTree(DeckTreeRequest) returns (DeckTreeNode);
-  rpc DeckTreeLegacy(generic.Empty) returns (generic.Json);
-  rpc GetAllDecksLegacy(generic.Empty) returns (generic.Json);
   rpc GetDeckIdByName(generic.String) returns (DeckId);
   rpc GetDeck(DeckId) returns (Deck);
   rpc UpdateDeck(Deck) returns (collection.OpChanges);
-  rpc UpdateDeckLegacy(generic.Json) returns (collection.OpChanges);
   rpc SetDeckCollapsed(SetDeckCollapsedRequest) returns (collection.OpChanges);
-  rpc GetDeckLegacy(DeckId) returns (generic.Json);
   rpc GetDeckNames(GetDeckNamesRequest) returns (DeckNames);
   rpc GetDeckAndChildNames(DeckId) returns (DeckNames);
-  rpc NewDeckLegacy(generic.Bool) returns (generic.Json);
   rpc RemoveDecks(DeckIds) returns (collection.OpChangesWithCount);
   rpc ReparentDecks(ReparentDecksRequest)
       returns (collection.OpChangesWithCount);
@@ -142,11 +134,6 @@ message Deck {
     Normal normal = 6;
     Filtered filtered = 7;
   }
-}
-
-message AddOrUpdateDeckLegacyRequest {
-  bytes deck = 1;
-  bool preserve_usn_and_mtime = 2;
 }
 
 message DeckTreeRequest {

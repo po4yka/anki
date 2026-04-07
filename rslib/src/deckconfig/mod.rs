@@ -157,23 +157,6 @@ impl Collection {
         }
     }
 
-    /// Used by the old import code; if provided id is non-zero, will add
-    /// instead of ignoring. Does not support undo.
-    pub(crate) fn add_or_update_deck_config_legacy(
-        &mut self,
-        config: &mut DeckConfig,
-    ) -> Result<()> {
-        let usn = self.usn()?;
-
-        if config.id.0 == 0 {
-            self.add_deck_config_inner(config, Some(usn))
-        } else {
-            config.set_modified(usn);
-            self.storage
-                .add_or_update_deck_config_with_existing_id(config)
-        }
-    }
-
     /// Assigns an id and adds to DB. If usn is provided, modification time and
     /// usn will be updated.
     pub(crate) fn add_deck_config_inner(

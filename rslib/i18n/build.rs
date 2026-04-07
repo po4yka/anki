@@ -6,10 +6,6 @@ mod extract;
 mod gather;
 mod write_strings;
 
-use std::path::PathBuf;
-
-use anki_io::create_dir_all;
-use anki_io::write_file_if_changed;
 use anyhow::Result;
 use check::check;
 use extract::get_modules;
@@ -24,16 +20,6 @@ fn main() -> Result<()> {
     check(&map);
     let mut modules = get_modules(&map);
     write_strings(&map, &modules, "strings.rs", "All");
-
-    // write strings.json file to requested path
-    if let Some(path) = option_env!("STRINGS_JSON") {
-        if !path.is_empty() {
-            let path = PathBuf::from(path);
-            let meta_json = serde_json::to_string_pretty(&modules).unwrap();
-            create_dir_all(path.parent().unwrap())?;
-            write_file_if_changed(path, meta_json)?;
-        }
-    }
 
     // generate strings for the launcher
     map.iter_mut()
