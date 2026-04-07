@@ -36,6 +36,9 @@ final class SearchModel {
     var selectedCardIds: Set<Int64> = []
     var searchMode: BrowserSearchMode = .cards
 
+    var allColumns: [Anki_Search_BrowserColumns.Column] = []
+    var visibleColumnKeys: [String] = ["question", "deck", "due"]
+
     var results: [BrowserRowItem] {
         cardIds.compactMap { id in
             guard let row = rows[id] else { return nil }
@@ -47,6 +50,31 @@ final class SearchModel {
 
     init(service: AnkiServiceProtocol) {
         self.service = service
+    }
+
+    func loadColumns() async {
+        do {
+            let response = try await service.allBrowserColumns()
+            allColumns = response.columns
+            let saved = UserDefaults.standard.stringArray(forKey: "browserVisibleColumns")
+            if let saved, !saved.isEmpty {
+                visibleColumnKeys = saved
+            }
+            try await service.setActiveBrowserColumns(columns: visibleColumnKeys)
+        } catch {}
+    }
+
+    func toggleColumn(key: String) async {
+        if visibleColumnKeys.contains(key) {
+            visibleColumnKeys.removeAll { $0 == key }
+        } else {
+            visibleColumnKeys.append(key)
+        }
+        UserDefaults.standard.set(visibleColumnKeys, forKey: "browserVisibleColumns")
+        do {
+            try await service.setActiveBrowserColumns(columns: visibleColumnKeys)
+            await search()
+        } catch {}
     }
 
     func search() async {
@@ -97,6 +125,53 @@ final class SearchModel {
             sortColumn = column
             sortReverse = false
         }
+        await search()
+    }
+
+    // MARK: - Saved Searches
+
+    struct SavedSearch: Codable, Identifiable {
+        var id: UUID
+        var name: String
+        var query: String
+    }
+
+    var savedSearches: [SavedSearch] = []
+
+    func loadSavedSearches() {
+        guard let data = UserDefaults.standard.data(forKey: "savedSearches"),
+              let decoded = try? JSONDecoder().decode([SavedSearch].self, from: data) else {
+            return
+        }
+        savedSearches = decoded
+    }
+
+    private func persistSavedSearches() {
+        if let data = try? JSONEncoder().encode(savedSearches) {
+            UserDefaults.standard.set(data, forKey: "savedSearches")
+        }
+    }
+
+    func saveCurrentSearch(name: String) {
+        guard !query.isEmpty else { return }
+        let saved = SavedSearch(id: UUID(), name: name, query: query)
+        savedSearches.append(saved)
+        persistSavedSearches()
+    }
+
+    func deleteSavedSearch(id: UUID) {
+        savedSearches.removeAll { $0.id == id }
+        persistSavedSearches()
+    }
+
+    func renameSavedSearch(id: UUID, newName: String) {
+        guard let idx = savedSearches.firstIndex(where: { $0.id == id }) else { return }
+        savedSearches[idx].name = newName
+        persistSavedSearches()
+    }
+
+    func applySavedSearch(_ saved: SavedSearch) async {
+        query = saved.query
         await search()
     }
 

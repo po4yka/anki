@@ -12,6 +12,26 @@ final class ReviewerModel {
     var error: AnkiError? = nil
     var lastDeckId: Int64 = 0
 
+    // Type-answer
+    var isTypeAnswerCard: Bool = false
+    var typeAnswerField: String = ""
+    var typedAnswer: String = ""
+    var comparisonHTML: String? = nil
+
+    // Auto-advance
+    var autoShowAnswerDelay: Float = 0
+    var autoAdvanceDelay: Float = 0
+    var questionAction: Anki_DeckConfig_DeckConfig.Config.QuestionAction = .showAnswer
+    var answerAction: Anki_DeckConfig_DeckConfig.Config.AnswerAction = .buryCard
+
+    // Timer
+    var elapsedSeconds: Int = 0
+    var showTimer: Bool = false
+    private var timerTask: Task<Void, Never>?
+
+    // Card info
+    var cardStats: Anki_Stats_CardStatsResponse? = nil
+
     private let service: AnkiServiceProtocol
 
     init(service: AnkiServiceProtocol) {
@@ -29,12 +49,138 @@ final class ReviewerModel {
             if let cardId = queuedCards?.cards.first?.card.id {
                 currentCardHTML = try await service.renderExistingCard(cardId: cardId)
                 await extractAvTags()
+                detectTypeAnswer()
+                await loadDeckConfig()
+                startTimer()
             }
+            comparisonHTML = nil
+            typedAnswer = ""
             error = nil
         } catch let e as AnkiError {
             error = e
         } catch {}
     }
+
+    private func detectTypeAnswer() {
+        guard let rendered = currentCardHTML else {
+            isTypeAnswerCard = false
+            typeAnswerField = ""
+            return
+        }
+        let questionHTML = rendered.questionNodes.map { node -> String in
+            if !node.text.isEmpty { return node.text }
+            return node.replacement.currentText
+        }.joined()
+
+        if let range = questionHTML.range(of: "\\[\\[type:(.+?)\\]\\]", options: .regularExpression) {
+            let match = questionHTML[range]
+            let fieldName = match.replacingOccurrences(of: "[[type:", with: "")
+                .replacingOccurrences(of: "]]", with: "")
+            isTypeAnswerCard = true
+            typeAnswerField = fieldName
+        } else {
+            isTypeAnswerCard = false
+            typeAnswerField = ""
+        }
+    }
+
+    func compareTypedAnswer() async {
+        guard isTypeAnswerCard else { return }
+        do {
+            comparisonHTML = try await service.compareAnswer(
+                expected: typeAnswerField,
+                provided: typedAnswer
+            )
+        } catch {}
+    }
+
+    private func loadDeckConfig() async {
+        guard let card = queuedCards?.cards.first?.card else { return }
+        do {
+            let update = try await service.getDeckConfigsForUpdate(deckId: card.deckID)
+            let configId = update.currentDeck.configID
+            if let matched = update.allConfig.first(where: { $0.config.id == configId }),
+               matched.hasConfig {
+                let inner = matched.config.config
+                showTimer = inner.showTimer
+                autoShowAnswerDelay = inner.secondsToShowQuestion
+                autoAdvanceDelay = inner.secondsToShowAnswer
+                questionAction = inner.questionAction
+                answerAction = inner.answerAction
+            }
+        } catch {}
+    }
+
+    // MARK: - Timer
+
+    func startTimer() {
+        stopTimer()
+        elapsedSeconds = 0
+        timerTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { break }
+                await MainActor.run {
+                    self?.elapsedSeconds += 1
+                }
+            }
+        }
+    }
+
+    func stopTimer() {
+        timerTask?.cancel()
+        timerTask = nil
+    }
+
+    var formattedTime: String {
+        let mins = elapsedSeconds / 60
+        let secs = elapsedSeconds % 60
+        return String(format: "%d:%02d", mins, secs)
+    }
+
+    // MARK: - Auto-advance
+
+    func scheduleAutoShowAnswer() -> Task<Void, Never>? {
+        guard autoShowAnswerDelay > 0 else { return nil }
+        return Task {
+            try? await Task.sleep(for: .seconds(Double(autoShowAnswerDelay)))
+            guard !Task.isCancelled else { return }
+            // Return -- the view will handle showing the answer
+        }
+    }
+
+    func autoAnswerRating() -> Anki_Scheduler_CardAnswer.Rating? {
+        switch answerAction {
+        case .answerAgain: return .again
+        case .answerHard: return .hard
+        case .answerGood: return .good
+        default: return nil
+        }
+    }
+
+    func scheduleAutoAdvance() -> Task<Void, Never>? {
+        guard autoAdvanceDelay > 0, autoAnswerRating() != nil else { return nil }
+        return Task {
+            try? await Task.sleep(for: .seconds(Double(autoAdvanceDelay)))
+            guard !Task.isCancelled else { return }
+        }
+    }
+
+    // MARK: - Card Info
+
+    func loadCardStats() async {
+        guard let cardId = queuedCards?.cards.first?.card.id else {
+            cardStats = nil
+            return
+        }
+        do {
+            cardStats = try await service.getCardStats(cardId: cardId)
+        } catch {
+            cardStats = nil
+        }
+    }
+
+    // MARK: - Existing methods
 
     private func extractAvTags() async {
         guard let rendered = currentCardHTML else {
@@ -61,14 +207,16 @@ final class ReviewerModel {
     ) async {
         do {
             let now = Int64(Date().timeIntervalSince1970 * 1000)
+            let ms = UInt32(elapsedSeconds * 1000)
             _ = try await service.answerCard(
                 cardId: cardId,
                 rating: rating,
                 currentState: currentState,
                 newState: newState,
                 answeredAtMillis: now,
-                millisecondsTaken: 0
+                millisecondsTaken: ms
             )
+            stopTimer()
             await loadQueue()
             await refreshUndoStatus()
         } catch let e as AnkiError {

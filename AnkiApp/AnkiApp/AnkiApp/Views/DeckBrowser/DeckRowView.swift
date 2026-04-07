@@ -4,7 +4,7 @@ struct DeckRowView: View {
     let node: Anki_Decks_DeckTreeNode
     let model: DeckBrowserModel
     @Environment(AppState.self) private var appState
-    @State private var showingReviewer = false
+    @State private var showingOverview = false
     @State private var showingRenameAlert = false
     @State private var showingDeleteConfirm = false
     @State private var showingDeckConfig = false
@@ -27,7 +27,7 @@ struct DeckRowView: View {
             }
 
             Button("Study") {
-                showingReviewer = true
+                showingOverview = true
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.small)
@@ -68,9 +68,10 @@ struct DeckRowView: View {
         } message: {
             Text("This will delete the deck and all its cards. This action cannot be undone.")
         }
-        .sheet(isPresented: $showingReviewer) {
-            ReviewerView()
+        .sheet(isPresented: $showingOverview) {
+            DeckOverviewView(node: node, service: appState.service)
                 .environment(appState)
+                .frame(minWidth: 500, minHeight: 400)
         }
         .sheet(isPresented: $showingDeckConfig) {
             DeckConfigView(deckId: node.deckID, deckName: node.name, service: appState.service)

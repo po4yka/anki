@@ -5,6 +5,8 @@ struct NoteEditorView: View {
     @Environment(AppState.self) private var appState
     @State private var model: NoteEditorModel?
     @Environment(\.dismiss) private var dismiss
+    @State private var showFieldWarning: Bool = false
+    @State private var fieldWarningMessage: String = ""
     var noteId: Int64? = nil
 
     var body: some View {
@@ -65,15 +67,23 @@ struct NoteEditorView: View {
                     }
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Save") {
-                            Task {
-                                await model.save()
-                                if model.error == nil { dismiss() }
-                            }
+                            Task { await validateAndSave() }
                         }
                         .disabled(model.isSaving)
                     }
                 }
                 .navigationTitle(noteId != nil ? "Edit Note" : "Add Note")
+                .alert("Warning", isPresented: $showFieldWarning) {
+                    Button("Save Anyway") {
+                        Task {
+                            await model.save()
+                            if model.error == nil { dismiss() }
+                        }
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text(fieldWarningMessage)
+                }
             } else {
                 ProgressView("Loading...")
             }
@@ -95,6 +105,30 @@ struct NoteEditorView: View {
             get: { model?.error },
             set: { model?.error = $0 }
         ))
+    }
+
+    private func validateAndSave() async {
+        guard let model else { return }
+        if let check = await model.validateFields() {
+            switch check.state {
+            case .duplicate:
+                fieldWarningMessage = "A note with the same first field already exists. Do you want to save anyway?"
+                showFieldWarning = true
+                return
+            case .missingCloze:
+                fieldWarningMessage = "This note type requires a cloze deletion, but none were found. Do you want to save anyway?"
+                showFieldWarning = true
+                return
+            case .empty:
+                fieldWarningMessage = "The first field is empty. Do you want to save anyway?"
+                showFieldWarning = true
+                return
+            case .normal, .notetypeNotCloze, .fieldNotCloze, .UNRECOGNIZED:
+                break
+            }
+        }
+        await model.save()
+        if model.error == nil { dismiss() }
     }
 }
 

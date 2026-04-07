@@ -10,6 +10,7 @@ struct FieldEditorView: View {
     var onAttachImage: ((_ coordinator: RichFieldEditor.Coordinator?) -> Void)?
 
     @State private var richEditorCoordinator: RichFieldEditor.Coordinator?
+    @State private var isShowingHTML: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -29,22 +30,28 @@ struct FieldEditorView: View {
                 VStack(spacing: 0) {
                     FormattingToolbar(
                         isClozeNotetype: isClozeNotetype,
+                        isShowingHTML: isShowingHTML,
                         onBold: { richEditorCoordinator?.executeCommand("bold") },
                         onItalic: { richEditorCoordinator?.executeCommand("italic") },
                         onUnderline: { richEditorCoordinator?.executeCommand("underline") },
                         onCloze: onCloze,
-                        onAttachImage: onAttachImage != nil ? { onAttachImage?(richEditorCoordinator) } : nil
+                        onAttachImage: onAttachImage != nil ? { onAttachImage?(richEditorCoordinator) } : nil,
+                        onToggleHTML: { isShowingHTML.toggle() },
+                        onLatex: { richEditorCoordinator?.wrapSelectionWithLatex() }
                     )
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
 
                     Divider()
 
-                    RichFieldEditor(html: $text) { _ in }
-                        .frame(minHeight: 60)
-                        .onAppear {
-                            // Coordinator is managed by SwiftUI via NSViewRepresentable
-                        }
+                    if isShowingHTML {
+                        TextEditor(text: $text)
+                            .font(.system(.body, design: .monospaced))
+                            .frame(minHeight: 60)
+                    } else {
+                        RichFieldEditor(html: $text) { _ in }
+                            .frame(minHeight: 60)
+                    }
                 }
                 .overlay(
                     RoundedRectangle(cornerRadius: 6)

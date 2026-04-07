@@ -3,7 +3,6 @@ import SwiftUI
 struct DeckBrowserView: View {
     @Environment(AppState.self) private var appState
     @State private var model: DeckBrowserModel?
-    @State private var showingReviewer = false
     @State private var showingNewDeckAlert = false
     @State private var newDeckName = ""
 
@@ -64,10 +63,6 @@ struct DeckBrowserView: View {
                         Button("Cancel", role: .cancel) {}
                     } message: {
                         Text("Enter a name for the new deck.")
-                    }
-                    .sheet(isPresented: $showingReviewer) {
-                        ReviewerView()
-                            .environment(appState)
                     }
                 }
             } else {

@@ -681,4 +681,66 @@ actor AnkiService: AnkiServiceProtocol {
             input: req
         )
     }
+
+    func createBackup(backupFolder: String, force: Bool, waitForCompletion: Bool) async throws -> Bool {
+        var req = Anki_Collection_CreateBackupRequest()
+        req.backupFolder = backupFolder
+        req.force = force
+        req.waitForCompletion = waitForCompletion
+        let response: Anki_Generic_Bool = try backend.command(
+            service: ServiceIndex.collection,
+            method: CollectionMethod.createBackup,
+            input: req
+        )
+        return response.val
+    }
+
+    func awaitBackupCompletion() async throws -> Bool {
+        let req = Anki_Generic_Empty()
+        let response: Anki_Generic_Bool = try backend.command(
+            service: ServiceIndex.collection,
+            method: CollectionMethod.awaitBackupCompletion,
+            input: req
+        )
+        return response.val
+    }
+
+    func getPreferences() async throws -> Anki_Config_Preferences {
+        let req = Anki_Generic_Empty()
+        return try backend.command(
+            service: ServiceIndex.config,
+            method: ConfigMethod.getPreferences,
+            input: req
+        )
+    }
+
+    func setPreferences(prefs: Anki_Config_Preferences) async throws {
+        let _: Anki_Generic_Empty = try backend.command(
+            service: ServiceIndex.config,
+            method: ConfigMethod.setPreferences,
+            input: prefs
+        )
+    }
+
+    func compareAnswer(expected: String, provided: String) async throws -> String {
+        var req = Anki_CardRendering_CompareAnswerRequest()
+        req.expected = expected
+        req.provided = provided
+        let response: Anki_Generic_String = try backend.command(
+            service: ServiceIndex.cardRendering,
+            method: CardRenderingMethod.compareAnswer,
+            input: req
+        )
+        return response.val
+    }
+
+    func getCardStats(cardId: Int64) async throws -> Anki_Stats_CardStatsResponse {
+        var req = Anki_Cards_CardId()
+        req.cid = cardId
+        return try backend.command(
+            service: ServiceIndex.stats,
+            method: StatsMethod.cardStats,
+            input: req
+        )
+    }
 }

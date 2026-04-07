@@ -34,6 +34,15 @@ struct RichFieldEditor: NSViewRepresentable {
                 word-wrap: break-word;
             }
         </style>
+        <script>
+            window.MathJax = {
+                tex: { inlineMath: [['\\\\(','\\\\)']], displayMath: [['\\\\[','\\\\]']] },
+                startup: { typeset: true }
+            };
+        </script>
+        <script id="MathJax-script" async
+            src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+        </script>
         </head>
         <body>
         <div id="editor" contenteditable="true">\(html)</div>
@@ -41,9 +50,11 @@ struct RichFieldEditor: NSViewRepresentable {
             const editor = document.getElementById('editor');
             editor.addEventListener('input', function() {
                 window.webkit.messageHandlers.contentChanged.postMessage(editor.innerHTML);
+                typesetMath();
             });
             function setContent(html) {
                 editor.innerHTML = html;
+                typesetMath();
             }
             function getContent() {
                 return editor.innerHTML;
@@ -58,6 +69,12 @@ struct RichFieldEditor: NSViewRepresentable {
             function insertHTML(html) {
                 document.execCommand('insertHTML', false, html);
                 window.webkit.messageHandlers.contentChanged.postMessage(editor.innerHTML);
+                typesetMath();
+            }
+            function typesetMath() {
+                if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+                    MathJax.typesetPromise([editor]).catch(function() {});
+                }
             }
         </script>
         </body>
@@ -113,6 +130,23 @@ struct RichFieldEditor: NSViewRepresentable {
                 .replacingOccurrences(of: "\\", with: "\\\\")
                 .replacingOccurrences(of: "'", with: "\\'")
             webView?.evaluateJavaScript("insertHTML('\(escaped)')")
+        }
+
+        func wrapSelectionWithLatex(display: Bool = false) {
+            let open = display ? "\\\\[" : "\\\\("
+            let close = display ? "\\\\]" : "\\\\)"
+            let js = """
+            (function() {
+                var sel = window.getSelection();
+                if (sel.rangeCount > 0) {
+                    var text = sel.toString() || 'x';
+                    document.execCommand('insertHTML', false, '\(open)' + text + '\(close)');
+                    window.webkit.messageHandlers.contentChanged.postMessage(editor.innerHTML);
+                    typesetMath();
+                }
+            })()
+            """
+            webView?.evaluateJavaScript(js)
         }
     }
 }

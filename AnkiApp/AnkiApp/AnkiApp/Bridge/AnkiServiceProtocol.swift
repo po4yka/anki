@@ -74,4 +74,10 @@ protocol AnkiServiceProtocol: Sendable {
     func customStudyDefaults(deckId: Int64) async throws -> Anki_Scheduler_CustomStudyDefaultsResponse
     func emptyFilteredDeck(deckId: Int64) async throws -> Anki_Collection_OpChanges
     func rebuildFilteredDeck(deckId: Int64) async throws -> Anki_Collection_OpChangesWithCount
+    func createBackup(backupFolder: String, force: Bool, waitForCompletion: Bool) async throws -> Bool
+    func awaitBackupCompletion() async throws -> Bool
+    func getPreferences() async throws -> Anki_Config_Preferences
+    func setPreferences(prefs: Anki_Config_Preferences) async throws
+    func compareAnswer(expected: String, provided: String) async throws -> String
+    func getCardStats(cardId: Int64) async throws -> Anki_Stats_CardStatsResponse
 }

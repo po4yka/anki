@@ -12,6 +12,11 @@ struct SearchView: View {
     @State private var tagInput = ""
     @State private var findText = ""
     @State private var replaceText = ""
+    @State private var showingColumnPicker = false
+    @State private var showingSaveSearch = false
+    @State private var saveSearchName = ""
+    @State private var renamingSearchId: UUID? = nil
+    @State private var renameSearchText = ""
 
     var body: some View {
         Group {
@@ -28,7 +33,18 @@ struct SearchView: View {
                         .buttonStyle(.borderedProminent)
                     }
                 } else {
-                    VStack(spacing: 0) {
+                    HSplitView {
+                        // Saved searches sidebar
+                        SavedSearchesSidebar(
+                            model: model,
+                            showingSaveSearch: $showingSaveSearch,
+                            saveSearchName: $saveSearchName,
+                            renamingSearchId: $renamingSearchId,
+                            renameSearchText: $renameSearchText
+                        )
+                        .frame(minWidth: 160, maxWidth: 220)
+
+                        VStack(spacing: 0) {
                         SearchBar(model: model)
                             .padding()
 
@@ -154,9 +170,19 @@ struct SearchView: View {
                             }
                         }
                     }
+                    } // end HSplitView
                     .navigationTitle("Browse")
                     .toolbar {
                         ToolbarItemGroup {
+                            Button {
+                                showingColumnPicker = true
+                            } label: {
+                                Label("Columns", systemImage: "gearshape")
+                            }
+                            .popover(isPresented: $showingColumnPicker) {
+                                ColumnPickerView(model: model)
+                            }
+
                             Button {
                                 dueDateInput = ""
                                 showingSetDueDate = true
@@ -189,6 +215,10 @@ struct SearchView: View {
         .onAppear {
             if model == nil {
                 model = SearchModel(service: appState.service)
+                Task {
+                    await model?.loadColumns()
+                    model?.loadSavedSearches()
+                }
             }
         }
         .ankiErrorAlert(Binding(
@@ -360,6 +390,146 @@ private struct FindReplaceSheet: View {
         }
         .padding()
         .frame(width: 350)
+    }
+}
+
+// MARK: - Column Picker
+
+private struct ColumnPickerView: View {
+    let model: SearchModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Visible Columns")
+                .font(.headline)
+                .padding()
+
+            Divider()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(model.allColumns, id: \.key) { column in
+                        let isVisible = model.visibleColumnKeys.contains(column.key)
+                        Button {
+                            Task { await model.toggleColumn(key: column.key) }
+                        } label: {
+                            HStack {
+                                Image(systemName: isVisible ? "checkmark.square" : "square")
+                                    .foregroundStyle(isVisible ? .blue : .secondary)
+                                Text(column.cardsModeLabel.isEmpty ? column.key : column.cardsModeLabel)
+                                Spacer()
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal)
+                        .padding(.vertical, 2)
+                    }
+                }
+                .padding(.vertical, 8)
+            }
+        }
+        .frame(width: 220, maxHeight: 350)
+    }
+}
+
+// MARK: - Saved Searches Sidebar
+
+private struct SavedSearchesSidebar: View {
+    let model: SearchModel
+    @Binding var showingSaveSearch: Bool
+    @Binding var saveSearchName: String
+    @Binding var renamingSearchId: UUID?
+    @Binding var renameSearchText: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("Saved Searches")
+                    .font(.headline)
+                Spacer()
+                Button {
+                    saveSearchName = ""
+                    showingSaveSearch = true
+                } label: {
+                    Image(systemName: "plus")
+                }
+                .buttonStyle(.plain)
+                .disabled(model.query.isEmpty)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+
+            Divider()
+
+            if model.savedSearches.isEmpty {
+                Text("No saved searches")
+                    .foregroundStyle(.secondary)
+                    .font(.caption)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.top, 20)
+            } else {
+                List {
+                    ForEach(model.savedSearches) { saved in
+                        Button {
+                            Task { await model.applySavedSearch(saved) }
+                        } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(saved.name)
+                                    .lineLimit(1)
+                                Text(saved.query)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .contextMenu {
+                            Button("Rename...") {
+                                renameSearchText = saved.name
+                                renamingSearchId = saved.id
+                            }
+                            Button("Delete", role: .destructive) {
+                                model.deleteSavedSearch(id: saved.id)
+                            }
+                        }
+                    }
+                }
+                .listStyle(.plain)
+            }
+
+            Spacer()
+        }
+        .alert("Save Search", isPresented: $showingSaveSearch) {
+            TextField("Name", text: $saveSearchName)
+            Button("Save") {
+                let name = saveSearchName.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !name.isEmpty {
+                    model.saveCurrentSearch(name: name)
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Enter a name for this search.")
+        }
+        .alert("Rename Search", isPresented: Binding(
+            get: { renamingSearchId != nil },
+            set: { if !$0 { renamingSearchId = nil } }
+        )) {
+            TextField("Name", text: $renameSearchText)
+            Button("Rename") {
+                let name = renameSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !name.isEmpty, let id = renamingSearchId {
+                    model.renameSavedSearch(id: id, newName: name)
+                }
+                renamingSearchId = nil
+            }
+            Button("Cancel", role: .cancel) {
+                renamingSearchId = nil
+            }
+        } message: {
+            Text("Enter a new name.")
+        }
     }
 }
 
