@@ -25,7 +25,7 @@ pub enum SurfaceError {
     #[error("embedding error: {0}")]
     Embedding(#[from] indexer::embeddings::EmbeddingError),
     #[error("vector store error: {0}")]
-    VectorStore(#[from] indexer::qdrant::VectorStoreError),
+    VectorStore(#[from] indexer::vector::VectorStoreError),
     #[error("provider error: {0}")]
     Provider(String),
     #[error("search error: {0}")]

@@ -25,7 +25,6 @@ impl ExecutionMode {
 #[derive(Debug, Clone)]
 pub struct RuntimeSettingsSummary {
     pub postgres_url: String,
-    pub qdrant_url: String,
     pub job_backend: String,
     pub embedding_provider: String,
     pub embedding_model: String,
@@ -78,7 +77,6 @@ fn embedding_provider_label(provider: EmbeddingProviderKind) -> &'static str {
 pub fn summarize_settings(settings: &Settings) -> RuntimeSettingsSummary {
     RuntimeSettingsSummary {
         postgres_url: settings.postgres_url.clone(),
-        qdrant_url: settings.qdrant_url.clone(),
         job_backend: "postgresql".to_string(),
         embedding_provider: embedding_provider_label(settings.embedding_provider).to_string(),
         embedding_model: settings.embedding_model.clone(),

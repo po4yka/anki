@@ -13,7 +13,7 @@ use crate::reranker::Reranker;
 pub struct SearchService<E, V, R>
 where
     E: indexer::embeddings::EmbeddingProvider,
-    V: indexer::qdrant::VectorRepository,
+    V: indexer::vector::VectorRepository,
     R: Reranker,
 {
     pub(crate) embedding: E,
@@ -27,7 +27,7 @@ where
 impl<E, V, R> SearchService<E, V, R>
 where
     E: indexer::embeddings::EmbeddingProvider,
-    V: indexer::qdrant::VectorRepository,
+    V: indexer::vector::VectorRepository,
     R: Reranker,
 {
     #[allow(clippy::too_many_arguments)]
@@ -122,7 +122,7 @@ mod tests {
 
     /// Simple mock vector repository for service tests.
     struct FakeVectorRepo {
-        results: Vec<indexer::qdrant::SemanticSearchHit>,
+        results: Vec<indexer::vector::SemanticSearchHit>,
     }
 
     impl FakeVectorRepo {
@@ -130,7 +130,7 @@ mod tests {
             Self {
                 results: results
                     .into_iter()
-                    .map(|(note_id, score)| indexer::qdrant::SemanticSearchHit {
+                    .map(|(note_id, score)| indexer::vector::SemanticSearchHit {
                         note_id,
                         chunk_id: format!("{note_id}:text_primary"),
                         chunk_kind: "text_primary".to_string(),
@@ -266,57 +266,56 @@ mod tests {
     }
 
     #[async_trait::async_trait]
-    impl indexer::qdrant::VectorRepository for FakeVectorRepo {
+    impl indexer::vector::VectorRepository for FakeVectorRepo {
         async fn ensure_collection(
             &self,
             _dimension: usize,
-        ) -> Result<bool, indexer::qdrant::VectorStoreError> {
+        ) -> Result<bool, indexer::vector::VectorStoreError> {
             Ok(false)
         }
 
         async fn collection_dimension(
             &self,
-        ) -> Result<Option<usize>, indexer::qdrant::VectorStoreError> {
+        ) -> Result<Option<usize>, indexer::vector::VectorStoreError> {
             Ok(Some(4))
         }
 
         async fn recreate_collection(
             &self,
             _dimension: usize,
-        ) -> Result<(), indexer::qdrant::VectorStoreError> {
+        ) -> Result<(), indexer::vector::VectorStoreError> {
             Ok(())
         }
 
         async fn upsert_vectors(
             &self,
             _vectors: &[Vec<f32>],
-            _payloads: &[indexer::qdrant::NotePayload],
-            _sparse_vectors: Option<&[indexer::qdrant::SparseVector]>,
-        ) -> Result<usize, indexer::qdrant::VectorStoreError> {
+            _payloads: &[indexer::vector::NotePayload],
+        ) -> Result<usize, indexer::vector::VectorStoreError> {
             Ok(0)
         }
 
         async fn delete_vectors(
             &self,
             _note_ids: &[i64],
-        ) -> Result<usize, indexer::qdrant::VectorStoreError> {
+        ) -> Result<usize, indexer::vector::VectorStoreError> {
             Ok(0)
         }
 
         async fn get_existing_hashes(
             &self,
             _note_ids: &[i64],
-        ) -> Result<HashMap<i64, String>, indexer::qdrant::VectorStoreError> {
+        ) -> Result<HashMap<i64, String>, indexer::vector::VectorStoreError> {
             Ok(HashMap::new())
         }
 
         async fn search_chunks(
             &self,
             _query_vector: &[f32],
-            _query_sparse: Option<&indexer::qdrant::SparseVector>,
+            _query_text: Option<&str>,
             _limit: usize,
-            _filters: &indexer::qdrant::SearchFilters,
-        ) -> Result<Vec<indexer::qdrant::SemanticSearchHit>, indexer::qdrant::VectorStoreError>
+            _filters: &indexer::vector::SearchFilters,
+        ) -> Result<Vec<indexer::vector::SemanticSearchHit>, indexer::vector::VectorStoreError>
         {
             Ok(self.results.clone())
         }
@@ -328,11 +327,11 @@ mod tests {
             _min_score: f32,
             _deck_names: Option<&[String]>,
             _tags: Option<&[String]>,
-        ) -> Result<Vec<indexer::qdrant::ScoredNote>, indexer::qdrant::VectorStoreError> {
+        ) -> Result<Vec<indexer::vector::ScoredNote>, indexer::vector::VectorStoreError> {
             Ok(vec![])
         }
 
-        async fn close(&self) -> Result<(), indexer::qdrant::VectorStoreError> {
+        async fn close(&self) -> Result<(), indexer::vector::VectorStoreError> {
             Ok(())
         }
     }

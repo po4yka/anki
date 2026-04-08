@@ -11,7 +11,7 @@ use super::types::{ChunkSearchHit, ChunkSearchParams, ChunkSearchResult, NoteDet
 impl<E, V, R> SearchService<E, V, R>
 where
     E: indexer::embeddings::EmbeddingProvider,
-    V: indexer::qdrant::VectorRepository,
+    V: indexer::vector::VectorRepository,
     R: Reranker,
 {
     /// Execute semantic-only chunk search.

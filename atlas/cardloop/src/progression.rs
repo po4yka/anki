@@ -88,6 +88,7 @@ impl ProgressionLog {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::{ProgressionAction, ProgressionActor};
     use chrono::Utc;
 
     fn make_event(action: ProgressionAction) -> ProgressionEvent {
@@ -116,8 +117,8 @@ mod tests {
 
         let recent = log.read_recent(2).unwrap();
         assert_eq!(recent.len(), 2);
-        assert_eq!(recent[0].action, "resolve");
-        assert_eq!(recent[1].action, "skip");
+        assert_eq!(recent[0].action, ProgressionAction::Resolve);
+        assert_eq!(recent[1].action, ProgressionAction::Skip);
     }
 
     #[test]

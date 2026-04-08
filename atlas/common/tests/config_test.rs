@@ -2,31 +2,7 @@ use common::config::*;
 
 // ── Send + Sync ──────────────────────────────────────────────────────────
 
-common::assert_send_sync!(Settings, Quantization, EmbeddingProviderKind);
-
-// ── Quantization enum ───────────────────────────────────────────────────
-
-#[test]
-fn quantization_serde_lowercase() {
-    let q: Quantization = serde_json::from_str(r#""scalar""#).unwrap();
-    assert_eq!(q, Quantization::Scalar);
-
-    let q: Quantization = serde_json::from_str(r#""binary""#).unwrap();
-    assert_eq!(q, Quantization::Binary);
-
-    let q: Quantization = serde_json::from_str(r#""none""#).unwrap();
-    assert_eq!(q, Quantization::None);
-}
-
-#[test]
-fn quantization_debug() {
-    let q = Quantization::Scalar;
-    let debug = format!("{q:?}");
-    assert!(
-        debug.contains("Scalar"),
-        "Debug should contain variant name"
-    );
-}
+common::assert_send_sync!(Settings, EmbeddingProviderKind);
 
 // ── Settings::load() defaults ───────────────────────────────────────────
 
@@ -36,12 +12,9 @@ fn settings_load_returns_defaults_when_no_env_vars() {
     temp_env::with_vars_unset(
         vec![
             "ANKIATLAS_POSTGRES_URL",
-            "ANKIATLAS_QDRANT_URL",
             "ANKIATLAS_EMBEDDING_PROVIDER",
             "ANKIATLAS_EMBEDDING_MODEL",
             "ANKIATLAS_EMBEDDING_DIMENSION",
-            "ANKIATLAS_QDRANT_QUANTIZATION",
-            "ANKIATLAS_QDRANT_ON_DISK",
             "ANKIATLAS_JOB_QUEUE_NAME",
             "ANKIATLAS_JOB_RESULT_TTL_SECONDS",
             "ANKIATLAS_JOB_MAX_RETRIES",
@@ -61,11 +34,6 @@ fn settings_load_returns_defaults_when_no_env_vars() {
 
             // Database
             assert!(settings.postgres_url.starts_with("postgresql://"));
-
-            // Vector store
-            assert!(settings.qdrant_url.starts_with("http://"));
-            assert_eq!(settings.qdrant_quantization, Quantization::Scalar);
-            assert!(!settings.qdrant_on_disk);
 
             // Async jobs
             assert!(settings.postgres_url.starts_with("postgres"));
@@ -105,7 +73,6 @@ fn settings_load_reads_ankiatlas_prefixed_env_vars() {
                 "ANKIATLAS_POSTGRES_URL",
                 Some("postgresql://custom:1234/db"),
             ),
-            ("ANKIATLAS_QDRANT_URL", Some("https://qdrant.example.com")),
             ("ANKIATLAS_API_PORT", Some("9090")),
             ("ANKIATLAS_DEBUG", Some("true")),
             ("ANKIATLAS_API_KEY", Some("secret-key-123")),
@@ -123,7 +90,6 @@ fn settings_load_reads_ankiatlas_prefixed_env_vars() {
             let settings = Settings::load().expect("load with env vars should succeed");
 
             assert_eq!(settings.postgres_url, "postgresql://custom:1234/db");
-            assert_eq!(settings.qdrant_url, "https://qdrant.example.com");
             assert_eq!(settings.api_port, 9090);
             assert!(settings.debug);
             assert_eq!(settings.api_key, Some("secret-key-123".to_string()));
@@ -163,42 +129,6 @@ fn validate_accepts_postgres_scheme() {
             assert!(settings.postgres_url.starts_with("postgres"));
         },
     );
-}
-
-// ── Validation: qdrant_url ──────────────────────────────────────────────
-
-#[test]
-fn validate_rejects_invalid_qdrant_url() {
-    temp_env::with_vars(
-        vec![("ANKIATLAS_QDRANT_URL", Some("grpc://localhost:6334"))],
-        || {
-            let result = Settings::load();
-            assert!(result.is_err(), "Should reject non-http(s) URL");
-        },
-    );
-}
-
-#[test]
-fn validate_accepts_https_qdrant_url() {
-    temp_env::with_vars(
-        vec![("ANKIATLAS_QDRANT_URL", Some("https://qdrant.cloud:6333"))],
-        || {
-            let settings = Settings::load().expect("https:// qdrant URL should be accepted");
-            assert_eq!(settings.qdrant_url, "https://qdrant.cloud:6333");
-        },
-    );
-}
-
-#[test]
-fn qdrant_grpc_url_swaps_default_rest_port() {
-    let grpc_url = qdrant_grpc_url("http://localhost:6333").expect("grpc url");
-    assert_eq!(grpc_url, "http://localhost:6334");
-}
-
-#[test]
-fn qdrant_grpc_url_preserves_custom_port() {
-    let grpc_url = qdrant_grpc_url("http://localhost:7444").expect("grpc url");
-    assert_eq!(grpc_url, "http://localhost:7444");
 }
 
 // ── Validation: embedding_dimension ─────────────────────────────────────
@@ -354,29 +284,23 @@ fn settings_load_returns_config_error_variant() {
 
 #[test]
 fn settings_debug_impl() {
-    temp_env::with_vars_unset(
-        vec!["ANKIATLAS_POSTGRES_URL", "ANKIATLAS_QDRANT_URL"],
-        || {
-            let settings = Settings::load().expect("defaults should work");
-            let debug = format!("{settings:?}");
-            assert!(debug.contains("Settings"), "Debug should contain type name");
-        },
-    );
+    temp_env::with_vars_unset(vec!["ANKIATLAS_POSTGRES_URL"], || {
+        let settings = Settings::load().expect("defaults should work");
+        let debug = format!("{settings:?}");
+        assert!(debug.contains("Settings"), "Debug should contain type name");
+    });
 }
 
 // ── Clone impl ──────────────────────────────────────────────────────────
 
 #[test]
 fn settings_clone() {
-    temp_env::with_vars_unset(
-        vec!["ANKIATLAS_POSTGRES_URL", "ANKIATLAS_QDRANT_URL"],
-        || {
-            let settings = Settings::load().expect("defaults should work");
-            let cloned = settings.clone();
-            assert_eq!(settings.postgres_url, cloned.postgres_url);
-            assert_eq!(settings.api_port, cloned.api_port);
-        },
-    );
+    temp_env::with_vars_unset(vec!["ANKIATLAS_POSTGRES_URL"], || {
+        let settings = Settings::load().expect("defaults should work");
+        let cloned = settings.clone();
+        assert_eq!(settings.postgres_url, cloned.postgres_url);
+        assert_eq!(settings.api_port, cloned.api_port);
+    });
 }
 
 // ── Crate root re-exports ───────────────────────────────────────────────
@@ -387,59 +311,30 @@ fn crate_root_reexports_settings_types() {
     let _: common::EmbeddingProviderKind = common::EmbeddingProviderKind::Mock;
 }
 
-// ── Quantization default ────────────────────────────────────────────────
-
-#[test]
-fn quantization_clone_copy_eq() {
-    let q = Quantization::Scalar;
-    let q2 = q; // Copy
-    let q3 = q.clone(); // Clone
-    assert_eq!(q, q2);
-    assert_eq!(q, q3);
-}
-
 // ── Case insensitive env vars ───────────────────────────────────────────
 
 #[test]
-fn settings_load_qdrant_quantization_from_env() {
-    temp_env::with_vars(
-        vec![("ANKIATLAS_QDRANT_QUANTIZATION", Some("binary"))],
-        || {
-            let settings = Settings::load().expect("should load with quantization override");
-            assert_eq!(settings.qdrant_quantization, Quantization::Binary);
-        },
-    );
-}
-
-#[test]
 fn settings_projection_methods_return_narrow_runtime_contracts() {
-    temp_env::with_vars_unset(
-        vec![
-            "ANKIATLAS_POSTGRES_URL",
-            "ANKIATLAS_QDRANT_URL",
-            "ANKIATLAS_API_KEY",
-        ],
-        || {
-            let settings = Settings::load().expect("defaults should work");
+    temp_env::with_vars_unset(vec!["ANKIATLAS_POSTGRES_URL", "ANKIATLAS_API_KEY"], || {
+        let settings = Settings::load().expect("defaults should work");
 
-            let database = settings.database();
-            assert!(database.postgres_url.starts_with("postgresql://"));
+        let database = settings.database();
+        assert!(database.postgres_url.starts_with("postgresql://"));
 
-            let jobs = settings.jobs();
-            assert!(jobs.postgres_url.starts_with("postgres"));
-            assert_eq!(jobs.queue_name, "ankiatlas_jobs");
+        let jobs = settings.jobs();
+        assert!(jobs.postgres_url.starts_with("postgres"));
+        assert_eq!(jobs.queue_name, "ankiatlas_jobs");
 
-            let api = settings.api();
-            assert_eq!(api.host, "0.0.0.0");
-            assert_eq!(api.port, 8000);
+        let api = settings.api();
+        assert_eq!(api.host, "0.0.0.0");
+        assert_eq!(api.port, 8000);
 
-            let embedding = settings.embedding();
-            assert_eq!(embedding.provider, EmbeddingProviderKind::OpenAi);
-            assert_eq!(embedding.dimension, 1536);
+        let embedding = settings.embedding();
+        assert_eq!(embedding.provider, EmbeddingProviderKind::OpenAi);
+        assert_eq!(embedding.dimension, 1536);
 
-            let rerank = settings.rerank();
-            assert_eq!(rerank.top_n, 50);
-            assert_eq!(rerank.batch_size, 32);
-        },
-    );
+        let rerank = settings.rerank();
+        assert_eq!(rerank.top_n, 50);
+        assert_eq!(rerank.batch_size, 32);
+    });
 }

@@ -31,12 +31,6 @@ pub(crate) fn render_home(frame: &mut Frame<'_>, area: Rect, app: &AppState) {
                         .unwrap_or("(unknown)")
                 )),
                 Line::from(format!(
-                    "Qdrant: {}",
-                    summary
-                        .map(|item| item.qdrant_url.as_str())
-                        .unwrap_or("(unknown)")
-                )),
-                Line::from(format!(
                     "Jobs: {}",
                     summary
                         .map(|item| item.job_backend.as_str())

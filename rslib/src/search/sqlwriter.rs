@@ -191,8 +191,11 @@ mod test {
 
     use super::super::parser::parse;
     use super::*;
+    use crate::card::CardQueue;
+    use crate::card::CardType;
     use crate::collection::Collection;
     use crate::collection::CollectionBuilder;
+    use crate::search::sqlwriter::utils::CollectRanges;
 
     // shortcut
     fn s(req: &mut Collection, search: &str) -> (String, Vec<String>) {
@@ -421,8 +424,8 @@ mod test {
         assert_eq!(
             s(ctx, "prop:due!=-1").0,
             format!(
-                "(((c.queue in (2,3) and \n                        (case when \
-c.odue != 0 then c.odue else c.due end) != {days}) or (c.queue in (1,4) and \n                        (((case when c.odue != 0 then c.odue else c.due end) - {cutoff}) / 86400) != -1)))",
+                "(((c.queue in (2,3) and\n                        (case when \
+c.odue != 0 then c.odue else c.due end) != {days}) or (c.queue in (1,4) and\n                        (((case when c.odue != 0 then c.odue else c.due end) - {cutoff}) / 86400) != -1)))",
                 days = timing.days_elapsed - 1,
                 cutoff = timing.next_day_at
             )

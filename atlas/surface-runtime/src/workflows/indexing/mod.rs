@@ -3,7 +3,7 @@ mod media;
 mod prepare;
 mod service;
 
-pub use service::IndexingService;
+pub use service::{IndexingService, UnsupportedVectorRepository};
 
 use common::ReindexMode;
 use indexer::service::IndexStats;

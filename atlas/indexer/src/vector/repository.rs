@@ -3,9 +3,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use super::schema::{
-    NotePayload, ScoredNote, SearchFilters, SemanticSearchHit, SparseVector, VectorStoreError,
-};
+use super::schema::{NotePayload, ScoredNote, SearchFilters, SemanticSearchHit, VectorStoreError};
 
 /// Trait for vector store operations. Enables mocking in tests.
 #[async_trait]
@@ -21,12 +19,11 @@ pub trait VectorRepository: Send + Sync {
     /// Drop and recreate the collection with the requested dimension.
     async fn recreate_collection(&self, dimension: usize) -> Result<(), VectorStoreError>;
 
-    /// Upsert dense vectors + payloads. Optional sparse vectors.
+    /// Upsert dense vectors + payloads.
     async fn upsert_vectors(
         &self,
         vectors: &[Vec<f32>],
         payloads: &[NotePayload],
-        sparse_vectors: Option<&[SparseVector]>,
     ) -> Result<usize, VectorStoreError>;
 
     /// Delete points by note IDs.
@@ -39,10 +36,11 @@ pub trait VectorRepository: Send + Sync {
     ) -> Result<HashMap<i64, String>, VectorStoreError>;
 
     /// Semantic search against chunk vectors.
+    /// `query_text` enables hybrid search (vector + full-text) when provided.
     async fn search_chunks(
         &self,
         query_vector: &[f32],
-        query_sparse: Option<&SparseVector>,
+        query_text: Option<&str>,
         limit: usize,
         filters: &SearchFilters,
     ) -> Result<Vec<SemanticSearchHit>, VectorStoreError>;
@@ -51,7 +49,7 @@ pub trait VectorRepository: Send + Sync {
     async fn search(
         &self,
         query_vector: &[f32],
-        query_sparse: Option<&SparseVector>,
+        query_text: Option<&str>,
         limit: usize,
         filters: &SearchFilters,
     ) -> Result<Vec<ScoredNote>, VectorStoreError> {
@@ -59,7 +57,7 @@ pub trait VectorRepository: Send + Sync {
         for hit in self
             .search_chunks(
                 query_vector,
-                query_sparse,
+                query_text,
                 limit.saturating_mul(4).max(limit),
                 filters,
             )
@@ -122,11 +120,8 @@ where
         &self,
         vectors: &[Vec<f32>],
         payloads: &[NotePayload],
-        sparse_vectors: Option<&[SparseVector]>,
     ) -> Result<usize, VectorStoreError> {
-        (*self)
-            .upsert_vectors(vectors, payloads, sparse_vectors)
-            .await
+        (*self).upsert_vectors(vectors, payloads).await
     }
 
     async fn delete_vectors(&self, note_ids: &[i64]) -> Result<usize, VectorStoreError> {
@@ -143,24 +138,24 @@ where
     async fn search_chunks(
         &self,
         query_vector: &[f32],
-        query_sparse: Option<&SparseVector>,
+        query_text: Option<&str>,
         limit: usize,
         filters: &SearchFilters,
     ) -> Result<Vec<SemanticSearchHit>, VectorStoreError> {
         (*self)
-            .search_chunks(query_vector, query_sparse, limit, filters)
+            .search_chunks(query_vector, query_text, limit, filters)
             .await
     }
 
     async fn search(
         &self,
         query_vector: &[f32],
-        query_sparse: Option<&SparseVector>,
+        query_text: Option<&str>,
         limit: usize,
         filters: &SearchFilters,
     ) -> Result<Vec<ScoredNote>, VectorStoreError> {
         (*self)
-            .search(query_vector, query_sparse, limit, filters)
+            .search(query_vector, query_text, limit, filters)
             .await
     }
 
@@ -203,11 +198,8 @@ where
         &self,
         vectors: &[Vec<f32>],
         payloads: &[NotePayload],
-        sparse_vectors: Option<&[SparseVector]>,
     ) -> Result<usize, VectorStoreError> {
-        (**self)
-            .upsert_vectors(vectors, payloads, sparse_vectors)
-            .await
+        (**self).upsert_vectors(vectors, payloads).await
     }
 
     async fn delete_vectors(&self, note_ids: &[i64]) -> Result<usize, VectorStoreError> {
@@ -224,24 +216,24 @@ where
     async fn search_chunks(
         &self,
         query_vector: &[f32],
-        query_sparse: Option<&SparseVector>,
+        query_text: Option<&str>,
         limit: usize,
         filters: &SearchFilters,
     ) -> Result<Vec<SemanticSearchHit>, VectorStoreError> {
         (**self)
-            .search_chunks(query_vector, query_sparse, limit, filters)
+            .search_chunks(query_vector, query_text, limit, filters)
             .await
     }
 
     async fn search(
         &self,
         query_vector: &[f32],
-        query_sparse: Option<&SparseVector>,
+        query_text: Option<&str>,
         limit: usize,
         filters: &SearchFilters,
     ) -> Result<Vec<ScoredNote>, VectorStoreError> {
         (**self)
-            .search(query_vector, query_sparse, limit, filters)
+            .search(query_vector, query_text, limit, filters)
             .await
     }
 
@@ -284,11 +276,8 @@ where
         &self,
         vectors: &[Vec<f32>],
         payloads: &[NotePayload],
-        sparse_vectors: Option<&[SparseVector]>,
     ) -> Result<usize, VectorStoreError> {
-        (**self)
-            .upsert_vectors(vectors, payloads, sparse_vectors)
-            .await
+        (**self).upsert_vectors(vectors, payloads).await
     }
 
     async fn delete_vectors(&self, note_ids: &[i64]) -> Result<usize, VectorStoreError> {
@@ -305,24 +294,24 @@ where
     async fn search_chunks(
         &self,
         query_vector: &[f32],
-        query_sparse: Option<&SparseVector>,
+        query_text: Option<&str>,
         limit: usize,
         filters: &SearchFilters,
     ) -> Result<Vec<SemanticSearchHit>, VectorStoreError> {
         (**self)
-            .search_chunks(query_vector, query_sparse, limit, filters)
+            .search_chunks(query_vector, query_text, limit, filters)
             .await
     }
 
     async fn search(
         &self,
         query_vector: &[f32],
-        query_sparse: Option<&SparseVector>,
+        query_text: Option<&str>,
         limit: usize,
         filters: &SearchFilters,
     ) -> Result<Vec<ScoredNote>, VectorStoreError> {
         (**self)
-            .search(query_vector, query_sparse, limit, filters)
+            .search(query_vector, query_text, limit, filters)
             .await
     }
 

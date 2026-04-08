@@ -20,7 +20,7 @@ pub enum SearchError {
     #[error("embedding error: {0}")]
     Embedding(#[from] indexer::embeddings::EmbeddingError),
     #[error("vector store error: {0}")]
-    VectorStore(#[from] indexer::qdrant::VectorStoreError),
+    VectorStore(#[from] indexer::vector::VectorStoreError),
     #[error("rerank failed: {0}")]
     Rerank(#[from] RerankError),
 }

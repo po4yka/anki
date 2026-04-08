@@ -1,12 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-/// Named vector for dense embeddings (semantic search).
-pub const DENSE_VECTOR_NAME: &str = "dense";
-
-/// Named vector for sparse BM25-style token vectors (keyword search).
-pub const SPARSE_VECTOR_NAME: &str = "sparse";
-
-/// Payload stored with each Qdrant point.
+/// Payload stored with each vector point.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct NotePayload {
     pub note_id: i64,
@@ -75,28 +69,19 @@ pub struct ScoredNote {
     pub score: f32,
 }
 
-/// Sparse vector (indices + values) for BM25-style retrieval.
-#[derive(Debug, Clone, Default, PartialEq)]
-pub struct SparseVector {
-    pub indices: Vec<u32>,
-    pub values: Vec<f32>,
-}
-
-/// Errors from Qdrant operations.
+/// Errors from vector store operations.
 #[derive(Debug, thiserror::Error)]
 pub enum VectorStoreError {
-    #[error("dimension mismatch: collection {collection} expects {expected}, got {actual}")]
-    DimensionMismatch {
-        collection: String,
-        expected: usize,
-        actual: usize,
-    },
-    #[error("qdrant error: {0}")]
+    #[error("dimension mismatch: collection expects {expected}, got {actual}")]
+    DimensionMismatch { expected: usize, actual: usize },
+    #[error("vector store error: {0}")]
     Client(String),
     #[error("connection failed: {0}")]
     Connection(String),
     #[error("reindex required: {reason}")]
     ReindexRequired { reason: String },
+    #[error("sql error: {0}")]
+    Sql(String),
 }
 
 /// Result of an upsert batch.
@@ -106,7 +91,7 @@ pub struct UpsertResult {
     pub skipped: usize,
 }
 
-/// Search filters passed to Qdrant.
+/// Search filters for vector queries.
 #[derive(Debug, Clone, Default)]
 pub struct SearchFilters {
     pub deck_names: Option<Vec<String>>,

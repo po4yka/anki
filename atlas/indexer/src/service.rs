@@ -6,7 +6,7 @@ use tracing::instrument;
 use crate::batch;
 use crate::embeddings::{EmbeddingInput, EmbeddingProvider, EmbeddingTask};
 use crate::progress::{IndexProgressCallback, IndexProgressStage, emit_progress};
-use crate::qdrant::VectorRepository;
+use crate::vector::VectorRepository;
 
 /// A note prepared for indexing.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -70,7 +70,7 @@ pub enum IndexError {
     #[error("embedding failed: {0}")]
     Embedding(#[from] crate::embeddings::EmbeddingError),
     #[error("vector store: {0}")]
-    VectorStore(#[from] crate::qdrant::VectorStoreError),
+    VectorStore(#[from] crate::vector::VectorStoreError),
     #[error("database: {0}")]
     Database(String),
     #[error("embedding model changed: stored={stored}, current={current}")]
@@ -217,7 +217,6 @@ impl<E: EmbeddingProvider, V: VectorRepository> IndexService<E, V> {
         );
 
         let payloads = batch::build_upsert_payloads(&to_embed);
-        let sparse_vectors = batch::generate_sparse_vectors(&to_embed);
 
         emit_progress(
             progress.as_ref(),
@@ -230,10 +229,7 @@ impl<E: EmbeddingProvider, V: VectorRepository> IndexService<E, V> {
                 to_embed.len()
             ),
         );
-        let _upserted = self
-            .vector_repo
-            .upsert_vectors(&vectors, &payloads, Some(&sparse_vectors))
-            .await?;
+        let _upserted = self.vector_repo.upsert_vectors(&vectors, &payloads).await?;
 
         stats.notes_embedded = to_embed.len();
         emit_progress(
@@ -292,7 +288,7 @@ mod tests {
     use super::*;
     use crate::embeddings::{DeterministicEmbeddingProvider, EmbeddingError};
     use crate::progress::IndexProgressEvent;
-    use crate::qdrant::{MockVectorRepository, VectorStoreError};
+    use crate::vector::{MockVectorRepository, VectorStoreError};
     use std::collections::HashMap;
     use std::sync::{Arc, Mutex};
 
@@ -369,10 +365,10 @@ mod tests {
 
     #[test]
     fn index_error_from_vector_store_error() {
-        let err = VectorStoreError::Client("qdrant down".into());
+        let err = VectorStoreError::Client("store down".into());
         let idx_err: IndexError = err.into();
         assert!(matches!(idx_err, IndexError::VectorStore(_)));
-        assert!(idx_err.to_string().contains("qdrant down"));
+        assert!(idx_err.to_string().contains("store down"));
     }
 
     #[test]
@@ -466,8 +462,8 @@ mod tests {
             .returning(|_| Box::pin(async { Ok(HashMap::new()) }));
 
         repo.expect_upsert_vectors()
-            .withf(|vectors, payloads, _sparse| vectors.len() == 2 && payloads.len() == 2)
-            .returning(|vectors, _, _| {
+            .withf(|vectors, payloads| vectors.len() == 2 && payloads.len() == 2)
+            .returning(|vectors, _| {
                 let len = vectors.len();
                 Box::pin(async move { Ok(len) })
             });
@@ -492,7 +488,7 @@ mod tests {
         repo.expect_get_existing_hashes()
             .returning(|_| Box::pin(async { Ok(HashMap::new()) }));
         repo.expect_upsert_vectors()
-            .returning(|_, _, _| Box::pin(async { Ok(2) }));
+            .returning(|_, _| Box::pin(async { Ok(2) }));
 
         let events = Arc::new(Mutex::new(Vec::new()));
         let captured = Arc::clone(&events);
@@ -550,8 +546,8 @@ mod tests {
         });
 
         repo.expect_upsert_vectors()
-            .withf(|vectors, payloads, _| vectors.len() == 1 && payloads[0].note_id == 2)
-            .returning(|vectors, _, _| {
+            .withf(|vectors, payloads| vectors.len() == 1 && payloads[0].note_id == 2)
+            .returning(|vectors, _| {
                 let len = vectors.len();
                 Box::pin(async move { Ok(len) })
             });
@@ -583,8 +579,8 @@ mod tests {
         });
 
         repo.expect_upsert_vectors()
-            .withf(|vectors, _, _| vectors.len() == 2)
-            .returning(|vectors, _, _| {
+            .withf(|vectors, _| vectors.len() == 2)
+            .returning(|vectors, _| {
                 let len = vectors.len();
                 Box::pin(async move { Ok(len) })
             });
@@ -614,7 +610,7 @@ mod tests {
             .returning(|_| Box::pin(async { Ok(HashMap::new()) }));
 
         repo.expect_upsert_vectors()
-            .withf(|_, payloads, _| {
+            .withf(|_, payloads| {
                 let p = &payloads[0];
                 p.note_id == 42
                     && p.model_id == 1
@@ -625,7 +621,7 @@ mod tests {
                     && p.lapses == 0
                     && p.reps == 0
             })
-            .returning(|vectors, _, _| {
+            .returning(|vectors, _| {
                 let len = vectors.len();
                 Box::pin(async move { Ok(len) })
             });
@@ -649,8 +645,8 @@ mod tests {
         let expected_hash = crate::embeddings::content_hash("mock/test", "my text");
 
         repo.expect_upsert_vectors()
-            .withf(move |_, payloads, _| payloads[0].content_hash == expected_hash)
-            .returning(|vectors, _, _| {
+            .withf(move |_, payloads| payloads[0].content_hash == expected_hash)
+            .returning(|vectors, _| {
                 let len = vectors.len();
                 Box::pin(async move { Ok(len) })
             });
@@ -677,41 +673,14 @@ mod tests {
             .returning(|_| Box::pin(async { Ok(HashMap::new()) }));
 
         repo.expect_upsert_vectors()
-            .withf(move |vectors, _, _| vectors.iter().all(|v| v.len() == dim))
-            .returning(|vectors, _, _| {
+            .withf(move |vectors, _| vectors.iter().all(|v| v.len() == dim))
+            .returning(|vectors, _| {
                 let len = vectors.len();
                 Box::pin(async move { Ok(len) })
             });
 
         let service = IndexService::new(embedding, repo);
         let notes = vec![make_note(1, "test")];
-        service
-            .index_notes(&notes, ReindexMode::Incremental)
-            .await
-            .unwrap();
-    }
-
-    // ====================================================================
-    // IndexService::index_notes - sparse vectors
-    // ====================================================================
-
-    #[tokio::test]
-    async fn index_notes_generates_sparse_vectors() {
-        let embedding = DeterministicEmbeddingProvider::new(4);
-        let mut repo = MockVectorRepository::new();
-
-        repo.expect_get_existing_hashes()
-            .returning(|_| Box::pin(async { Ok(HashMap::new()) }));
-
-        repo.expect_upsert_vectors()
-            .withf(|_, _, sparse| sparse.is_some() && !sparse.unwrap().is_empty())
-            .returning(|vectors, _, _| {
-                let len = vectors.len();
-                Box::pin(async move { Ok(len) })
-            });
-
-        let service = IndexService::new(embedding, repo);
-        let notes = vec![make_note(1, "hello world")];
         service
             .index_notes(&notes, ReindexMode::Incremental)
             .await
@@ -771,7 +740,7 @@ mod tests {
         repo.expect_get_existing_hashes()
             .returning(|_| Box::pin(async { Ok(HashMap::new()) }));
 
-        repo.expect_upsert_vectors().returning(|_, _, _| {
+        repo.expect_upsert_vectors().returning(|_, _| {
             Box::pin(async { Err(VectorStoreError::Client("upsert failed".into())) })
         });
 
@@ -855,10 +824,10 @@ mod tests {
         });
 
         repo.expect_upsert_vectors()
-            .withf(|vectors, payloads, _| {
+            .withf(|vectors, payloads| {
                 vectors.len() == 2 && payloads.iter().all(|p| p.note_id == 2 || p.note_id == 4)
             })
-            .returning(|vectors, _, _| {
+            .returning(|vectors, _| {
                 let len = vectors.len();
                 Box::pin(async move { Ok(len) })
             });
@@ -893,7 +862,7 @@ mod tests {
             .returning(|_| Box::pin(async { Ok(HashMap::new()) }));
 
         repo.expect_upsert_vectors()
-            .withf(|_, payloads, _| {
+            .withf(|_, payloads| {
                 let p = &payloads[0];
                 p.mature
                     && p.lapses == 5
@@ -902,7 +871,7 @@ mod tests {
                     && p.tags == vec!["study"]
                     && p.deck_names == vec!["Math"]
             })
-            .returning(|vectors, _, _| {
+            .returning(|vectors, _| {
                 let len = vectors.len();
                 Box::pin(async move { Ok(len) })
             });
@@ -943,8 +912,8 @@ mod tests {
         });
 
         repo.expect_upsert_vectors()
-            .withf(|vectors, payloads, _| vectors.len() == 1 && payloads[0].note_id == 1)
-            .returning(|vectors, _, _| {
+            .withf(|vectors, payloads| vectors.len() == 1 && payloads[0].note_id == 1)
+            .returning(|vectors, _| {
                 let len = vectors.len();
                 Box::pin(async move { Ok(len) })
             });
@@ -971,7 +940,7 @@ mod tests {
 
         repo.expect_get_existing_hashes()
             .returning(|_| Box::pin(async { Ok(HashMap::new()) }));
-        repo.expect_upsert_vectors().returning(|vectors, _, _| {
+        repo.expect_upsert_vectors().returning(|vectors, _| {
             let len = vectors.len();
             Box::pin(async move { Ok(len) })
         });

@@ -13,44 +13,43 @@ use testcontainers_modules::postgres::Postgres;
 struct DuplicateVectorRepo;
 
 #[async_trait::async_trait]
-impl indexer::qdrant::VectorRepository for DuplicateVectorRepo {
+impl indexer::vector::VectorRepository for DuplicateVectorRepo {
     async fn ensure_collection(
         &self,
         _dimension: usize,
-    ) -> Result<bool, indexer::qdrant::VectorStoreError> {
+    ) -> Result<bool, indexer::vector::VectorStoreError> {
         Ok(false)
     }
 
     async fn upsert_vectors(
         &self,
         _vectors: &[Vec<f32>],
-        _payloads: &[indexer::qdrant::NotePayload],
-        _sparse_vectors: Option<&[indexer::qdrant::SparseVector]>,
-    ) -> Result<usize, indexer::qdrant::VectorStoreError> {
+        _payloads: &[indexer::vector::NotePayload],
+    ) -> Result<usize, indexer::vector::VectorStoreError> {
         Ok(0)
     }
 
     async fn delete_vectors(
         &self,
         _note_ids: &[i64],
-    ) -> Result<usize, indexer::qdrant::VectorStoreError> {
+    ) -> Result<usize, indexer::vector::VectorStoreError> {
         Ok(0)
     }
 
     async fn get_existing_hashes(
         &self,
         _note_ids: &[i64],
-    ) -> Result<HashMap<i64, String>, indexer::qdrant::VectorStoreError> {
+    ) -> Result<HashMap<i64, String>, indexer::vector::VectorStoreError> {
         Ok(HashMap::new())
     }
 
     async fn search(
         &self,
         _query_vector: &[f32],
-        _query_sparse: Option<&indexer::qdrant::SparseVector>,
+        _query_text: Option<&str>,
         _limit: usize,
-        _filters: &indexer::qdrant::SearchFilters,
-    ) -> Result<Vec<indexer::qdrant::ScoredNote>, indexer::qdrant::VectorStoreError> {
+        _filters: &indexer::vector::SearchFilters,
+    ) -> Result<Vec<indexer::vector::ScoredNote>, indexer::vector::VectorStoreError> {
         Ok(Vec::new())
     }
 
@@ -61,7 +60,7 @@ impl indexer::qdrant::VectorRepository for DuplicateVectorRepo {
         _min_score: f32,
         _deck_names: Option<&[String]>,
         _tags: Option<&[String]>,
-    ) -> Result<Vec<indexer::qdrant::ScoredNote>, indexer::qdrant::VectorStoreError> {
+    ) -> Result<Vec<indexer::vector::ScoredNote>, indexer::vector::VectorStoreError> {
         if !(1..=75).contains(&note_id) {
             return Ok(Vec::new());
         }
@@ -70,14 +69,14 @@ impl indexer::qdrant::VectorRepository for DuplicateVectorRepo {
         let cluster_start = cluster_index * 3 + 1;
         Ok((cluster_start..cluster_start + 3)
             .filter(|other| *other != note_id)
-            .map(|other| indexer::qdrant::ScoredNote {
+            .map(|other| indexer::vector::ScoredNote {
                 note_id: other,
                 score: 0.97,
             })
             .collect())
     }
 
-    async fn close(&self) -> Result<(), indexer::qdrant::VectorStoreError> {
+    async fn close(&self) -> Result<(), indexer::vector::VectorStoreError> {
         Ok(())
     }
 }

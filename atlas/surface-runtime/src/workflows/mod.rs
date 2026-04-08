@@ -6,7 +6,9 @@ mod sync;
 mod tag_audit;
 mod validation;
 
-pub use indexing::{IndexExecutionSummary, IndexExecutor, IndexingService};
+pub use indexing::{
+    IndexExecutionSummary, IndexExecutor, IndexingService, UnsupportedVectorRepository,
+};
 pub use obsidian_scan::{ObsidianNotePreview, ObsidianScanPreview, ObsidianScanService};
 pub use preview::{GeneratePreview, GeneratePreviewService};
 pub use progress::{SurfaceOperation, SurfaceProgressEvent, SurfaceProgressSink};

@@ -13,7 +13,11 @@ fn generated_card_content_hash_is_sha256_first_16_hex() {
         let mut hasher = Sha256::new();
         hasher.update(apf_html.as_bytes());
         let result = hasher.finalize();
-        format!("{:x}", result)[..16].to_string()
+        result
+            .iter()
+            .map(|b| format!("{:02x}", b))
+            .collect::<String>()[..16]
+            .to_string()
     };
 
     let card = GeneratedCard {

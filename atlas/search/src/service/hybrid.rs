@@ -12,7 +12,7 @@ use super::types::{HybridSearchResult, SearchMode, SearchParams};
 impl<E, V, R> SearchService<E, V, R>
 where
     E: indexer::embeddings::EmbeddingProvider,
-    V: indexer::qdrant::VectorRepository,
+    V: indexer::vector::VectorRepository,
     R: Reranker,
 {
     /// Execute hybrid search: semantic + FTS -> RRF fusion -> optional rerank.
@@ -35,7 +35,7 @@ where
         }
 
         // Semantic search
-        let mut semantic_matches = HashMap::<i64, indexer::qdrant::SemanticSearchHit>::new();
+        let mut semantic_matches = HashMap::<i64, indexer::vector::SemanticSearchHit>::new();
         let semantic_results = if search_mode == SearchMode::FtsOnly {
             vec![]
         } else {

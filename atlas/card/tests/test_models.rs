@@ -648,7 +648,8 @@ fn valid_note_types_contains_expected() {
     assert!(VALID_NOTE_TYPES.contains(&"APF::Cloze"));
     assert!(VALID_NOTE_TYPES.contains(&"Basic"));
     assert!(VALID_NOTE_TYPES.contains(&"Cloze"));
-    assert_eq!(VALID_NOTE_TYPES.len(), 4);
+    assert!(VALID_NOTE_TYPES.contains(&"ImageOcclusion"));
+    assert_eq!(VALID_NOTE_TYPES.len(), 5);
 }
 
 // ===========================================================================

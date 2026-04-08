@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::embeddings::{self, EmbeddingError, EmbeddingInput, EmbeddingProvider};
-use crate::qdrant::{NotePayload, QdrantRepository, SparseVector};
+use crate::vector::NotePayload;
 use common::ReindexMode;
 
 use crate::progress::{IndexProgressCallback, IndexProgressStage, emit_progress};
@@ -102,21 +102,6 @@ pub(crate) fn build_upsert_payloads(to_embed: &[NoteToEmbed<'_>]) -> Vec<NotePay
                 mime_type: chunk.mime_type.clone(),
                 preview_label: chunk.preview_label.clone(),
             })
-        })
-        .collect()
-}
-
-/// Generate sparse vectors from the chunks' `sparse_text` field.
-pub(crate) fn generate_sparse_vectors(to_embed: &[NoteToEmbed<'_>]) -> Vec<SparseVector> {
-    to_embed
-        .iter()
-        .flat_map(|e| &e.chunks)
-        .map(|chunk| {
-            chunk
-                .sparse_text
-                .as_deref()
-                .map(QdrantRepository::text_to_sparse_vector)
-                .unwrap_or_default()
         })
         .collect()
 }

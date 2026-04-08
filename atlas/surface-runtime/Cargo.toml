@@ -21,7 +21,6 @@ validation = { path = "../validation" }
 
 async-trait = { workspace = true }
 chrono = { workspace = true }
-qdrant-client = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sqlx = { workspace = true }

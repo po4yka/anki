@@ -13,7 +13,7 @@ use testcontainers::runners::AsyncRunner;
 use testcontainers_modules::postgres::Postgres;
 
 struct BenchVectorRepo {
-    results: Vec<indexer::qdrant::ScoredNote>,
+    results: Vec<indexer::vector::SemanticSearchHit>,
 }
 
 impl BenchVectorRepo {
@@ -21,51 +21,60 @@ impl BenchVectorRepo {
         Self {
             results: results
                 .into_iter()
-                .map(|(note_id, score)| indexer::qdrant::ScoredNote { note_id, score })
+                .map(|(note_id, score)| indexer::vector::SemanticSearchHit {
+                    note_id,
+                    chunk_id: format!("{note_id}:text_primary"),
+                    chunk_kind: "text_primary".to_string(),
+                    modality: "text".to_string(),
+                    source_field: None,
+                    asset_rel_path: None,
+                    mime_type: Some("text/plain".to_string()),
+                    preview_label: None,
+                    score,
+                })
                 .collect(),
         }
     }
 }
 
 #[async_trait::async_trait]
-impl indexer::qdrant::VectorRepository for BenchVectorRepo {
+impl indexer::vector::VectorRepository for BenchVectorRepo {
     async fn ensure_collection(
         &self,
         _dimension: usize,
-    ) -> Result<bool, indexer::qdrant::VectorStoreError> {
+    ) -> Result<bool, indexer::vector::VectorStoreError> {
         Ok(false)
     }
 
     async fn upsert_vectors(
         &self,
         _vectors: &[Vec<f32>],
-        _payloads: &[indexer::qdrant::NotePayload],
-        _sparse_vectors: Option<&[indexer::qdrant::SparseVector]>,
-    ) -> Result<usize, indexer::qdrant::VectorStoreError> {
+        _payloads: &[indexer::vector::NotePayload],
+    ) -> Result<usize, indexer::vector::VectorStoreError> {
         Ok(0)
     }
 
     async fn delete_vectors(
         &self,
         _note_ids: &[i64],
-    ) -> Result<usize, indexer::qdrant::VectorStoreError> {
+    ) -> Result<usize, indexer::vector::VectorStoreError> {
         Ok(0)
     }
 
     async fn get_existing_hashes(
         &self,
         _note_ids: &[i64],
-    ) -> Result<HashMap<i64, String>, indexer::qdrant::VectorStoreError> {
+    ) -> Result<HashMap<i64, String>, indexer::vector::VectorStoreError> {
         Ok(HashMap::new())
     }
 
-    async fn search(
+    async fn search_chunks(
         &self,
         _query_vector: &[f32],
-        _query_sparse: Option<&indexer::qdrant::SparseVector>,
+        _query_text: Option<&str>,
         _limit: usize,
-        _filters: &indexer::qdrant::SearchFilters,
-    ) -> Result<Vec<indexer::qdrant::ScoredNote>, indexer::qdrant::VectorStoreError> {
+        _filters: &indexer::vector::SearchFilters,
+    ) -> Result<Vec<indexer::vector::SemanticSearchHit>, indexer::vector::VectorStoreError> {
         Ok(self.results.clone())
     }
 
@@ -76,11 +85,11 @@ impl indexer::qdrant::VectorRepository for BenchVectorRepo {
         _min_score: f32,
         _deck_names: Option<&[String]>,
         _tags: Option<&[String]>,
-    ) -> Result<Vec<indexer::qdrant::ScoredNote>, indexer::qdrant::VectorStoreError> {
+    ) -> Result<Vec<indexer::vector::ScoredNote>, indexer::vector::VectorStoreError> {
         Ok(Vec::new())
     }
 
-    async fn close(&self) -> Result<(), indexer::qdrant::VectorStoreError> {
+    async fn close(&self) -> Result<(), indexer::vector::VectorStoreError> {
         Ok(())
     }
 }
@@ -144,7 +153,7 @@ async fn setup_fixture() -> BenchFixture {
 
 fn build_service(
     pool: sqlx::PgPool,
-    vector_results: Vec<indexer::qdrant::ScoredNote>,
+    vector_results: Vec<(i64, f32)>,
     reranker: Option<BenchReranker>,
 ) -> SearchService<
     indexer::embeddings::DeterministicEmbeddingProvider,
@@ -169,54 +178,12 @@ fn bench_search_hot_paths(c: &mut Criterion) {
     let fts_only_service = build_service(fixture.pool.clone(), Vec::new(), None);
     let hybrid_service = build_service(
         fixture.pool.clone(),
-        vec![
-            indexer::qdrant::ScoredNote {
-                note_id: 1,
-                score: 0.99,
-            },
-            indexer::qdrant::ScoredNote {
-                note_id: 2,
-                score: 0.95,
-            },
-            indexer::qdrant::ScoredNote {
-                note_id: 3,
-                score: 0.91,
-            },
-            indexer::qdrant::ScoredNote {
-                note_id: 4,
-                score: 0.88,
-            },
-            indexer::qdrant::ScoredNote {
-                note_id: 5,
-                score: 0.84,
-            },
-        ],
+        vec![(1, 0.99_f32), (2, 0.95), (3, 0.91), (4, 0.88), (5, 0.84)],
         None,
     );
     let rerank_service = build_service(
         fixture.pool.clone(),
-        vec![
-            indexer::qdrant::ScoredNote {
-                note_id: 1,
-                score: 0.99,
-            },
-            indexer::qdrant::ScoredNote {
-                note_id: 2,
-                score: 0.95,
-            },
-            indexer::qdrant::ScoredNote {
-                note_id: 3,
-                score: 0.91,
-            },
-            indexer::qdrant::ScoredNote {
-                note_id: 4,
-                score: 0.88,
-            },
-            indexer::qdrant::ScoredNote {
-                note_id: 5,
-                score: 0.84,
-            },
-        ],
+        vec![(1, 0.99_f32), (2, 0.95), (3, 0.91), (4, 0.88), (5, 0.84)],
         Some(BenchReranker),
     );
 

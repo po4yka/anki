@@ -1,8 +1,8 @@
 mod batch;
 pub mod embeddings;
 pub mod progress;
-pub mod qdrant;
 pub mod service;
+pub mod vector;
 
 pub use progress::{IndexProgressCallback, IndexProgressEvent, IndexProgressStage};
 pub use service::{

@@ -7,7 +7,10 @@ license.workspace = true
 
 [dependencies]
 common = { path = "../common" }
+indexer = { path = "../indexer" }
 sqlx = { workspace = true }
+pgvector = { workspace = true }
+async-trait = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 chrono = { workspace = true }

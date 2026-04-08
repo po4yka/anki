@@ -2,17 +2,6 @@ use std::env;
 
 use serde::Deserialize;
 use strum::{Display, EnumString};
-use url::Url;
-
-/// Qdrant quantization mode.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, EnumString, Display)]
-#[serde(rename_all = "lowercase")]
-#[strum(serialize_all = "lowercase")]
-pub enum Quantization {
-    None,
-    Scalar,
-    Binary,
-}
 
 /// Supported embedding providers.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, EnumString, Display)]
@@ -41,9 +30,6 @@ impl std::error::Error for ConfigError {}
 #[derive(Debug, Clone, Deserialize)]
 pub struct Settings {
     pub postgres_url: String,
-    pub qdrant_url: String,
-    pub qdrant_quantization: Quantization,
-    pub qdrant_on_disk: bool,
     pub job_queue_name: String,
     pub job_result_ttl_seconds: u32,
     pub job_max_retries: u32,
@@ -112,11 +98,6 @@ impl Settings {
                 "ANKIATLAS_POSTGRES_URL",
                 "postgresql://localhost:5432/ankiatlas",
             ),
-            qdrant_url: env_or("ANKIATLAS_QDRANT_URL", "http://localhost:6333"),
-            qdrant_quantization: env_or("ANKIATLAS_QDRANT_QUANTIZATION", "scalar")
-                .parse_enum("qdrant_quantization")?,
-            qdrant_on_disk: env_or("ANKIATLAS_QDRANT_ON_DISK", "false")
-                .parse_bool("qdrant_on_disk")?,
             job_queue_name: env_or("ANKIATLAS_JOB_QUEUE_NAME", "ankiatlas_jobs"),
             job_result_ttl_seconds: env_or("ANKIATLAS_JOB_RESULT_TTL_SECONDS", "86400")
                 .parse_u32("job_result_ttl_seconds")?,
@@ -163,14 +144,6 @@ impl Settings {
             return Err(ConfigError(format!(
                 "postgres_url must start with postgresql:// or postgres://, got: {}",
                 self.postgres_url
-            )));
-        }
-
-        // qdrant_url must start with http:// or https://
-        if !self.qdrant_url.starts_with("http://") && !self.qdrant_url.starts_with("https://") {
-            return Err(ConfigError(format!(
-                "qdrant_url must start with http:// or https://, got: {}",
-                self.qdrant_url
             )));
         }
 
@@ -273,25 +246,6 @@ impl Settings {
             batch_size: self.rerank_batch_size,
         }
     }
-}
-
-/// Convert the configured Qdrant REST endpoint into the matching gRPC endpoint.
-///
-/// The public config uses the documented HTTP port (`6333`) by default, while the
-/// Rust gRPC client expects the gRPC port (`6334`).
-pub fn qdrant_grpc_url(qdrant_url: &str) -> Result<String, ConfigError> {
-    let mut url = Url::parse(qdrant_url)
-        .map_err(|error| ConfigError(format!("invalid qdrant_url {qdrant_url}: {error}")))?;
-
-    if matches!(url.port(), Some(6333)) {
-        url.set_port(Some(6334)).map_err(|()| {
-            ConfigError(format!(
-                "failed to convert qdrant_url to gRPC endpoint: {qdrant_url}"
-            ))
-        })?;
-    }
-
-    Ok(url.as_str().trim_end_matches('/').to_string())
 }
 
 fn env_or(key: &str, default: &str) -> String {

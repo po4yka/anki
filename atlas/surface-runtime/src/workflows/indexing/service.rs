@@ -4,8 +4,8 @@ use std::sync::Arc;
 use common::ReindexMode;
 use indexer::embeddings::EmbeddingProvider;
 use indexer::progress::{IndexProgressCallback, IndexProgressEvent};
-use indexer::qdrant::{NotePayload, SemanticSearchHit, SparseVector, VectorRepository};
 use indexer::service::{IndexService, MultimodalNoteForIndexing};
+use indexer::vector::{NotePayload, SemanticSearchHit, VectorRepository};
 use sqlx::{FromRow, PgPool};
 
 use super::chunk::build_note_chunks;
@@ -324,23 +324,23 @@ impl IndexExecutor for IndexingService {
     }
 }
 
-pub(super) struct UnsupportedVectorRepository;
+pub struct UnsupportedVectorRepository;
 
 #[async_trait::async_trait]
 impl VectorRepository for UnsupportedVectorRepository {
     async fn ensure_collection(
         &self,
         _dimension: usize,
-    ) -> Result<bool, indexer::qdrant::VectorStoreError> {
-        Err(indexer::qdrant::VectorStoreError::Client(
+    ) -> Result<bool, indexer::vector::VectorStoreError> {
+        Err(indexer::vector::VectorStoreError::Client(
             "vector repository is not configured".to_string(),
         ))
     }
 
     async fn collection_dimension(
         &self,
-    ) -> Result<Option<usize>, indexer::qdrant::VectorStoreError> {
-        Err(indexer::qdrant::VectorStoreError::Client(
+    ) -> Result<Option<usize>, indexer::vector::VectorStoreError> {
+        Err(indexer::vector::VectorStoreError::Client(
             "vector repository is not configured".to_string(),
         ))
     }
@@ -348,8 +348,8 @@ impl VectorRepository for UnsupportedVectorRepository {
     async fn recreate_collection(
         &self,
         _dimension: usize,
-    ) -> Result<(), indexer::qdrant::VectorStoreError> {
-        Err(indexer::qdrant::VectorStoreError::Client(
+    ) -> Result<(), indexer::vector::VectorStoreError> {
+        Err(indexer::vector::VectorStoreError::Client(
             "vector repository is not configured".to_string(),
         ))
     }
@@ -358,9 +358,8 @@ impl VectorRepository for UnsupportedVectorRepository {
         &self,
         _vectors: &[Vec<f32>],
         _payloads: &[NotePayload],
-        _sparse_vectors: Option<&[SparseVector]>,
-    ) -> Result<usize, indexer::qdrant::VectorStoreError> {
-        Err(indexer::qdrant::VectorStoreError::Client(
+    ) -> Result<usize, indexer::vector::VectorStoreError> {
+        Err(indexer::vector::VectorStoreError::Client(
             "vector repository is not configured".to_string(),
         ))
     }
@@ -368,8 +367,8 @@ impl VectorRepository for UnsupportedVectorRepository {
     async fn delete_vectors(
         &self,
         _note_ids: &[i64],
-    ) -> Result<usize, indexer::qdrant::VectorStoreError> {
-        Err(indexer::qdrant::VectorStoreError::Client(
+    ) -> Result<usize, indexer::vector::VectorStoreError> {
+        Err(indexer::vector::VectorStoreError::Client(
             "vector repository is not configured".to_string(),
         ))
     }
@@ -377,8 +376,8 @@ impl VectorRepository for UnsupportedVectorRepository {
     async fn get_existing_hashes(
         &self,
         _note_ids: &[i64],
-    ) -> Result<std::collections::HashMap<i64, String>, indexer::qdrant::VectorStoreError> {
-        Err(indexer::qdrant::VectorStoreError::Client(
+    ) -> Result<std::collections::HashMap<i64, String>, indexer::vector::VectorStoreError> {
+        Err(indexer::vector::VectorStoreError::Client(
             "vector repository is not configured".to_string(),
         ))
     }
@@ -386,23 +385,11 @@ impl VectorRepository for UnsupportedVectorRepository {
     async fn search_chunks(
         &self,
         _query_vector: &[f32],
-        _query_sparse: Option<&SparseVector>,
+        _query_text: Option<&str>,
         _limit: usize,
-        _filters: &indexer::qdrant::SearchFilters,
-    ) -> Result<Vec<SemanticSearchHit>, indexer::qdrant::VectorStoreError> {
-        Err(indexer::qdrant::VectorStoreError::Client(
-            "vector repository is not configured".to_string(),
-        ))
-    }
-
-    async fn search(
-        &self,
-        _query_vector: &[f32],
-        _query_sparse: Option<&SparseVector>,
-        _limit: usize,
-        _filters: &indexer::qdrant::SearchFilters,
-    ) -> Result<Vec<indexer::qdrant::ScoredNote>, indexer::qdrant::VectorStoreError> {
-        Err(indexer::qdrant::VectorStoreError::Client(
+        _filters: &indexer::vector::SearchFilters,
+    ) -> Result<Vec<SemanticSearchHit>, indexer::vector::VectorStoreError> {
+        Err(indexer::vector::VectorStoreError::Client(
             "vector repository is not configured".to_string(),
         ))
     }
@@ -414,13 +401,13 @@ impl VectorRepository for UnsupportedVectorRepository {
         _min_score: f32,
         _deck_names: Option<&[String]>,
         _tags: Option<&[String]>,
-    ) -> Result<Vec<indexer::qdrant::ScoredNote>, indexer::qdrant::VectorStoreError> {
-        Err(indexer::qdrant::VectorStoreError::Client(
+    ) -> Result<Vec<indexer::vector::ScoredNote>, indexer::vector::VectorStoreError> {
+        Err(indexer::vector::VectorStoreError::Client(
             "vector repository is not configured".to_string(),
         ))
     }
 
-    async fn close(&self) -> Result<(), indexer::qdrant::VectorStoreError> {
+    async fn close(&self) -> Result<(), indexer::vector::VectorStoreError> {
         Ok(())
     }
 }

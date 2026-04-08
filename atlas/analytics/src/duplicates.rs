@@ -43,12 +43,12 @@ pub struct DuplicateStats {
 }
 
 /// Duplicate detector. Uses VectorRepository for similarity search.
-pub struct DuplicateDetector<V: indexer::qdrant::VectorRepository> {
+pub struct DuplicateDetector<V: indexer::vector::VectorRepository> {
     pub vector_repo: V,
     pub repository: Arc<dyn AnalyticsRepository>,
 }
 
-impl<V: indexer::qdrant::VectorRepository> DuplicateDetector<V> {
+impl<V: indexer::vector::VectorRepository> DuplicateDetector<V> {
     pub fn new(vector_repo: V, repository: Arc<dyn AnalyticsRepository>) -> Self {
         Self {
             vector_repo,
@@ -113,7 +113,7 @@ impl<V: indexer::qdrant::VectorRepository> DuplicateDetector<V> {
 
         if successful_lookups == 0 && !note_ids.is_empty() {
             return Err(first_error.unwrap_or_else(|| {
-                AnalyticsError::VectorStore(indexer::qdrant::VectorStoreError::Client(
+                AnalyticsError::VectorStore(indexer::vector::VectorStoreError::Client(
                     "duplicate similarity lookup failed for all notes".to_string(),
                 ))
             }));
@@ -326,8 +326,8 @@ mod tests {
     use super::*;
     use crate::repository::SqlxAnalyticsRepository;
     use async_trait::async_trait;
-    use indexer::qdrant::{
-        NotePayload, ScoredNote, SearchFilters, SemanticSearchHit, SparseVector, VectorRepository,
+    use indexer::vector::{
+        NotePayload, ScoredNote, SearchFilters, SemanticSearchHit, VectorRepository,
         VectorStoreError,
     };
     use sqlx::postgres::PgPoolOptions;
@@ -362,7 +362,6 @@ mod tests {
             &self,
             _vectors: &[Vec<f32>],
             _payloads: &[NotePayload],
-            _sparse_vectors: Option<&[SparseVector]>,
         ) -> Result<usize, VectorStoreError> {
             Ok(0)
         }
@@ -381,7 +380,7 @@ mod tests {
         async fn search_chunks(
             &self,
             _query_vector: &[f32],
-            _query_sparse: Option<&SparseVector>,
+            _query_text: Option<&str>,
             _limit: usize,
             _filters: &SearchFilters,
         ) -> Result<Vec<SemanticSearchHit>, VectorStoreError> {
@@ -531,7 +530,7 @@ mod tests {
                             score: 0.995,
                         }]),
                     ),
-                    (2, StubResult::ClientError("transient qdrant error")),
+                    (2, StubResult::ClientError("transient store error")),
                 ]),
             },
             Arc::new(SqlxAnalyticsRepository::new(test_pool())),
@@ -555,7 +554,7 @@ mod tests {
         let detector = DuplicateDetector::new(
             StubVectorRepo {
                 results: HashMap::from([
-                    (1, StubResult::ClientError("qdrant unavailable")),
+                    (1, StubResult::ClientError("store unavailable")),
                     (2, StubResult::ConnectionError("connection reset")),
                 ]),
             },
@@ -571,7 +570,7 @@ mod tests {
         };
 
         assert!(
-            error.to_string().contains("qdrant unavailable"),
+            error.to_string().contains("store unavailable"),
             "unexpected error: {error}"
         );
     }

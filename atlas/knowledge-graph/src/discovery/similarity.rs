@@ -15,11 +15,11 @@ const SIMILAR_LIMIT: usize = 10;
 
 /// Discover similarity edges between notes using vector embeddings.
 ///
-/// For each note, finds the top-K most similar notes via Qdrant and creates
+/// For each note, finds the top-K most similar notes via vector store and creates
 /// bidirectional `Similar` edges. Notes above the duplicate threshold (0.93)
 /// are excluded since those are handled by the duplicate detector.
 ///
-/// This function accepts pre-computed similarity pairs to decouple from Qdrant.
+/// This function accepts pre-computed similarity pairs to decouple from the vector store.
 /// The caller is responsible for querying `VectorRepository::find_similar_to_note`.
 #[instrument(skip_all, fields(pairs = similarity_pairs.len()))]
 pub async fn discover_similarity_edges(

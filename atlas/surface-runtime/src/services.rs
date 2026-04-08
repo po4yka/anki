@@ -8,7 +8,9 @@ use analytics::service::AnalyticsService;
 use common::config::{EmbeddingProviderKind, Settings};
 use database::create_pool;
 use indexer::embeddings::{EmbeddingProvider, EmbeddingProviderConfig, create_embedding_provider};
-use indexer::qdrant::{QdrantRepository, VectorRepository};
+use indexer::vector::VectorRepository;
+
+use database::PgVectorRepository;
 use jobs::{JobManager, PgJobManager};
 use search::error::{RerankError, SearchError};
 use search::repository::SqlxSearchReadRepository;
@@ -428,13 +430,13 @@ fn validate_read_only_collection_state(
 
 async fn validate_read_only_vector_store(
     db: &PgPool,
-    vector_store: &QdrantRepository,
+    vector_store: &dyn VectorRepository,
     embedding: &dyn EmbeddingProvider,
 ) -> Result<(), SurfaceError> {
     let desired_dimension = embedding.dimension();
     let desired_model = embedding.model_name();
     let current_dimension = vector_store.collection_dimension().await.map_err(|e| {
-        SurfaceError::Configuration(format!("inspect Qdrant collection dimension: {e}"))
+        SurfaceError::Configuration(format!("inspect vector collection dimension: {e}"))
     })?;
     let stored_fingerprint = load_embedding_fingerprint(db)
         .await
@@ -486,18 +488,9 @@ pub async fn build_surface_services(
             ))
         })?,
     );
-    let collection_name = "anki_notes";
-    let vector_store = Arc::new(
-        QdrantRepository::new(&settings.qdrant_url, collection_name)
-            .await
-            .map_err(|e| {
-                SurfaceError::Configuration(format!(
-                    "connect Qdrant repository for surface runtime: {e}"
-                ))
-            })?,
-    );
+    let vector_store = Arc::new(PgVectorRepository::new(db.clone()));
     if !options.enable_direct_execution {
-        validate_read_only_vector_store(&db, &vector_store, embedding.as_ref()).await?;
+        validate_read_only_vector_store(&db, vector_store.as_ref(), embedding.as_ref()).await?;
     }
     let vector_repo = vector_store as SharedVectorRepository;
     let reranker = build_reranker(settings);

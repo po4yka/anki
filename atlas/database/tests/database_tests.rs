@@ -34,10 +34,6 @@ async fn setup_pool() -> Option<(PgPool, testcontainers::ContainerAsync<Postgres
 fn settings_for_container(host: &str, port: u16) -> common::config::Settings {
     common::config::Settings {
         postgres_url: format!("postgresql://postgres:postgres@{host}:{port}/postgres"),
-        qdrant_url: "http://localhost:6333".to_string(),
-        qdrant_quantization: common::config::Quantization::None,
-        qdrant_on_disk: false,
-        postgres_url: "postgres://localhost:5432/anki_atlas".to_string(),
         job_queue_name: "test_jobs".to_string(),
         job_result_ttl_seconds: 3600,
         job_max_retries: 3,
@@ -379,9 +375,11 @@ fn embedded_migrations_match_python_source() {
     // byte-identical to packages/common/migrations/. We verify by checking
     // the embedded content contains expected markers.
     let migrations = database::migrations::MIGRATIONS;
-    assert_eq!(migrations.len(), 2);
+    assert_eq!(migrations.len(), 4);
     assert_eq!(migrations[0].0, "001_initial_schema");
     assert_eq!(migrations[1].0, "002_pg_trgm_lexical_search");
+    assert_eq!(migrations[2].0, "003_knowledge_graph");
+    assert_eq!(migrations[3].0, "004_pgvector_note_chunks");
 
     // Verify key content from migration 1
     assert!(
@@ -399,5 +397,27 @@ fn embedded_migrations_match_python_source() {
             .1
             .contains("CREATE EXTENSION IF NOT EXISTS pg_trgm"),
         "002 should enable pg_trgm extension"
+    );
+
+    // Verify key content from migration 3
+    assert!(
+        migrations[2]
+            .1
+            .contains("CREATE TABLE IF NOT EXISTS concept_edges"),
+        "003 should contain concept_edges table"
+    );
+
+    // Verify key content from migration 4
+    assert!(
+        migrations[3]
+            .1
+            .contains("CREATE EXTENSION IF NOT EXISTS vector"),
+        "004 should enable pgvector extension"
+    );
+    assert!(
+        migrations[3]
+            .1
+            .contains("CREATE TABLE IF NOT EXISTS note_chunks"),
+        "004 should contain note_chunks table"
     );
 }

@@ -25,6 +25,14 @@ pub static MIGRATIONS: &[(&str, &str)] = &[
         "002_pg_trgm_lexical_search",
         include_str!("../migrations/002_pg_trgm_lexical_search.sql"),
     ),
+    (
+        "003_knowledge_graph",
+        include_str!("../migrations/003_knowledge_graph.sql"),
+    ),
+    (
+        "004_pgvector_note_chunks",
+        include_str!("../migrations/004_pgvector_note_chunks.sql"),
+    ),
 ];
 
 /// Run all pending SQL migrations.

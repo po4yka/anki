@@ -12,7 +12,7 @@ use crate::taxonomy::Taxonomy;
 pub struct AnalyticsService<E, V>
 where
     E: indexer::embeddings::EmbeddingProvider,
-    V: indexer::qdrant::VectorRepository,
+    V: indexer::vector::VectorRepository,
 {
     pub embedding: E,
     pub vector_repo: V,
@@ -22,7 +22,7 @@ where
 impl<E, V> AnalyticsService<E, V>
 where
     E: indexer::embeddings::EmbeddingProvider,
-    V: indexer::qdrant::VectorRepository,
+    V: indexer::vector::VectorRepository,
 {
     pub fn new(embedding: E, vector_repo: V, repository: Arc<dyn AnalyticsRepository>) -> Self {
         Self {
@@ -144,7 +144,7 @@ mod tests {
         // (this is a compile-time check, the test body doesn't matter)
         fn _check<
             E: indexer::embeddings::EmbeddingProvider,
-            V: indexer::qdrant::VectorRepository,
+            V: indexer::vector::VectorRepository,
         >() {
             fn _assert<T: Send + Sync>() {}
             _assert::<AnalyticsService<E, V>>();
