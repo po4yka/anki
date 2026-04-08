@@ -94,6 +94,8 @@ protocol AnkiServiceProtocol: Sendable {
     func removeNotetype(id: Int64) async throws -> Anki_Collection_OpChanges
     func getNotetypeNamesAndCounts() async throws -> Anki_Notetypes_NotetypeUseCounts
     func getImageForOcclusion(path: String) async throws -> Anki_ImageOcclusion_GetImageForOcclusionResponse
+    func getImageOcclusionNote(noteId: Int64) async throws
+        -> Anki_ImageOcclusion_GetImageOcclusionNoteResponse
     func addImageOcclusionNote(request: Anki_ImageOcclusion_AddImageOcclusionNoteRequest) async throws
         -> Anki_Collection_OpChanges
     func updateImageOcclusionNote(request: Anki_ImageOcclusion_UpdateImageOcclusionNoteRequest) async throws

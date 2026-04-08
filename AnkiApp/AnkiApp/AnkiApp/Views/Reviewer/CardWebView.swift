@@ -101,6 +101,12 @@ private func reviewerScript() -> String {
             MathJax.typesetPromise([qa]);
         }
         bindAudioButtons();
+        // Re-run inline scripts (e.g. anki.imageOcclusion.setup())
+        qa.querySelectorAll('script').forEach(function(old) {
+            var s = document.createElement('script');
+            s.textContent = old.textContent;
+            old.parentNode.replaceChild(s, old);
+        });
     }
     bindAudioButtons();
     </script>
@@ -114,12 +120,15 @@ private func buildReviewerHTML(body: String, css: String) -> String {
     <head>
     <meta charset="utf-8">
     \(mathjaxHeadHTML())
+    <script src="image-occlusion.js"></script>
     <style>
     \(css)
     .replay-button { cursor: pointer; }
     .replay-button svg:not(.MathJax) { width: 32px; height: 32px; fill: currentColor; }
     mjx-container { overflow-x: auto; overflow-y: hidden; max-width: 100%; }
     mjx-container[display="true"] { display: block; text-align: center; margin: 12px 0; }
+    #image-occlusion-container { position: relative; display: inline-block; }
+    #image-occlusion-canvas { position: absolute; top: 0; left: 0; pointer-events: none; }
     </style>
     </head>
     <body>

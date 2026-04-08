@@ -658,6 +658,17 @@ actor AnkiService: AnkiServiceProtocol {
         )
     }
 
+    func getImageOcclusionNote(noteId: Int64) async throws
+        -> Anki_ImageOcclusion_GetImageOcclusionNoteResponse {
+        var req = Anki_ImageOcclusion_GetImageOcclusionNoteRequest()
+        req.noteID = noteId
+        return try backend.command(
+            service: ServiceIndex.imageOcclusion,
+            method: ImageOcclusionMethod.getImageOcclusionNote,
+            input: req
+        )
+    }
+
     func addImageOcclusionNote(request: Anki_ImageOcclusion_AddImageOcclusionNoteRequest) async throws
         -> Anki_Collection_OpChanges {
         try backend.command(

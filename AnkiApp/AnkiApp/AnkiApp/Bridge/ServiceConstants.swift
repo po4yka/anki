@@ -121,6 +121,7 @@ enum NotetypesMethod {
 
 enum ImageOcclusionMethod {
     static let getImageForOcclusion: UInt32 = 0
+    static let getImageOcclusionNote: UInt32 = 1
     static let addImageOcclusionNote: UInt32 = 4
     static let updateImageOcclusionNote: UInt32 = 5
 }
