@@ -21,7 +21,8 @@ struct NoteEditorView: View {
                     Section("Fields") {
                         ForEach(model.fields.indices, id: \.self) { index in
                             FieldEditorView(
-                                label: model.fieldNames[index],
+                                label: model.fieldNames[index]
+                                    + (model.isFieldRequired(index) ? " *" : ""),
                                 text: Binding(
                                     get: { model.fields[index] },
                                     set: { model.fields[index] = $0 }
@@ -58,6 +59,25 @@ struct NoteEditorView: View {
 
                     Section("Tags") {
                         TagEditor(model: model)
+                    }
+
+                    if !model.isClozeNotetype, let reqs = model.fieldRequirements {
+                        Section("Cards") {
+                            HStack {
+                                Text("Cards to generate:")
+                                Spacer()
+                                Text("\(reqs.cardCount)")
+                                    .foregroundStyle(reqs.cardCount > 0 ? .primary : .red)
+                            }
+                            if !reqs.emptyRequiredFields.isEmpty {
+                                Label(
+                                    "Empty required: \(reqs.emptyRequiredFields.joined(separator: ", "))",
+                                    systemImage: "exclamationmark.triangle"
+                                )
+                                .foregroundStyle(.orange)
+                                .font(.caption)
+                            }
+                        }
                     }
                 })
                 .formStyle(.grouped)
@@ -126,6 +146,13 @@ struct NoteEditorView: View {
                 case .normal, .notetypeNotCloze, .fieldNotCloze, .UNRECOGNIZED:
                     break
             }
+        }
+        if let reqs = model.fieldRequirements, reqs.cardCount == 0,
+           !reqs.emptyRequiredFields.isEmpty {
+            let names = reqs.emptyRequiredFields.joined(separator: ", ")
+            fieldWarningMessage = "Required fields (\(names)) are empty. No cards will be generated. Save anyway?"
+            showFieldWarning = true
+            return
         }
         await model.save()
         if model.error == nil { dismiss() }

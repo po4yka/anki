@@ -34,6 +34,20 @@ final class NoteEditorModel {
         currentNotetype?.fields.map(\.name) ?? []
     }
 
+    var fieldRequirements: FieldRequirements? {
+        guard let notetype = currentNotetype, let note else { return nil }
+        guard notetype.config.kind != .cloze else { return nil }
+        return FieldRequirementsHelper.analyze(notetype: notetype, fieldValues: note.fields)
+    }
+
+    func isFieldRequired(_ index: Int) -> Bool {
+        fieldRequirements?.requiredFieldIndexes.contains(index) ?? false
+    }
+
+    var predictedCardCount: Int {
+        fieldRequirements?.cardCount ?? 0
+    }
+
     var availableDecks: [DeckItem] {
         guard let tree = deckTree else { return [] }
         var result: [DeckItem] = []
