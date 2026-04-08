@@ -3,6 +3,7 @@ import Observation
 
 @Observable
 @MainActor
+// swiftlint:disable:next type_body_length
 final class ReviewerModel {
     var queuedCards: Anki_Scheduler_QueuedCards?
     var currentCardHTML: Anki_CardRendering_RenderCardResponse?

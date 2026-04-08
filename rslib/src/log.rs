@@ -5,7 +5,7 @@ use std::fs;
 use std::fs::OpenOptions;
 use std::io;
 
-use once_cell::sync::OnceCell;
+use std::sync::OnceLock;
 use tracing::subscriber::set_global_default;
 use tracing_appender::non_blocking::NonBlocking;
 use tracing_appender::non_blocking::WorkerGuard;
@@ -23,26 +23,27 @@ pub fn set_global_logger(path: Option<&str>) -> Result<()> {
     if std::env::var("BURN_LOG").is_ok() {
         return Ok(());
     }
-    static ONCE: OnceCell<()> = OnceCell::new();
-    ONCE.get_or_try_init(|| -> Result<()> {
-        let file_writer = if let Some(path) = path {
-            Some(Layer::new().with_writer(get_appender(path)?))
-        } else {
-            None
-        };
-        let subscriber = tracing_subscriber::registry()
-            .with(fmt::layer().with_target(false))
-            .with(file_writer)
-            .with(EnvFilter::from_default_env());
-        set_global_default(subscriber).or_invalid("global subscriber already set")?;
-        Ok(())
-    })?;
+    static ONCE: OnceLock<()> = OnceLock::new();
+    if ONCE.get().is_some() {
+        return Ok(());
+    }
+    let file_writer = if let Some(path) = path {
+        Some(Layer::new().with_writer(get_appender(path)?))
+    } else {
+        None
+    };
+    let subscriber = tracing_subscriber::registry()
+        .with(fmt::layer().with_target(false))
+        .with(file_writer)
+        .with(EnvFilter::from_default_env());
+    set_global_default(subscriber).or_invalid("global subscriber already set")?;
+    let _ = ONCE.set(());
     Ok(())
 }
 
 /// Holding on to this guard does not actually ensure the log file will be fully
 /// written, as statics do not implement Drop.
-static APPENDER_GUARD: OnceCell<WorkerGuard> = OnceCell::new();
+static APPENDER_GUARD: OnceLock<WorkerGuard> = OnceLock::new();
 
 fn get_appender(path: &str) -> Result<NonBlocking> {
     maybe_rotate_log(path)?;

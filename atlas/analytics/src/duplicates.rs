@@ -280,13 +280,10 @@ impl<V: indexer::qdrant::VectorRepository> DuplicateDetector<V> {
 
 /// Internal: union-find with path compression.
 /// Always uses smaller ID as root for determinism.
-/// Used by `DuplicateDetector::find_duplicates` (implementation pending).
-#[allow(dead_code)]
 pub(crate) struct UnionFind {
     parent: std::collections::HashMap<i64, i64>,
 }
 
-#[allow(dead_code)]
 impl UnionFind {
     pub(crate) fn new() -> Self {
         Self {
@@ -319,7 +316,6 @@ impl UnionFind {
         if rx == ry {
             return;
         }
-        // Smaller ID becomes root for determinism.
         let (new_root, child) = if rx < ry { (rx, ry) } else { (ry, rx) };
         self.parent.insert(child, new_root);
     }

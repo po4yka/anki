@@ -23,19 +23,8 @@ impl<'a> AuditScanner<'a> {
 
     /// Generate a deterministic ID for deduplication: same slug + issue kind = same ID.
     fn item_id(slug: &str, discriminator: &str) -> String {
-        use sha2::{Digest, Sha256};
-        let mut hasher = Sha256::new();
-        hasher.update(slug.as_bytes());
-        hasher.update(b":");
-        hasher.update(discriminator.as_bytes());
-        let hash = hasher.finalize();
-        // Use first 16 hex chars as a stable ID
-        hex_prefix(&hash)
+        super::work_item_id("", slug, discriminator)
     }
-}
-
-fn hex_prefix(bytes: &[u8]) -> String {
-    bytes.iter().take(8).map(|b| format!("{b:02x}")).collect()
 }
 
 impl Scanner for AuditScanner<'_> {

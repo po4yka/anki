@@ -33,14 +33,7 @@ impl<'a> FsrsScanner<'a> {
     }
 
     fn item_id(slug: &str, discriminator: &str) -> String {
-        use sha2::{Digest, Sha256};
-        let mut hasher = Sha256::new();
-        hasher.update(b"fsrs:");
-        hasher.update(slug.as_bytes());
-        hasher.update(b":");
-        hasher.update(discriminator.as_bytes());
-        let hash = hasher.finalize();
-        hash.iter().take(8).map(|b| format!("{b:02x}")).collect()
+        super::work_item_id("fsrs:", slug, discriminator)
     }
 
     /// Compute a quality score from FSRS memory state.

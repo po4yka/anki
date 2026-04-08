@@ -266,44 +266,21 @@ impl Collection {
         let timing = self.timing_for_timestamp(now)?;
         let secs_until_rollover = timing.next_day_at.elapsed_secs_since(now).max(0) as u32;
 
-        Ok(vec![
-            answer_button_time_collapsible(
-                choices
-                    .again
-                    .interval_kind()
-                    .maybe_as_days(secs_until_rollover)
-                    .as_seconds(),
-                collapse_time,
-                &self.tr,
-            ),
-            answer_button_time_collapsible(
-                choices
-                    .hard
-                    .interval_kind()
-                    .maybe_as_days(secs_until_rollover)
-                    .as_seconds(),
-                collapse_time,
-                &self.tr,
-            ),
-            answer_button_time_collapsible(
-                choices
-                    .good
-                    .interval_kind()
-                    .maybe_as_days(secs_until_rollover)
-                    .as_seconds(),
-                collapse_time,
-                &self.tr,
-            ),
-            answer_button_time_collapsible(
-                choices
-                    .easy
-                    .interval_kind()
-                    .maybe_as_days(secs_until_rollover)
-                    .as_seconds(),
-                collapse_time,
-                &self.tr,
-            ),
-        ])
+        Ok(
+            [&choices.again, &choices.hard, &choices.good, &choices.easy]
+                .into_iter()
+                .map(|state| {
+                    answer_button_time_collapsible(
+                        state
+                            .interval_kind()
+                            .maybe_as_days(secs_until_rollover)
+                            .as_seconds(),
+                        collapse_time,
+                        &self.tr,
+                    )
+                })
+                .collect(),
+        )
     }
 
     /// Answer card, writing its new state to the database.

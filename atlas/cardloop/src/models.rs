@@ -172,15 +172,51 @@ pub struct WorkItem {
     pub confidence: Option<f64>,
 }
 
+/// Action performed on a work item.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ProgressionAction {
+    Scan,
+    Resolve,
+    Skip,
+    Reopen,
+}
+
+impl std::fmt::Display for ProgressionAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Scan => write!(f, "scan"),
+            Self::Resolve => write!(f, "resolve"),
+            Self::Skip => write!(f, "skip"),
+            Self::Reopen => write!(f, "reopen"),
+        }
+    }
+}
+
+/// Who performed a progression action.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ProgressionActor {
+    Agent,
+    User,
+}
+
+impl std::fmt::Display for ProgressionActor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Agent => write!(f, "agent"),
+            Self::User => write!(f, "user"),
+        }
+    }
+}
+
 /// Immutable event for the progression log.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProgressionEvent {
     pub timestamp: DateTime<Utc>,
-    /// Action name: "scan", "resolve", "skip", "reopen".
-    pub action: String,
+    pub action: ProgressionAction,
     pub item_ids: Vec<String>,
-    /// Who performed it: "agent" or "user".
-    pub actor: String,
+    pub actor: ProgressionActor,
     pub note: Option<String>,
     pub scores_before: Option<ScoreSummary>,
     pub scores_after: Option<ScoreSummary>,

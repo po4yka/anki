@@ -11,7 +11,7 @@ serde = { workspace = true }
 sha2 = { workspace = true }
 hex = { workspace = true }
 regex = { workspace = true }
-unicode-normalization = "0.1"
+unicode-normalization = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 chrono = { workspace = true }

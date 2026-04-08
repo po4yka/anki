@@ -17,7 +17,7 @@ base64 = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 regex = { workspace = true }
-html-escape = "0.2"
+htmlescape = { workspace = true }
 ammonia = { workspace = true }
 pulldown-cmark = { workspace = true }
 

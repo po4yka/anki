@@ -28,11 +28,7 @@ impl<'a> StaleScanner<'a> {
     }
 
     fn item_id(source_path: &str) -> String {
-        let mut hasher = Sha256::new();
-        hasher.update(b"stale:");
-        hasher.update(source_path.as_bytes());
-        let hash = hasher.finalize();
-        hash.iter().take(8).map(|b| format!("{b:02x}")).collect()
+        super::work_item_id("stale:", source_path, "")
     }
 
     /// Compute a content hash for a file's contents.

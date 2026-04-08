@@ -119,6 +119,6 @@ pub fn convert_apf_field(field_content: &str) -> String {
 /// Wraps code in `<pre><code class="language-{lang}">` with HTML escaping.
 pub fn highlight_code(code: &str, language: Option<&str>) -> String {
     let lang = language.unwrap_or("text");
-    let escaped = html_escape::encode_text(code);
+    let escaped = htmlescape::encode_minimal(code);
     format!("<pre><code class=\"language-{lang}\">{escaped}</code></pre>")
 }

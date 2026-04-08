@@ -90,12 +90,12 @@ mod tests {
     use super::*;
     use chrono::Utc;
 
-    fn make_event(action: &str) -> ProgressionEvent {
+    fn make_event(action: ProgressionAction) -> ProgressionEvent {
         ProgressionEvent {
             timestamp: Utc::now(),
-            action: action.to_string(),
+            action,
             item_ids: vec!["item-1".into()],
-            actor: "agent".into(),
+            actor: ProgressionActor::Agent,
             note: None,
             scores_before: None,
             scores_after: None,
@@ -108,9 +108,9 @@ mod tests {
         let path = dir.path().join("progression.jsonl");
         let log = ProgressionLog::open(&path).unwrap();
 
-        log.append(&make_event("scan")).unwrap();
-        log.append(&make_event("resolve")).unwrap();
-        log.append(&make_event("skip")).unwrap();
+        log.append(&make_event(ProgressionAction::Scan)).unwrap();
+        log.append(&make_event(ProgressionAction::Resolve)).unwrap();
+        log.append(&make_event(ProgressionAction::Skip)).unwrap();
 
         assert_eq!(log.count().unwrap(), 3);
 
@@ -137,7 +137,7 @@ mod tests {
         let path = dir.path().join("progression.jsonl");
         let log = ProgressionLog::open(&path).unwrap();
 
-        log.append(&make_event("scan")).unwrap();
+        log.append(&make_event(ProgressionAction::Scan)).unwrap();
 
         let events = log.read_recent(100).unwrap();
         assert_eq!(events.len(), 1);

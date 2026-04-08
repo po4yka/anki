@@ -59,49 +59,70 @@ pub enum DatabaseCheckProgress {
 
 impl CheckDatabaseOutput {
     pub fn to_i18n_strings(&self, tr: &I18n) -> Vec<String> {
-        let mut probs = Vec::new();
-
-        if self.notetypes_recovered > 0 {
-            probs.push(tr.database_check_notetypes_recovered());
-        }
-
-        if self.card_position_too_high > 0 {
-            probs.push(tr.database_check_new_card_high_due(self.card_position_too_high));
-        }
-        if self.card_properties_invalid > 0 {
-            probs.push(tr.database_check_card_properties(self.card_properties_invalid));
-        }
-        if self.card_last_review_time_empty > 0 {
-            probs.push(
-                tr.database_check_card_last_review_time_empty(self.card_last_review_time_empty),
-            );
-        }
-        if self.cards_missing_note > 0 {
-            probs.push(tr.database_check_card_missing_note(self.cards_missing_note));
-        }
-        if self.decks_missing > 0 {
-            probs.push(tr.database_check_missing_decks(self.decks_missing));
-        }
-        if self.field_count_mismatch > 0 {
-            probs.push(tr.database_check_field_count(self.field_count_mismatch));
-        }
-        if self.card_ords_duplicated > 0 {
-            probs.push(tr.database_check_duplicate_card_ords(self.card_ords_duplicated));
-        }
-        if self.templates_missing > 0 {
-            probs.push(tr.database_check_missing_templates(self.templates_missing));
-        }
-        if self.revlog_properties_invalid > 0 {
-            probs.push(tr.database_check_revlog_properties(self.revlog_properties_invalid));
-        }
-        if self.invalid_utf8 > 0 {
-            probs.push(tr.database_check_notes_with_invalid_utf8(self.invalid_utf8));
-        }
-        if self.invalid_ids > 0 {
-            probs.push(tr.database_check_fixed_invalid_ids(self.invalid_ids));
-        }
-
-        probs.into_iter().map(Into::into).collect()
+        let checks: [(usize, String); 12] = [
+            (
+                self.notetypes_recovered,
+                tr.database_check_notetypes_recovered().into(),
+            ),
+            (
+                self.card_position_too_high,
+                tr.database_check_new_card_high_due(self.card_position_too_high)
+                    .into(),
+            ),
+            (
+                self.card_properties_invalid,
+                tr.database_check_card_properties(self.card_properties_invalid)
+                    .into(),
+            ),
+            (
+                self.card_last_review_time_empty,
+                tr.database_check_card_last_review_time_empty(self.card_last_review_time_empty)
+                    .into(),
+            ),
+            (
+                self.cards_missing_note,
+                tr.database_check_card_missing_note(self.cards_missing_note)
+                    .into(),
+            ),
+            (
+                self.decks_missing,
+                tr.database_check_missing_decks(self.decks_missing).into(),
+            ),
+            (
+                self.field_count_mismatch,
+                tr.database_check_field_count(self.field_count_mismatch)
+                    .into(),
+            ),
+            (
+                self.card_ords_duplicated,
+                tr.database_check_duplicate_card_ords(self.card_ords_duplicated)
+                    .into(),
+            ),
+            (
+                self.templates_missing,
+                tr.database_check_missing_templates(self.templates_missing)
+                    .into(),
+            ),
+            (
+                self.revlog_properties_invalid,
+                tr.database_check_revlog_properties(self.revlog_properties_invalid)
+                    .into(),
+            ),
+            (
+                self.invalid_utf8,
+                tr.database_check_notes_with_invalid_utf8(self.invalid_utf8)
+                    .into(),
+            ),
+            (
+                self.invalid_ids,
+                tr.database_check_fixed_invalid_ids(self.invalid_ids).into(),
+            ),
+        ];
+        checks
+            .into_iter()
+            .filter(|(count, _)| *count > 0)
+            .map(|(_, msg)| msg)
+            .collect()
     }
 }
 

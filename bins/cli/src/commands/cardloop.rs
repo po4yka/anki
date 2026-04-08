@@ -5,7 +5,7 @@ use card::CardRegistry;
 use cardloop::{
     AsyncScanner, CardloopStore, ClusterBuilder, IssueKind, ItemStatus, LoopKind, ProgressionLog,
     QueueBuilder, Tier,
-    models::ProgressionEvent,
+    models::{ProgressionAction, ProgressionActor, ProgressionEvent},
     scanners::{Scanner, audit::AuditScanner, fsrs::FsrsScanner, llm_review::LlmReviewScanner},
 };
 use chrono::Utc;
@@ -149,9 +149,9 @@ async fn cmd_scan(args: &crate::args::CardloopScanArgs) -> anyhow::Result<()> {
     let item_ids: Vec<String> = all_items.iter().map(|i| i.id.clone()).collect();
     log.append(&ProgressionEvent {
         timestamp: Utc::now(),
-        action: "scan".into(),
+        action: ProgressionAction::Scan,
         item_ids,
-        actor: "agent".into(),
+        actor: ProgressionActor::Agent,
         note: Some(format!(
             "scan #{scan_number}: {new_count} items found, {stale_resolved} auto-resolved"
         )),
@@ -446,9 +446,9 @@ fn cmd_resolve(args: &crate::args::CardloopResolveArgs) -> anyhow::Result<()> {
 
     log.append(&ProgressionEvent {
         timestamp: Utc::now(),
-        action: "resolve".into(),
+        action: ProgressionAction::Resolve,
         item_ids: vec![item.id.clone()],
-        actor: "agent".into(),
+        actor: ProgressionActor::Agent,
         note: args.attest.clone(),
         scores_before: Some(scores_before),
         scores_after: Some(scores_after.clone()),

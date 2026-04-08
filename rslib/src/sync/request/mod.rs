@@ -179,7 +179,8 @@ where
 
 pub static MAXIMUM_SYNC_PAYLOAD_BYTES: LazyLock<usize> = LazyLock::new(|| {
     env::var("MAX_SYNC_PAYLOAD_MEGS")
-        .map(|v| v.parse().expect("invalid upload limit"))
+        .ok()
+        .and_then(|v| v.parse().ok())
         .unwrap_or(100)
         * 1024
         * 1024
