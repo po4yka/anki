@@ -119,6 +119,18 @@ struct ReviewPreferencesView: View {
                 Toggle("Interrupt audio when answering", isOn: $interruptAudioWhenAnswering)
             }
 
+            Section("Text-to-Speech") {
+                Toggle("Enable TTS playback", isOn: Binding(
+                    get: { appState.ttsSettings.isEnabled },
+                    set: { appState.ttsSettings.isEnabled = $0 }
+                ))
+                Toggle("Auto-play TTS on card show", isOn: Binding(
+                    get: { appState.ttsSettings.autoPlay },
+                    set: { appState.ttsSettings.autoPlay = $0 }
+                ))
+                .disabled(!appState.ttsSettings.isEnabled)
+            }
+
             Section("Time Limit") {
                 let minutes = timeLimitSecs / 60
                 Stepper("Time limit per card: \(minutes) min", value: $timeLimitSecs, in: 0 ... 3600, step: 60)

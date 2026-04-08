@@ -7,6 +7,8 @@ final class ReviewerModel {
     var queuedCards: Anki_Scheduler_QueuedCards?
     var currentCardHTML: Anki_CardRendering_RenderCardResponse?
     var currentAvTags: [Anki_CardRendering_AVTag] = []
+    var questionAvTags: [Anki_CardRendering_AVTag] = []
+    var answerAvTags: [Anki_CardRendering_AVTag] = []
     var undoLabel: String?
     var isLoading: Bool = false
     var error: AnkiError?
@@ -184,17 +186,28 @@ final class ReviewerModel {
 
     private func extractAvTags() async {
         guard let rendered = currentCardHTML else {
+            questionAvTags = []
+            answerAvTags = []
             currentAvTags = []
             return
         }
-        let text = rendered.answerNodes.map { node -> String in
+        let qText = rendered.questionNodes.map { node -> String in
+            if !node.text.isEmpty { return node.text }
+            return node.replacement.currentText
+        }.joined()
+        let aText = rendered.answerNodes.map { node -> String in
             if !node.text.isEmpty { return node.text }
             return node.replacement.currentText
         }.joined()
         do {
-            let response = try await service.extractAvTags(text: text, questionSide: false)
-            currentAvTags = response.avTags
+            let qResponse = try await service.extractAvTags(text: qText, questionSide: true)
+            let aResponse = try await service.extractAvTags(text: aText, questionSide: false)
+            questionAvTags = qResponse.avTags
+            answerAvTags = aResponse.avTags
+            currentAvTags = questionAvTags + answerAvTags
         } catch {
+            questionAvTags = []
+            answerAvTags = []
             currentAvTags = []
         }
     }

@@ -12,6 +12,7 @@ final class AppState {
     var undoStatus: Anki_Collection_UndoStatus?
 
     let service: AnkiService
+    let ttsSettings = TTSSettings()
     var atlasService: AtlasService?
     var isAtlasAvailable: Bool {
         atlasService != nil

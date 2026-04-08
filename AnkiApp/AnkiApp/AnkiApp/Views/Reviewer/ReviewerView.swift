@@ -8,6 +8,8 @@ struct ReviewerView: View {
     @State private var model: ReviewerModel?
     @State private var showingAnswer = false
     @State private var audioPlayer: AVPlayer?
+    @State private var ttsService = TTSService()
+    @State private var ttsPlaybackTask: Task<Void, Never>?
     @State private var editingNoteId: Int64?
     @State private var showCardInfo = false
     @State private var autoShowTask: Task<Void, Never>?
@@ -79,6 +81,13 @@ struct ReviewerView: View {
                 if model.isTypeAnswerCard {
                     Task { await model.compareTypedAnswer() }
                 }
+                if appState.ttsSettings.isEnabled, appState.ttsSettings.autoPlay {
+                    let answerTts = model.answerAvTags.filter {
+                        if case .tts = $0.value { return true }
+                        return false
+                    }
+                    if !answerTts.isEmpty { playAvTags(model.answerAvTags) }
+                }
                 autoAdvanceTask = model.scheduleAutoAdvance()
                 if let autoAdvanceTask {
                     Task {
@@ -99,6 +108,15 @@ struct ReviewerView: View {
                     }
                 }
             }
+        }
+        .onChange(of: model?.currentCardHTML?.questionNodes.count) { _, _ in
+            guard let model else { return }
+            guard appState.ttsSettings.isEnabled, appState.ttsSettings.autoPlay else { return }
+            let questionTts = model.questionAvTags.filter {
+                if case .tts = $0.value { return true }
+                return false
+            }
+            if !questionTts.isEmpty { playAvTags(model.questionAvTags) }
         }
         .frame(minWidth: 600, minHeight: 500)
         .sheet(item: Binding(
@@ -217,6 +235,7 @@ struct ReviewerView: View {
 
     private func performAnswer(model: ReviewerModel, rating: Anki_Scheduler_CardAnswer.Rating) {
         cancelAutoTasks()
+        stopAllAudio()
         showingAnswer = false
         if let card = model.queuedCards?.cards.first,
            card.hasStates {
@@ -339,12 +358,37 @@ struct ReviewerView: View {
 
     private func replayAudio() {
         guard let model else { return }
-        for tag in model.currentAvTags {
-            if case let .soundOrVideo(filename) = tag.value {
-                playAudioFile(filename)
-                return
+        let tags = showingAnswer
+            ? model.questionAvTags + model.answerAvTags
+            : model.questionAvTags
+        playAvTags(tags)
+    }
+
+    private func playAvTags(_ tags: [Anki_CardRendering_AVTag]) {
+        ttsPlaybackTask?.cancel()
+        ttsPlaybackTask = Task {
+            await ttsService.stop()
+            audioPlayer?.pause()
+            for tag in tags {
+                guard !Task.isCancelled else { break }
+                switch tag.value {
+                    case let .soundOrVideo(filename):
+                        playAudioFile(filename)
+                    case let .tts(ttsTag):
+                        guard appState.ttsSettings.isEnabled else { continue }
+                        await ttsService.speak(tag: ttsTag)
+                    case .none:
+                        break
+                }
             }
         }
+    }
+
+    private func stopAllAudio() {
+        ttsPlaybackTask?.cancel()
+        ttsPlaybackTask = nil
+        Task { await ttsService.stop() }
+        audioPlayer?.pause()
     }
 }
 
