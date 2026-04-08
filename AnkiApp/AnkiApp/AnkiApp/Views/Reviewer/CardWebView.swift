@@ -24,12 +24,21 @@ struct CardWebView: NSViewRepresentable {
 
     func updateNSView(_ webView: WKWebView, context: Context) {
         context.coordinator.onPlayAudio = onPlayAudio
-        let fullHTML = buildReviewerHTML(body: html, css: css)
-        webView.loadHTMLString(fullHTML, baseURL: baseURL)
+        if context.coordinator.isLoaded, context.coordinator.lastCSS == css {
+            let escaped = escapeForJS(html)
+            webView.evaluateJavaScript("updateContent('\(escaped)')")
+        } else {
+            let fullHTML = buildReviewerHTML(body: html, css: css)
+            webView.loadHTMLString(fullHTML, baseURL: baseURL)
+            context.coordinator.lastCSS = css
+            context.coordinator.isLoaded = true
+        }
     }
 
     class Coordinator: NSObject, WKScriptMessageHandler {
         var onPlayAudio: ((String) -> Void)?
+        var isLoaded = false
+        var lastCSS = ""
 
         init(onPlayAudio: ((String) -> Void)?) {
             self.onPlayAudio = onPlayAudio
@@ -43,35 +52,79 @@ struct CardWebView: NSViewRepresentable {
     }
 }
 
+// MARK: - HTML Builder
+
+private func escapeForJS(_ text: String) -> String {
+    text.replacingOccurrences(of: "\\", with: "\\\\")
+        .replacingOccurrences(of: "'", with: "\\'")
+        .replacingOccurrences(of: "\n", with: "\\n")
+        .replacingOccurrences(of: "\r", with: "")
+}
+
+private func mathjaxHeadHTML() -> String {
+    """
+    <script>
+    MathJax = {
+        tex: { inlineMath: [['\\\\(', '\\\\)']], displayMath: [['\\\\[', '\\\\]']] },
+        svg: { fontCache: 'local' },
+        options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'code'] },
+        startup: { typeset: true }
+    };
+    </script>
+    <script src="mathjax/tex-svg.js" id="MathJax-script" async></script>
+    """
+}
+
+private func reviewerScript() -> String {
+    """
+    <script>
+    function bindAudioButtons() {
+        document.querySelectorAll('.replay-button').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var file = this.getAttribute('data-file');
+                if (file) { window.webkit.messageHandlers.ankiPlay.postMessage(file); }
+            });
+        });
+        document.querySelectorAll('a[href^="playsound:"]').forEach(function(a) {
+            a.addEventListener('click', function(e) {
+                e.preventDefault();
+                var file = this.getAttribute('href').replace('playsound:', '');
+                if (file) { window.webkit.messageHandlers.ankiPlay.postMessage(file); }
+            });
+        });
+    }
+    function updateContent(html) {
+        var qa = document.getElementById('qa');
+        qa.innerHTML = html;
+        if (window.MathJax && MathJax.typesetPromise) {
+            MathJax.typesetClear([qa]);
+            MathJax.typesetPromise([qa]);
+        }
+        bindAudioButtons();
+    }
+    bindAudioButtons();
+    </script>
+    """
+}
+
 private func buildReviewerHTML(body: String, css: String) -> String {
     """
     <!DOCTYPE html>
     <html>
     <head>
     <meta charset="utf-8">
+    \(mathjaxHeadHTML())
     <style>
     \(css)
     .replay-button { cursor: pointer; }
-    .replay-button svg { width: 32px; height: 32px; fill: currentColor; }
+    .replay-button svg:not(.MathJax) { width: 32px; height: 32px; fill: currentColor; }
+    mjx-container { overflow-x: auto; overflow-y: hidden; max-width: 100%; }
+    mjx-container[display="true"] { display: block; text-align: center; margin: 12px 0; }
     </style>
     </head>
     <body>
     <div id="qa">\(body)</div>
-    <script>
-    document.querySelectorAll('.replay-button').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var file = this.getAttribute('data-file');
-            if (file) { window.webkit.messageHandlers.ankiPlay.postMessage(file); }
-        });
-    });
-    document.querySelectorAll('a[href^="playsound:"]').forEach(function(a) {
-        a.addEventListener('click', function(e) {
-            e.preventDefault();
-            var file = this.getAttribute('href').replace('playsound:', '');
-            if (file) { window.webkit.messageHandlers.ankiPlay.postMessage(file); }
-        });
-    });
-    </script>
+    \(reviewerScript())
     </body>
     </html>
     """

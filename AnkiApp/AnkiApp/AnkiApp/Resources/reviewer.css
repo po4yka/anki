@@ -39,3 +39,15 @@ hr {
     border-top: 1px solid #d2d2d7;
     margin: 16px 0;
 }
+
+mjx-container {
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-width: 100%;
+}
+
+mjx-container[display="true"] {
+    display: block;
+    text-align: center;
+    margin: 12px 0;
+}
