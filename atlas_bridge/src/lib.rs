@@ -5,6 +5,7 @@
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
 use std::ffi::{CStr, c_char, c_void};
+use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::PathBuf;
 use std::slice;
 use std::sync::Arc;
@@ -227,29 +228,34 @@ fn build_noop_services(postgres_url: Option<&str>) -> Result<SurfaceServices, St
 ///
 /// Returns an opaque pointer on success. The caller must pass this pointer to
 /// all subsequent atlas_command calls and must call atlas_free() when done.
-/// Returns null on error.
+/// Returns null on error or if a panic occurs.
 #[unsafe(no_mangle)]
 pub extern "C" fn atlas_init(config_data: *const u8, config_len: usize) -> *mut c_void {
-    let config: AtlasConfig = if config_data.is_null() || config_len == 0 {
-        AtlasConfig::default()
-    } else {
-        let bytes = unsafe { slice::from_raw_parts(config_data, config_len) };
-        serde_json::from_slice(bytes).unwrap_or_default()
-    };
+    catch_unwind(|| {
+        let config: AtlasConfig = if config_data.is_null() || config_len == 0 {
+            AtlasConfig::default()
+        } else {
+            // SAFETY: `config_data` points to `config_len` bytes owned by the Swift caller.
+            // The caller guarantees the pointer is valid for the duration of this call.
+            let bytes = unsafe { slice::from_raw_parts(config_data, config_len) };
+            serde_json::from_slice(bytes).unwrap_or_default()
+        };
 
-    let Ok(runtime) = Runtime::new() else {
-        return std::ptr::null_mut();
-    };
+        let Ok(runtime) = Runtime::new() else {
+            return std::ptr::null_mut();
+        };
 
-    let Ok(services) = build_noop_services(config.postgres_url.as_deref()) else {
-        return std::ptr::null_mut();
-    };
+        let Ok(services) = build_noop_services(config.postgres_url.as_deref()) else {
+            return std::ptr::null_mut();
+        };
 
-    let handle = Box::new(AtlasHandle {
-        services: Arc::new(services),
-        runtime,
-    });
-    Box::into_raw(handle) as *mut c_void
+        let handle = Box::new(AtlasHandle {
+            services: Arc::new(services),
+            runtime,
+        });
+        Box::into_raw(handle) as *mut c_void
+    })
+    .unwrap_or(std::ptr::null_mut())
 }
 
 fn dispatch_command(handle: &AtlasHandle, method: &str, input: &[u8]) -> Result<Vec<u8>, String> {
@@ -434,32 +440,51 @@ pub extern "C" fn atlas_command(
     input_len: usize,
     is_error: *mut bool,
 ) -> AtlasByteBuffer {
-    if handle.is_null() {
-        unsafe { *is_error = true };
-        return AtlasByteBuffer::from_str("atlas handle is null");
-    }
-
-    let Ok(method_str) = (unsafe { CStr::from_ptr(method).to_str() }) else {
-        unsafe { *is_error = true };
-        return AtlasByteBuffer::from_str("invalid UTF-8 in method name");
-    };
-
-    let input_bytes: &[u8] = if input.is_null() || input_len == 0 {
-        b"{}"
-    } else {
-        unsafe { slice::from_raw_parts(input, input_len) }
-    };
-
-    let handle_ref = unsafe { &*(handle as *const AtlasHandle) };
-
-    match dispatch_command(handle_ref, method_str, input_bytes) {
-        Ok(bytes) => {
-            unsafe { *is_error = false };
-            AtlasByteBuffer::from_vec(bytes)
-        }
-        Err(msg) => {
+    let result = catch_unwind(AssertUnwindSafe(|| {
+        if handle.is_null() {
+            // SAFETY: `is_error` is a valid pointer provided by the Swift caller.
             unsafe { *is_error = true };
-            AtlasByteBuffer::from_str(&msg)
+            return AtlasByteBuffer::from_str("atlas handle is null");
+        }
+
+        // SAFETY: `method` is a valid null-terminated C string provided by the Swift caller.
+        let Ok(method_str) = (unsafe { CStr::from_ptr(method).to_str() }) else {
+            // SAFETY: `is_error` is a valid pointer provided by the Swift caller.
+            unsafe { *is_error = true };
+            return AtlasByteBuffer::from_str("invalid UTF-8 in method name");
+        };
+
+        let input_bytes: &[u8] = if input.is_null() || input_len == 0 {
+            b"{}"
+        } else {
+            // SAFETY: `input` points to `input_len` bytes owned by the Swift caller.
+            // The caller guarantees the pointer is valid for the duration of this call.
+            unsafe { slice::from_raw_parts(input, input_len) }
+        };
+
+        // SAFETY: `handle` was created by `atlas_init` via `Box::into_raw` and has not been freed.
+        // The caller guarantees exclusive access.
+        let handle_ref = unsafe { &*(handle as *const AtlasHandle) };
+
+        match dispatch_command(handle_ref, method_str, input_bytes) {
+            Ok(bytes) => {
+                // SAFETY: `is_error` is a valid pointer provided by the Swift caller.
+                unsafe { *is_error = false };
+                AtlasByteBuffer::from_vec(bytes)
+            }
+            Err(msg) => {
+                // SAFETY: `is_error` is a valid pointer provided by the Swift caller.
+                unsafe { *is_error = true };
+                AtlasByteBuffer::from_str(&msg)
+            }
+        }
+    }));
+    match result {
+        Ok(buf) => buf,
+        Err(_) => {
+            // SAFETY: `is_error` is a valid pointer provided by the Swift caller.
+            unsafe { *is_error = true };
+            AtlasByteBuffer::from_str("internal panic in atlas_command")
         }
     }
 }
@@ -467,19 +492,73 @@ pub extern "C" fn atlas_command(
 /// Free an AtlasHandle instance created by atlas_init.
 #[unsafe(no_mangle)]
 pub extern "C" fn atlas_free(handle: *mut c_void) {
-    if !handle.is_null() {
-        unsafe { drop(Box::from_raw(handle as *mut AtlasHandle)) };
-    }
+    let _ = catch_unwind(AssertUnwindSafe(|| {
+        if !handle.is_null() {
+            // SAFETY: `handle` was created by `atlas_init` via `Box::into_raw`.
+            // The caller guarantees this is the final use of this pointer.
+            unsafe { drop(Box::from_raw(handle as *mut AtlasHandle)) };
+        }
+    }));
 }
 
 /// Free an AtlasByteBuffer returned by atlas_command.
 #[unsafe(no_mangle)]
 pub extern "C" fn atlas_free_buffer(buf: AtlasByteBuffer) {
-    if !buf.data.is_null() {
-        unsafe {
-            drop(Box::from_raw(std::ptr::slice_from_raw_parts_mut(
-                buf.data, buf.len,
-            )));
-        };
+    let _ = catch_unwind(AssertUnwindSafe(|| {
+        if !buf.data.is_null() {
+            // SAFETY: `buf.data` and `buf.len` were produced by `AtlasByteBuffer::from_vec`.
+            // The caller guarantees this buffer has not already been freed.
+            unsafe {
+                drop(Box::from_raw(std::ptr::slice_from_raw_parts_mut(
+                    buf.data, buf.len,
+                )));
+            };
+        }
+    }));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn init_with_null_config() {
+        let ptr = atlas_init(std::ptr::null(), 0);
+        if !ptr.is_null() {
+            atlas_free(ptr);
+        }
+    }
+
+    #[test]
+    fn init_with_empty_json() {
+        let json = b"{}";
+        let ptr = atlas_init(json.as_ptr(), json.len());
+        if !ptr.is_null() {
+            atlas_free(ptr);
+        }
+    }
+
+    #[test]
+    fn init_with_invalid_json_falls_back() {
+        let garbage = b"not json at all";
+        let ptr = atlas_init(garbage.as_ptr(), garbage.len());
+        if !ptr.is_null() {
+            atlas_free(ptr);
+        }
+    }
+
+    #[test]
+    fn free_null_does_not_crash() {
+        atlas_free(std::ptr::null_mut());
+    }
+
+    #[test]
+    fn free_buffer_null_data_does_not_crash() {
+        atlas_free_buffer(AtlasByteBuffer::empty());
+    }
+
+    #[test]
+    fn free_buffer_valid_data_does_not_crash() {
+        atlas_free_buffer(AtlasByteBuffer::from_vec(vec![1u8, 2, 3]));
     }
 }

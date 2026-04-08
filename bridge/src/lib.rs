@@ -4,6 +4,7 @@
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
 use std::ffi::c_void;
+use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::slice;
 
 use anki::backend::{Backend, init_backend};
@@ -40,14 +41,19 @@ impl ByteBuffer {
 ///
 /// Returns an opaque pointer on success. The caller must pass this pointer to
 /// all subsequent anki_command calls and must call anki_free() when done.
-/// Returns null on error.
+/// Returns null on error or if a panic occurs.
 #[unsafe(no_mangle)]
 pub extern "C" fn anki_init(data: *const u8, len: usize) -> *mut c_void {
-    let bytes = unsafe { slice::from_raw_parts(data, len) };
-    match init_backend(bytes) {
-        Ok(backend) => Box::into_raw(Box::new(backend)) as *mut c_void,
-        Err(_) => std::ptr::null_mut(),
-    }
+    catch_unwind(|| {
+        // SAFETY: `data` points to `len` bytes owned by the Swift caller.
+        // The caller guarantees the pointer is valid for the duration of this call.
+        let bytes = unsafe { slice::from_raw_parts(data, len) };
+        match init_backend(bytes) {
+            Ok(backend) => Box::into_raw(Box::new(backend)) as *mut c_void,
+            Err(_) => std::ptr::null_mut(),
+        }
+    })
+    .unwrap_or(std::ptr::null_mut())
 }
 
 /// Execute a protobuf service method.
@@ -66,16 +72,32 @@ pub extern "C" fn anki_command(
     input_len: usize,
     is_error: *mut bool,
 ) -> ByteBuffer {
-    let backend = unsafe { &*(backend as *const Backend) };
-    let input_bytes = unsafe { slice::from_raw_parts(input, input_len) };
-    match backend.run_service_method(service, method, input_bytes) {
-        Ok(response) => {
-            unsafe { *is_error = false };
-            ByteBuffer::from_vec(response)
+    let result = catch_unwind(AssertUnwindSafe(|| {
+        // SAFETY: `backend` was created by `anki_init` via `Box::into_raw` and has not been freed.
+        // The caller guarantees exclusive access (no concurrent mutation).
+        let backend = unsafe { &*(backend as *const Backend) };
+        // SAFETY: `input` points to `input_len` bytes owned by the Swift caller.
+        // The caller guarantees the pointer is valid for the duration of this call.
+        let input_bytes = unsafe { slice::from_raw_parts(input, input_len) };
+        match backend.run_service_method(service, method, input_bytes) {
+            Ok(response) => {
+                // SAFETY: `is_error` is a valid pointer provided by the Swift caller.
+                unsafe { *is_error = false };
+                ByteBuffer::from_vec(response)
+            }
+            Err(err_bytes) => {
+                // SAFETY: `is_error` is a valid pointer provided by the Swift caller.
+                unsafe { *is_error = true };
+                ByteBuffer::from_vec(err_bytes)
+            }
         }
-        Err(err_bytes) => {
+    }));
+    match result {
+        Ok(buf) => buf,
+        Err(_) => {
+            // SAFETY: `is_error` is a valid pointer provided by the Swift caller.
             unsafe { *is_error = true };
-            ByteBuffer::from_vec(err_bytes)
+            ByteBuffer::from_vec(b"internal panic in anki_command".to_vec())
         }
     }
 }
@@ -83,19 +105,62 @@ pub extern "C" fn anki_command(
 /// Free a Backend instance created by anki_init.
 #[unsafe(no_mangle)]
 pub extern "C" fn anki_free(backend: *mut c_void) {
-    if !backend.is_null() {
-        unsafe { drop(Box::from_raw(backend as *mut Backend)) };
-    }
+    let _ = catch_unwind(AssertUnwindSafe(|| {
+        if !backend.is_null() {
+            // SAFETY: `backend` was created by `anki_init` via `Box::into_raw`.
+            // The caller guarantees this is the final use of this pointer.
+            unsafe { drop(Box::from_raw(backend as *mut Backend)) };
+        }
+    }));
 }
 
 /// Free a ByteBuffer returned by anki_command.
 #[unsafe(no_mangle)]
 pub extern "C" fn anki_free_buffer(buf: ByteBuffer) {
-    if !buf.data.is_null() {
-        unsafe {
-            drop(Box::from_raw(std::ptr::slice_from_raw_parts_mut(
-                buf.data, buf.len,
-            )));
-        };
+    let _ = catch_unwind(AssertUnwindSafe(|| {
+        if !buf.data.is_null() {
+            // SAFETY: `buf.data` and `buf.len` were produced by `ByteBuffer::from_vec`.
+            // The caller guarantees this buffer has not already been freed.
+            unsafe {
+                drop(Box::from_raw(std::ptr::slice_from_raw_parts_mut(
+                    buf.data, buf.len,
+                )));
+            };
+        }
+    }));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn init_with_invalid_protobuf_returns_null() {
+        let garbage = [0xFF, 0xFE, 0xFD];
+        let ptr = anki_init(garbage.as_ptr(), garbage.len());
+        assert!(ptr.is_null());
+    }
+
+    #[test]
+    fn free_null_does_not_crash() {
+        anki_free(std::ptr::null_mut());
+    }
+
+    #[test]
+    fn free_buffer_null_data_does_not_crash() {
+        anki_free_buffer(ByteBuffer::empty());
+    }
+
+    #[test]
+    fn free_buffer_valid_data_does_not_crash() {
+        anki_free_buffer(ByteBuffer::from_vec(vec![1u8, 2, 3]));
+    }
+
+    #[test]
+    fn byte_buffer_from_vec_roundtrip() {
+        let buf = ByteBuffer::from_vec(vec![10u8, 20, 30, 40]);
+        assert_eq!(buf.len, 4);
+        assert!(!buf.data.is_null());
+        anki_free_buffer(buf);
     }
 }
