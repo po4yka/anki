@@ -31,7 +31,6 @@ members = [
   "atlas_bridge",
   "bridge",
   "ftl",
-  "qt/launcher",
   "rslib",
   "rslib/i18n",
   "rslib/io",
