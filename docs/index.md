@@ -1,3 +1,5 @@
+# Anki SwiftUI Documentation
+
 ```{include} ../README.md
 ```
 
@@ -7,21 +9,14 @@ maxdepth: 2
 hidden:
 ---
 
-development
-build
-contributing
 architecture
 protobuf
-```
-
-## Auto-generated API References
-
-```{toctree}
----
-maxdepth: 1
-hidden:
----
-
-api-python
-api-rust
+CRATE_LAYOUT
+CONFIG
+TESTING
+PROTO_COMPATIBILITY
+SWIFT_TYPES
+USER_GUIDE
+CLI_GUIDE
+upstream-sync
 ```

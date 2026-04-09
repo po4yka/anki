@@ -8,7 +8,7 @@ See `docs/migration/` for detailed technical documents referenced below.
 
 ---
 
-## Phase 0: Documentation and Planning
+## Phase 0: Documentation and Planning [COMPLETE]
 
 **Goal:** Complete migration documentation before touching code.
 
@@ -26,7 +26,7 @@ See `docs/migration/` for detailed technical documents referenced below.
 
 ---
 
-## Phase 1: Strip and Build
+## Phase 1: Strip and Build [COMPLETE]
 
 **Goal:** Remove all non-Rust code and get a clean `cargo build` working.
 
@@ -51,7 +51,7 @@ See `docs/migration/` for detailed technical documents referenced below.
 
 ---
 
-## Phase 2: Swift FFI Bridge
+## Phase 2: Swift FFI Bridge [COMPLETE]
 
 **Goal:** Create a minimal bridge that lets Swift code talk to the Rust backend.
 
@@ -75,7 +75,7 @@ See `docs/migration/` for detailed technical documents referenced below.
 
 ---
 
-## Phase 3: Core SwiftUI App
+## Phase 3: Core SwiftUI App [COMPLETE]
 
 **Goal:** Build the essential SRS screens to replace the Qt/Svelte UI.
 
@@ -96,7 +96,7 @@ See `docs/migration/` for detailed technical documents referenced below.
 
 ---
 
-## Phase 4: Atlas Integration
+## Phase 4: Atlas Integration [COMPLETE]
 
 **Goal:** Merge anki-atlas crates into the workspace alongside Anki core.
 
@@ -121,7 +121,7 @@ See `docs/migration/` for detailed technical documents referenced below.
 
 ---
 
-## Phase 5: Atlas Features in SwiftUI
+## Phase 5: Atlas Features in SwiftUI [COMPLETE]
 
 **Goal:** Expose atlas capabilities in the native UI and via MCP.
 
@@ -204,7 +204,7 @@ Phase A (Foundations) ──> Phase B (Decomposition) ──> Phase C (API & Int
 
 ---
 
-## Phase A: Shared Foundations & Type Safety
+## Phase A: Shared Foundations & Type Safety [COMPLETE]
 
 **Goal:** Establish shared abstractions that reduce duplication and improve FFI safety.
 
@@ -282,7 +282,7 @@ Extract duplicated SQL patterns from atlas repositories.
 
 ---
 
-## Phase B: Decompose God Objects
+## Phase B: Decompose God Objects [COMPLETE]
 
 **Goal:** Break apart oversized structures for better testability and maintainability.
 
@@ -353,7 +353,7 @@ Storage is accessed directly via `col.storage.get_card()` with no trait boundary
 
 ---
 
-## Phase C: API & Integration Cleanup
+## Phase C: API & Integration Cleanup [COMPLETE]
 
 **Goal:** Clean up proto surface, automate Swift types, document architecture.
 

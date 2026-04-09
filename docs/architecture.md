@@ -1,46 +1,120 @@
 # Anki Architecture
 
-Very brief notes for now.
+## Overview
 
-## Backend/GUI
+Anki SwiftUI is a macOS spaced repetition app built on two Rust layers
+connected to a native SwiftUI interface via C-ABI FFI bridges.
 
-At the highest level, Anki is logically separated into two parts.
+```
+┌─────────────────────────────────────────────┐
+│  SwiftUI (AnkiApp/)                         │  macOS native UI
+│  Views, ViewModels, @Observable state       │
+├──────────────────┬──────────────────────────┤
+│  AnkiBridge      │  AtlasService            │  FFI bridges
+│  (protobuf)      │  (JSON)                  │
+│  ffi_common/     │  ffi_common/             │  shared ByteBuffer
+├──────────────────┼──────────────────────────┤
+│  rslib/          │  atlas/ (19 crates)      │  Rust backend
+│  Anki core       │  AI & analytics          │
+│  (SQLite)        │  (PostgreSQL + pgvector) │
+└──────────────────┴──────────────────────────┘
+```
 
-A neat visualization of the file layout is available here:
-<https://mango-dune-07a8b7110.1.azurestaticapps.net/?repo=ankitects%2Fanki>
-(or go to <https://githubnext.com/projects/repo-visualization#explore-for-yourself> and enter `ankitects/anki`).
+## Rust Backend: rslib
 
-### Library (rslib & pylib)
+The core Anki engine lives in `rslib/` (crate name: `anki`). It manages:
 
-The Python library (pylib) exports "backend" methods - opening collections,
-fetching and answering cards, and so on. It is used by Anki’s GUI, and can also
-be included in command line programs to access Anki decks without the GUI.
+- **Collection** -- the central object holding storage, caches, and state
+- **Scheduler** -- FSRS-based card scheduling and queue management
+- **Storage** -- SQLite database for cards, notes, decks, review history
+- **Search** -- query parser and SQL generation for card/note search
+- **Sync** -- AnkiWeb HTTP sync protocol (collection + media)
+- **Import/Export** -- .apkg and .colpkg file handling
 
-The library is accessible in Python with "import anki". Its code lives in
-the `pylib/anki/` folder.
+rslib exposes its API via **protobuf service definitions** in `proto/anki/`.
+The `Backend` struct dispatches requests by numeric (service, method) ID pairs.
 
-These days, the majority of backend logic lives in a Rust library (rslib, located in `rslib/`). Calls to pylib proxy requests to rslib, and return the results.
+## Rust Backend: Atlas
 
-pylib contains a private Python module called rsbridge (`pylib/rsbridge/`) that wraps the Rust code, making it accessible in Python.
+The `atlas/` directory contains 19 crates providing AI-powered features:
 
-### GUI (aqt & ts)
+- **search** -- hybrid search (semantic + full-text with RRF fusion)
+- **indexer** -- embedding generation (OpenAI, Google, FastEmbed)
+- **database** -- PostgreSQL with pgvector for vector storage
+- **analytics** -- topic taxonomy, coverage analysis, duplicate detection
+- **generator** -- LLM-powered card generation
+- **knowledge-graph** -- concept relationship edges
+- **surface-runtime** -- service orchestration and facades
 
-Anki's _GUI_ is a mix of Qt (via the PyQt Python bindings for Qt), and
-TypeScript/HTML/CSS. The Qt code lives in `qt/aqt/`, and is importable in Python
-with "import aqt". The web code is split between `qt/aqt/data/web/` and `ts/`,
-with the majority of new code being placed in the latter, and copied into the
-former at build time.
+Atlas uses **trait-based dependency injection** (`VectorRepository`,
+`EmbeddingProvider`, `SearchFacade`, `AnalyticsFacade`).
+
+## FFI Bridges
+
+Two C-ABI bridges connect Swift to Rust:
+
+### AnkiBridge (protobuf)
+- `bridge/src/lib.rs` -- `anki_init()`, `anki_command()`, `anki_free()`
+- Swift sends serialized protobuf, receives serialized protobuf
+- Dispatch by numeric service/method IDs (type-safe via proto codegen)
+
+### AtlasService (JSON)
+- `atlas_bridge/src/lib.rs` -- `atlas_init()`, `atlas_command()`, `atlas_free()`
+- Swift sends JSON request, receives JSON response
+- Dispatch by string method names (type-safe via AtlasService wrappers)
+
+Both bridges use `ffi_common/` for shared `ByteBuffer` and `FfiError` types.
+
+## SwiftUI App
+
+The macOS app (`AnkiApp/`) follows modern SwiftUI patterns:
+
+- **State**: `@Observable` objects (AppState, per-screen models)
+- **Navigation**: `NavigationSplitView` with `SidebarView` + `DetailRouter`
+- **Bridge**: `AnkiService` (actor, protobuf) + `AtlasService` (actor, JSON)
+
+See `AnkiApp/README.md` for the full SwiftUI architecture guide.
 
 ## Protobuf
 
-Anki uses Protocol Buffers to define backend methods, and the storage format of
-some items in a collection file. The definitions live in `proto/anki/`.
+Protocol Buffer definitions in `proto/anki/` (20 files, 38 services) define
+the rslib API. Swift types are auto-generated with `swift-protobuf`. Rust
+types are auto-generated by `prost` during `cargo build`.
 
-The Python/Rust bridge uses them to pass data back and forth, and some of the
-TypeScript code also makes use of them, allowing data to be communicated in a
-type-safe manner between the different languages.
+See `docs/PROTO_COMPATIBILITY.md` for the service index.
 
-At the moment, the protobuf is not considered public API. Some pylib methods
-expose a protobuf object directly to callers, but when they do so, they use a
-type alias, so callers outside pylib should never need to import a generated
-\_pb2.py file.
+## Data Flow
+
+```
+User taps "Answer: Good" in SwiftUI ReviewerView
+  → ReviewerModel.answerCard(ease: .good)
+    → AnkiService.answerCard(cardId, answer)  [actor, async]
+      → AnkiBridge.command(service: 13, method: 2, input: protobuf)
+        → [C-ABI FFI boundary]
+          → Backend.run_service_method(13, 2, bytes)
+            → SchedulerService.answer_card(CardAnswer)
+              → Collection.answer_card()
+                → SqliteStorage.update_card() + add_revlog()
+              → serialize OpChanges to protobuf
+          → [C-ABI FFI boundary]
+        → ByteBuffer returned to Swift
+      → Decode OpChanges protobuf
+    → Update ReviewerModel state
+  → SwiftUI re-renders next card
+```
+
+## Key Documentation
+
+| Document | Purpose |
+|----------|---------|
+| `CLAUDE.md` | Project conventions for AI assistants |
+| `CONTRIBUTING.md` | Developer contribution guidelines |
+| `ROADMAP.md` | Migration phases and architecture improvement plan |
+| `docs/CRATE_LAYOUT.md` | 32-crate workspace directory |
+| `docs/CONFIG.md` | Atlas environment variable reference |
+| `docs/PROTO_COMPATIBILITY.md` | Protobuf service index |
+| `docs/SWIFT_TYPES.md` | Swift-Rust type mappings |
+| `docs/TESTING.md` | Testing strategy and patterns |
+| `docs/USER_GUIDE.md` | End-user feature guide |
+| `docs/CLI_GUIDE.md` | CLI and MCP server reference |
+| `AnkiApp/README.md` | SwiftUI architecture guide |
