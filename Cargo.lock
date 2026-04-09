@@ -276,6 +276,7 @@ dependencies = [
  "chrono",
  "common",
  "database",
+ "mockall",
  "rusqlite",
  "serde",
  "serde_json",
@@ -301,6 +302,7 @@ name = "anki_bridge"
 version = "0.1.0"
 dependencies = [
  "anki",
+ "ffi_common",
 ]
 
 [[package]]
@@ -584,6 +586,7 @@ dependencies = [
  "async-trait",
  "chrono",
  "common",
+ "ffi_common",
  "jobs",
  "serde",
  "serde_json",
@@ -2985,6 +2988,10 @@ dependencies = [
  "rand 0.9.2",
  "web-time",
 ]
+
+[[package]]
+name = "ffi_common"
+version = "0.0.0"
 
 [[package]]
 name = "filedescriptor"

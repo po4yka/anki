@@ -4,38 +4,10 @@
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
 use std::ffi::c_void;
-use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::slice;
 
 use anki::backend::{Backend, init_backend};
-
-/// Byte buffer for transferring owned data across the FFI boundary.
-/// Swift must call anki_free_buffer() when it is done with the data.
-#[repr(C)]
-pub struct ByteBuffer {
-    data: *mut u8,
-    len: usize,
-}
-
-impl ByteBuffer {
-    fn from_vec(v: Vec<u8>) -> Self {
-        let mut v = v.into_boxed_slice();
-        let buf = ByteBuffer {
-            data: v.as_mut_ptr(),
-            len: v.len(),
-        };
-        std::mem::forget(v);
-        buf
-    }
-
-    #[allow(dead_code)]
-    fn empty() -> Self {
-        ByteBuffer {
-            data: std::ptr::null_mut(),
-            len: 0,
-        }
-    }
-}
+use ffi_common::ByteBuffer;
 
 /// Initialize a Backend from a serialized BackendInit protobuf message.
 ///
@@ -44,7 +16,7 @@ impl ByteBuffer {
 /// Returns null on error or if a panic occurs.
 #[unsafe(no_mangle)]
 pub extern "C" fn anki_init(data: *const u8, len: usize) -> *mut c_void {
-    catch_unwind(|| {
+    ffi_common::catch_ffi_panic(|| {
         // SAFETY: `data` points to `len` bytes owned by the Swift caller.
         // The caller guarantees the pointer is valid for the duration of this call.
         let bytes = unsafe { slice::from_raw_parts(data, len) };
@@ -72,7 +44,7 @@ pub extern "C" fn anki_command(
     input_len: usize,
     is_error: *mut bool,
 ) -> ByteBuffer {
-    let result = catch_unwind(AssertUnwindSafe(|| {
+    let result = ffi_common::catch_ffi_panic_unwind_safe(|| {
         // SAFETY: `backend` was created by `anki_init` via `Box::into_raw` and has not been freed.
         // The caller guarantees exclusive access (no concurrent mutation).
         let backend = unsafe { &*(backend as *const Backend) };
@@ -91,7 +63,7 @@ pub extern "C" fn anki_command(
                 ByteBuffer::from_vec(err_bytes)
             }
         }
-    }));
+    });
     match result {
         Ok(buf) => buf,
         Err(_) => {
@@ -105,29 +77,23 @@ pub extern "C" fn anki_command(
 /// Free a Backend instance created by anki_init.
 #[unsafe(no_mangle)]
 pub extern "C" fn anki_free(backend: *mut c_void) {
-    let _ = catch_unwind(AssertUnwindSafe(|| {
+    let _ = ffi_common::catch_ffi_panic_unwind_safe(|| {
         if !backend.is_null() {
             // SAFETY: `backend` was created by `anki_init` via `Box::into_raw`.
             // The caller guarantees this is the final use of this pointer.
             unsafe { drop(Box::from_raw(backend as *mut Backend)) };
         }
-    }));
+    });
 }
 
 /// Free a ByteBuffer returned by anki_command.
 #[unsafe(no_mangle)]
 pub extern "C" fn anki_free_buffer(buf: ByteBuffer) {
-    let _ = catch_unwind(AssertUnwindSafe(|| {
-        if !buf.data.is_null() {
-            // SAFETY: `buf.data` and `buf.len` were produced by `ByteBuffer::from_vec`.
-            // The caller guarantees this buffer has not already been freed.
-            unsafe {
-                drop(Box::from_raw(std::ptr::slice_from_raw_parts_mut(
-                    buf.data, buf.len,
-                )));
-            };
-        }
-    }));
+    let _ = ffi_common::catch_ffi_panic_unwind_safe(|| {
+        // SAFETY: `buf` was produced by `ByteBuffer::from_vec`.
+        // The caller guarantees this buffer has not already been freed.
+        unsafe { buf.free() };
+    });
 }
 
 #[cfg(test)]

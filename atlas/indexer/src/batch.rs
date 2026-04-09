@@ -34,7 +34,7 @@ pub(crate) fn compute_changed_notes<'a>(
             chunks.iter().map(|chunk| chunk.hash_component.as_str()),
         );
         if reindex_mode != ReindexMode::Force
-            && let Some(existing) = existing_hashes.get(&note.note.note_id)
+            && let Some(existing) = existing_hashes.get(&note.note.meta.note_id)
             && *existing == new_hash
         {
             skipped += 1;
@@ -43,7 +43,7 @@ pub(crate) fn compute_changed_notes<'a>(
                 IndexProgressStage::Diffing,
                 idx + 1,
                 notes.len(),
-                format!("skipped unchanged note {}", note.note.note_id),
+                format!("skipped unchanged note {}", note.note.meta.note_id),
             );
             continue;
         }
@@ -57,7 +57,7 @@ pub(crate) fn compute_changed_notes<'a>(
             IndexProgressStage::Diffing,
             idx + 1,
             notes.len(),
-            format!("queued note {} for embedding", note.note.note_id),
+            format!("queued note {} for embedding", note.note.meta.note_id),
         );
     }
 
@@ -85,14 +85,8 @@ pub(crate) fn build_upsert_payloads(to_embed: &[NoteToEmbed<'_>]) -> Vec<NotePay
         .iter()
         .flat_map(|e| {
             e.chunks.iter().map(move |chunk| NotePayload {
-                note_id: e.note.note.note_id,
-                model_id: e.note.note.model_id,
-                deck_names: e.note.note.deck_names.clone(),
-                tags: e.note.note.tags.clone(),
+                meta: e.note.note.meta.clone(),
                 content_hash: e.new_hash.clone(),
-                mature: e.note.note.mature,
-                lapses: e.note.note.lapses,
-                reps: e.note.note.reps,
                 fail_rate: e.note.note.fail_rate,
                 chunk_id: chunk.chunk_id.clone(),
                 chunk_kind: chunk.chunk_kind.clone(),
@@ -113,7 +107,7 @@ pub(crate) fn note_effective_chunks(note: &MultimodalNoteForIndexing) -> Vec<Chu
     if note.chunks.is_empty() {
         vec![default_text_chunk(
             &note.note.normalized_text,
-            note.note.note_id,
+            note.note.meta.note_id,
         )]
     } else {
         note.chunks.clone()

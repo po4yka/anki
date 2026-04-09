@@ -1,19 +1,12 @@
+use common::NoteMetadata;
 use serde::{Deserialize, Serialize};
 
 /// Payload stored with each vector point.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct NotePayload {
-    pub note_id: i64,
-    pub deck_names: Vec<String>,
-    pub tags: Vec<String>,
-    pub model_id: i64,
+    #[serde(flatten)]
+    pub meta: NoteMetadata,
     pub content_hash: String,
-    #[serde(default)]
-    pub mature: bool,
-    #[serde(default)]
-    pub lapses: i32,
-    #[serde(default)]
-    pub reps: i32,
     #[serde(default)]
     pub fail_rate: Option<f64>,
     #[serde(default = "default_chunk_id")]

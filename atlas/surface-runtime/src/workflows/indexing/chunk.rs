@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use common::NoteMetadata;
 use indexer::embeddings::{EmbeddingInput, EmbeddingPart, EmbeddingTask};
 use indexer::service::{ChunkForIndexing, MultimodalNoteForIndexing, NoteForIndexing};
 use sha2::{Digest, Sha256};
@@ -92,14 +93,16 @@ pub(super) fn build_note_chunks(
 
     Ok(MultimodalNoteForIndexing {
         note: NoteForIndexing {
-            note_id: row.note_id,
-            model_id: row.model_id,
+            meta: NoteMetadata {
+                note_id: row.note_id,
+                model_id: row.model_id,
+                tags: row.tags.clone(),
+                deck_names: row.deck_names.clone(),
+                mature: row.mature,
+                lapses: row.lapses,
+                reps: row.reps,
+            },
             normalized_text: row.normalized_text.clone(),
-            tags: row.tags.clone(),
-            deck_names: row.deck_names.clone(),
-            mature: row.mature,
-            lapses: row.lapses,
-            reps: row.reps,
             fail_rate: row.fail_rate,
         },
         chunks,

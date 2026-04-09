@@ -448,7 +448,7 @@ impl VectorRepository for PgVectorRepository {
                 let p = &payloads[idx];
                 let v = Vector::from(vectors[idx].clone());
                 b.push_bind(p.chunk_id.clone())
-                    .push_bind(p.note_id)
+                    .push_bind(p.meta.note_id)
                     .push_bind(p.chunk_kind.clone())
                     .push_bind(p.modality.clone())
                     .push_bind(p.source_field.clone())

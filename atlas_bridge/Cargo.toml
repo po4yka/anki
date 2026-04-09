@@ -27,6 +27,7 @@ missing_errors_doc = "allow"
 missing_panics_doc = "allow"
 
 [dependencies]
+ffi_common.workspace = true
 surface-runtime = { path = "../atlas/surface-runtime" }
 surface-contracts = { path = "../atlas/surface-contracts" }
 common = { path = "../atlas/common" }

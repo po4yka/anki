@@ -175,3 +175,18 @@ pub enum ExecutionMode {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct DeckName(pub String);
+
+/// Common note metadata shared across indexing, search, and analytics.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct NoteMetadata {
+    pub note_id: i64,
+    pub model_id: i64,
+    pub tags: Vec<String>,
+    pub deck_names: Vec<String>,
+    #[serde(default)]
+    pub mature: bool,
+    #[serde(default)]
+    pub lapses: i32,
+    #[serde(default)]
+    pub reps: i32,
+}

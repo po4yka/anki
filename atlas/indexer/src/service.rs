@@ -1,4 +1,4 @@
-use common::ReindexMode;
+use common::{NoteMetadata, ReindexMode};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::instrument;
@@ -11,17 +11,9 @@ use crate::vector::VectorRepository;
 /// A note prepared for indexing.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NoteForIndexing {
-    pub note_id: i64,
-    pub model_id: i64,
+    #[serde(flatten)]
+    pub meta: NoteMetadata,
     pub normalized_text: String,
-    pub tags: Vec<String>,
-    pub deck_names: Vec<String>,
-    #[serde(default)]
-    pub mature: bool,
-    #[serde(default)]
-    pub lapses: i32,
-    #[serde(default)]
-    pub reps: i32,
     #[serde(default)]
     pub fail_rate: Option<f64>,
 }
@@ -114,7 +106,7 @@ impl<E: EmbeddingProvider, V: VectorRepository> IndexService<E, V> {
             .iter()
             .cloned()
             .map(|note| MultimodalNoteForIndexing {
-                chunks: vec![default_text_chunk(&note.normalized_text, note.note_id)],
+                chunks: vec![default_text_chunk(&note.normalized_text, note.meta.note_id)],
                 note,
             })
             .collect();
@@ -155,7 +147,7 @@ impl<E: EmbeddingProvider, V: VectorRepository> IndexService<E, V> {
             1,
             "loading stored content hashes",
         );
-        let note_ids: Vec<i64> = notes.iter().map(|n| n.note.note_id).collect();
+        let note_ids: Vec<i64> = notes.iter().map(|n| n.note.meta.note_id).collect();
         let existing_hashes = self.vector_repo.get_existing_hashes(&note_ids).await?;
         emit_progress(
             progress.as_ref(),
@@ -296,14 +288,16 @@ mod tests {
 
     fn make_note(note_id: i64, text: &str) -> NoteForIndexing {
         NoteForIndexing {
-            note_id,
-            model_id: 1,
+            meta: NoteMetadata {
+                note_id,
+                model_id: 1,
+                tags: vec!["tag1".to_string()],
+                deck_names: vec!["Default".to_string()],
+                mature: false,
+                lapses: 0,
+                reps: 0,
+            },
             normalized_text: text.to_string(),
-            tags: vec!["tag1".to_string()],
-            deck_names: vec!["Default".to_string()],
-            mature: false,
-            lapses: 0,
-            reps: 0,
             fail_rate: None,
         }
     }
@@ -317,7 +311,7 @@ mod tests {
         let note = make_note(42, "hello world");
         let json = serde_json::to_string(&note).unwrap();
         let deserialized: NoteForIndexing = serde_json::from_str(&json).unwrap();
-        assert_eq!(deserialized.note_id, 42);
+        assert_eq!(deserialized.meta.note_id, 42);
         assert_eq!(deserialized.normalized_text, "hello world");
     }
 
@@ -325,9 +319,9 @@ mod tests {
     fn note_for_indexing_defaults() {
         let json = r#"{"note_id":1,"model_id":1,"normalized_text":"x","tags":[],"deck_names":[]}"#;
         let note: NoteForIndexing = serde_json::from_str(json).unwrap();
-        assert!(!note.mature);
-        assert_eq!(note.lapses, 0);
-        assert_eq!(note.reps, 0);
+        assert!(!note.meta.mature);
+        assert_eq!(note.meta.lapses, 0);
+        assert_eq!(note.meta.reps, 0);
         assert!(note.fail_rate.is_none());
     }
 
@@ -546,7 +540,7 @@ mod tests {
         });
 
         repo.expect_upsert_vectors()
-            .withf(|vectors, payloads| vectors.len() == 1 && payloads[0].note_id == 2)
+            .withf(|vectors, payloads| vectors.len() == 1 && payloads[0].meta.note_id == 2)
             .returning(|vectors, _| {
                 let len = vectors.len();
                 Box::pin(async move { Ok(len) })
@@ -612,14 +606,14 @@ mod tests {
         repo.expect_upsert_vectors()
             .withf(|_, payloads| {
                 let p = &payloads[0];
-                p.note_id == 42
-                    && p.model_id == 1
-                    && p.deck_names == vec!["Default"]
-                    && p.tags == vec!["tag1"]
+                p.meta.note_id == 42
+                    && p.meta.model_id == 1
+                    && p.meta.deck_names == vec!["Default"]
+                    && p.meta.tags == vec!["tag1"]
                     && !p.content_hash.is_empty()
-                    && !p.mature
-                    && p.lapses == 0
-                    && p.reps == 0
+                    && !p.meta.mature
+                    && p.meta.lapses == 0
+                    && p.meta.reps == 0
             })
             .returning(|vectors, _| {
                 let len = vectors.len();
@@ -825,7 +819,10 @@ mod tests {
 
         repo.expect_upsert_vectors()
             .withf(|vectors, payloads| {
-                vectors.len() == 2 && payloads.iter().all(|p| p.note_id == 2 || p.note_id == 4)
+                vectors.len() == 2
+                    && payloads
+                        .iter()
+                        .all(|p| p.meta.note_id == 2 || p.meta.note_id == 4)
             })
             .returning(|vectors, _| {
                 let len = vectors.len();
@@ -864,12 +861,12 @@ mod tests {
         repo.expect_upsert_vectors()
             .withf(|_, payloads| {
                 let p = &payloads[0];
-                p.mature
-                    && p.lapses == 5
-                    && p.reps == 20
+                p.meta.mature
+                    && p.meta.lapses == 5
+                    && p.meta.reps == 20
                     && p.fail_rate == Some(0.25)
-                    && p.tags == vec!["study"]
-                    && p.deck_names == vec!["Math"]
+                    && p.meta.tags == vec!["study"]
+                    && p.meta.deck_names == vec!["Math"]
             })
             .returning(|vectors, _| {
                 let len = vectors.len();
@@ -878,14 +875,16 @@ mod tests {
 
         let service = IndexService::new(embedding, repo);
         let note = NoteForIndexing {
-            note_id: 100,
-            model_id: 2,
+            meta: NoteMetadata {
+                note_id: 100,
+                model_id: 2,
+                tags: vec!["study".to_string()],
+                deck_names: vec!["Math".to_string()],
+                mature: true,
+                lapses: 5,
+                reps: 20,
+            },
             normalized_text: "calculus integral".to_string(),
-            tags: vec!["study".to_string()],
-            deck_names: vec!["Math".to_string()],
-            mature: true,
-            lapses: 5,
-            reps: 20,
             fail_rate: Some(0.25),
         };
         service
@@ -912,7 +911,7 @@ mod tests {
         });
 
         repo.expect_upsert_vectors()
-            .withf(|vectors, payloads| vectors.len() == 1 && payloads[0].note_id == 1)
+            .withf(|vectors, payloads| vectors.len() == 1 && payloads[0].meta.note_id == 1)
             .returning(|vectors, _| {
                 let len = vectors.len();
                 Box::pin(async move { Ok(len) })

@@ -155,58 +155,33 @@ impl AnalyticsRepository for SqlxAnalyticsRepository {
     }
 
     async fn fetch_note_text(&self, note_id: i64) -> Result<String, AnalyticsError> {
-        let (text,): (String,) =
-            sqlx::query_as("SELECT normalized_text FROM notes WHERE note_id = $1")
-                .bind(note_id)
-                .fetch_one(&self.pool)
-                .await?;
-        Ok(text)
+        database::queries::note_text(&self.pool, note_id)
+            .await?
+            .ok_or_else(|| AnalyticsError::Internal(format!("note {note_id} not found")))
     }
 
     async fn fetch_active_note_ids(&self) -> Result<Vec<i64>, AnalyticsError> {
-        let note_ids: Vec<(i64,)> =
-            sqlx::query_as("SELECT note_id FROM notes WHERE deleted_at IS NULL ORDER BY note_id")
-                .fetch_all(&self.pool)
-                .await?;
-        Ok(note_ids.into_iter().map(|(note_id,)| note_id).collect())
+        Ok(database::queries::all_active_note_ids(&self.pool).await?)
     }
 
     async fn fetch_note_review_count(&self, note_id: i64) -> Result<i64, AnalyticsError> {
-        let (review_count,): (i64,) =
-            sqlx::query_as("SELECT COALESCE(SUM(c.reps), 0) FROM cards c WHERE c.note_id = $1")
-                .bind(note_id)
-                .fetch_one(&self.pool)
-                .await?;
-        Ok(review_count)
+        Ok(database::queries::note_review_count(&self.pool, note_id).await?)
     }
 
     async fn fetch_note_excerpt_and_tags(
         &self,
         note_id: i64,
     ) -> Result<NoteExcerptAndTags, AnalyticsError> {
-        sqlx::query_as(
-            "SELECT LEFT(n.normalized_text, 200) AS excerpt, COALESCE(n.tags, '{}') AS tags \
-             FROM notes n WHERE n.note_id = $1",
-        )
-        .bind(note_id)
-        .fetch_one(&self.pool)
-        .await
-        .map_err(Into::into)
+        database::queries::note_excerpt_and_tags(&self.pool, note_id)
+            .await?
+            .map(|ne| NoteExcerptAndTags {
+                excerpt: ne.excerpt,
+                tags: ne.tags,
+            })
+            .ok_or_else(|| AnalyticsError::Internal(format!("note {note_id} not found")))
     }
 
     async fn fetch_note_deck_names(&self, note_id: i64) -> Result<Vec<String>, AnalyticsError> {
-        let deck_rows: Vec<(String,)> = sqlx::query_as(
-            "SELECT DISTINCT d.name FROM cards c \
-             JOIN decks d ON d.deck_id = c.deck_id \
-             WHERE c.note_id = $1",
-        )
-        .bind(note_id)
-        .fetch_all(&self.pool)
-        .await?;
-
-        Ok(deck_rows
-            .into_iter()
-            .map(|(deck_name,)| deck_name)
-            .collect())
+        Ok(database::queries::deck_names_for_note(&self.pool, note_id).await?)
     }
 }

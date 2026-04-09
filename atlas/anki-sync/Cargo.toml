@@ -22,3 +22,4 @@ tokio = { workspace = true }
 tempfile = { workspace = true }
 testcontainers = { workspace = true }
 testcontainers-modules = { workspace = true }
+mockall = { workspace = true }

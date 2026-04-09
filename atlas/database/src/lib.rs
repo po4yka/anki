@@ -2,6 +2,7 @@ pub mod connection;
 pub mod migrations;
 pub mod pgvector;
 pub mod pool;
+pub mod queries;
 
 pub use pgvector::PgVectorRepository;
 

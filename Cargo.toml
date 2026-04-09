@@ -30,6 +30,7 @@ members = [
   "bins/mcp",
   "atlas_bridge",
   "bridge",
+  "ffi_common",
   "ftl",
   "rslib",
   "rslib/i18n",
@@ -53,6 +54,7 @@ version = "5.2.0"
 [workspace.dependencies]
 # local
 anki = { path = "rslib" }
+ffi_common = { path = "ffi_common" }
 anki_i18n = { path = "rslib/i18n" }
 anki_io = { path = "rslib/io" }
 anki_process = { path = "rslib/process" }
