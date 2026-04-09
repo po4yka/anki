@@ -36,7 +36,7 @@ final class NotetypeModel {
         } catch {}
     }
 
-    func addNotetype(name: String, kind: Anki_Notetypes_Notetype.Config.Kind = .kindNormal) async {
+    func addNotetype(name: String, kind: Anki_Notetypes_Notetype.Config.Kind = .normal) async {
         do {
             var notetype = Anki_Notetypes_Notetype()
             notetype.name = name

@@ -8,17 +8,17 @@ enum BrowserSearchMode: String, CaseIterable {
 
 struct BrowserRowItem: Identifiable {
     let id: Int64
-    let row: Anki_Search_BrowserRow
-    let questionPreview: String
-    let deckName: String
-    let due: String
+    let cells: [String]
+    let color: Anki_Search_BrowserRow.Color
 
     init(id: Int64, row: Anki_Search_BrowserRow) {
         self.id = id
-        self.row = row
-        questionPreview = row.cells.first?.text ?? ""
-        deckName = row.cells.count > 1 ? row.cells[1].text : ""
-        due = row.cells.count > 2 ? row.cells[2].text : ""
+        self.cells = row.cells.map(\.text)
+        self.color = row.color
+    }
+
+    func cell(at index: Int) -> String {
+        index < cells.count ? cells[index] : ""
     }
 }
 
@@ -38,6 +38,12 @@ final class SearchModel {
 
     var allColumns: [Anki_Search_BrowserColumns.Column] = []
     var visibleColumnKeys: [String] = ["question", "deck", "due"]
+
+    var visibleColumns: [Anki_Search_BrowserColumns.Column] {
+        visibleColumnKeys.compactMap { key in
+            allColumns.first { $0.key == key }
+        }
+    }
 
     var results: [BrowserRowItem] {
         cardIds.compactMap { id in

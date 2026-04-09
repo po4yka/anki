@@ -22,7 +22,7 @@ struct FutureDueChart: View {
                         x: .value("Day", point.day),
                         y: .value("Cards Due", point.count)
                     )
-                    .foregroundStyle(point.day < 0 ? .red.gradient : .blue.gradient)
+                    .foregroundStyle(point.day < 0 ? Color.red : Color.blue)
                 }
                 .chartXAxisLabel("Days from Today")
                 .chartYAxisLabel("Cards Due")

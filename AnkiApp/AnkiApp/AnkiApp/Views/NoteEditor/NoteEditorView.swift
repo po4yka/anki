@@ -20,40 +20,7 @@ struct NoteEditorView: View {
 
                     Section("Fields") {
                         ForEach(model.fields.indices, id: \.self) { index in
-                            FieldEditorView(
-                                label: model.fieldNames[index]
-                                    + (model.isFieldRequired(index) ? " *" : ""),
-                                text: Binding(
-                                    get: { model.fields[index] },
-                                    set: { model.fields[index] = $0 }
-                                ),
-                                isPlainText: false,
-                                isClozeNotetype: model.isClozeNotetype,
-                                onCloze: {
-                                    Task {
-                                        let num = await model.nextClozeNumber()
-                                        let field = model.fields[index]
-                                        let range = NSRange(field.startIndex..., in: field)
-                                        model.fields[index] = ClozeHelper.insertCloze(
-                                            into: field, at: range, number: num
-                                        )
-                                    }
-                                },
-                                onAttachImage: { coordinator in
-                                    let panel = NSOpenPanel()
-                                    panel.allowedContentTypes = [.image, .png, .jpeg, .gif, .webP]
-                                    panel.allowsMultipleSelection = false
-                                    panel.canChooseDirectories = false
-                                    guard panel.runModal() == .OK, let url = panel.url else { return }
-                                    Task {
-                                        guard let data = try? Data(contentsOf: url) else { return }
-                                        let filename = url.lastPathComponent
-                                        if let actualName = await model.attachImage(desiredName: filename, data: data) {
-                                            coordinator?.insertHTML("<img src=\"\(actualName)\">")
-                                        }
-                                    }
-                                }
-                            )
+                            fieldEditorRow(index: index, model: model)
                         }
                     }
 
@@ -66,8 +33,9 @@ struct NoteEditorView: View {
                             HStack {
                                 Text("Cards to generate:")
                                 Spacer()
+                                let cardCountColor: Color = reqs.cardCount > 0 ? .primary : .red
                                 Text("\(reqs.cardCount)")
-                                    .foregroundStyle(reqs.cardCount > 0 ? .primary : .red)
+                                    .foregroundStyle(cardCountColor)
                             }
                             if !reqs.emptyRequiredFields.isEmpty {
                                 Label(
@@ -125,6 +93,48 @@ struct NoteEditorView: View {
             get: { model?.error },
             set: { model?.error = $0 }
         ))
+    }
+
+    @ViewBuilder
+    private func fieldEditorRow(index: Int, model: NoteEditorModel) -> some View {
+        let label: String = model.fieldNames[index] + (model.isFieldRequired(index) ? " *" : "")
+        let binding = Binding<String>(
+            get: { model.fields[index] },
+            set: { model.fields[index] = $0 }
+        )
+        FieldEditorView(
+            label: label,
+            text: binding,
+            isPlainText: false,
+            isClozeNotetype: model.isClozeNotetype,
+            onCloze: { insertCloze(at: index, model: model) },
+            onAttachImage: { coordinator in attachImage(coordinator: coordinator, model: model) }
+        )
+    }
+
+    private func insertCloze(at index: Int, model: NoteEditorModel) {
+        Task {
+            let num = await model.nextClozeNumber()
+            let field = model.fields[index]
+            let range = NSRange(field.startIndex..., in: field)
+            model.fields[index] = ClozeHelper.insertCloze(into: field, at: range, number: num)
+        }
+    }
+
+    private func attachImage(coordinator: RichFieldEditor.Coordinator?, model: NoteEditorModel) {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.image, .png, .jpeg, .gif, .webP]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        Task {
+            guard let data = try? Data(contentsOf: url) else { return }
+            let filename = url.lastPathComponent
+            if let actualName = await model.attachImage(desiredName: filename, data: data) {
+                let html: String = "<img src=\"\(actualName)\">"
+                coordinator?.insertHTML(html)
+            }
+        }
     }
 
     private func validateAndSave() async {

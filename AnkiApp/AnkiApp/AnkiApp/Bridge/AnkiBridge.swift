@@ -5,6 +5,7 @@ enum AnkiError: Error {
     case initFailed
     case backend(Anki_Backend_BackendError)
     case decodingFailed(Error)
+    case message(String)
 }
 
 class AnkiBackend {

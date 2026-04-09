@@ -43,7 +43,7 @@ final class CsvImportModel {
             )
             metadata = meta
             selectedDelimiter = meta.delimiter
-            isHtml = meta.isHTML
+            isHtml = meta.isHtml
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -79,7 +79,7 @@ final class CsvImportModel {
         errorMessage = nil
 
         meta.delimiter = selectedDelimiter
-        meta.isHTML = isHtml
+        meta.isHtml = isHtml
         meta.dupeResolution = dupeResolution
 
         do {

@@ -78,7 +78,7 @@ final class ImageOcclusionModel {
             let response = try await service.getImageOcclusionNote(noteId: noteId)
             guard case let .note(note) = response.value else {
                 if case let .error(msg) = response.value {
-                    error = AnkiError(localized: msg)
+                    error = AnkiError.message(msg)
                 }
                 return
             }

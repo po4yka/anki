@@ -57,7 +57,7 @@ struct DeckBrowserView: View {
                         Button("Create") {
                             let name = newDeckName.trimmingCharacters(in: .whitespacesAndNewlines)
                             if !name.isEmpty {
-                                Task { await model?.createDeck(name: name) }
+                                Task { await model.createDeck(name: name) }
                             }
                         }
                         Button("Cancel", role: .cancel) {}

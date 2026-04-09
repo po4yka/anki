@@ -91,84 +91,7 @@ struct SearchView: View {
                                 )
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                             } else {
-                                Table(model.results, selection: Binding(
-                                    get: { model.selectedCardIds },
-                                    set: { model.selectedCardIds = $0 }
-                                )) {
-                                    TableColumn("Question") { row in
-                                        Text(row.questionPreview)
-                                            .lineLimit(1)
-                                    }
-                                    .width(min: 200)
-
-                                    TableColumn("Deck") { row in
-                                        Text(row.deckName)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    .width(min: 100)
-
-                                    TableColumn("Due") { row in
-                                        Text(row.due)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    .width(min: 80)
-                                }
-                                .contextMenu(forSelectionType: Int64.self) { ids in
-                                    if !ids.isEmpty {
-                                        Button("Edit Note") {
-                                            if let cardId = ids.first {
-                                                Task {
-                                                    let card = try? await appState.service.getCard(id: cardId)
-                                                    if let noteId = card?.noteID {
-                                                        editingNoteId = noteId
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        Divider()
-                                        Button("Set Due Date...") {
-                                            dueDateInput = ""
-                                            showingSetDueDate = true
-                                        }
-                                        Button("Add Tags...") {
-                                            tagInput = ""
-                                            showingAddTags = true
-                                        }
-                                        Button("Remove Tags...") {
-                                            tagInput = ""
-                                            showingRemoveTags = true
-                                        }
-                                        Divider()
-                                        Button("Suspend") {
-                                            Task { await model.suspendSelected() }
-                                        }
-                                        Button("Bury") {
-                                            Task { await model.burySelected() }
-                                        }
-                                        Button("Forget") {
-                                            Task { await model.forgetSelected() }
-                                        }
-                                        Divider()
-                                        Button("Find and Replace...") {
-                                            findText = ""
-                                            replaceText = ""
-                                            showingFindReplace = true
-                                        }
-                                        Divider()
-                                        Button("Delete", role: .destructive) {
-                                            Task { await model.deleteSelected() }
-                                        }
-                                    }
-                                } primaryAction: { ids in
-                                    if let cardId = ids.first {
-                                        Task {
-                                            let card = try? await appState.service.getCard(id: cardId)
-                                            if let noteId = card?.noteID {
-                                                editingNoteId = noteId
-                                            }
-                                        }
-                                    }
-                                }
+                                resultsTable(model: model)
                             }
                         }
                     } // end HSplitView
@@ -256,6 +179,78 @@ struct SearchView: View {
                         search: findText, replacement: replaceText,
                         regex: false, matchCase: false, fieldName: ""
                     )
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func resultsTable(model: SearchModel) -> some View {
+        let selection = Binding<Set<Int64>>(
+            get: { model.selectedCardIds },
+            set: { model.selectedCardIds = $0 }
+        )
+        Table(model.results, selection: selection) {
+            TableColumn("Question") { (row: BrowserRowItem) in
+                Text(row.cell(at: 0)).lineLimit(1)
+            }
+            .width(min: 200)
+            TableColumn("Deck") { (row: BrowserRowItem) in
+                Text(row.cell(at: 1)).foregroundStyle(.secondary)
+            }
+            .width(min: 100)
+            TableColumn("Due") { (row: BrowserRowItem) in
+                Text(row.cell(at: 2)).foregroundStyle(.secondary)
+            }
+            .width(min: 80)
+        }
+        .contextMenu(forSelectionType: Int64.self) { ids in
+            if !ids.isEmpty {
+                Button("Edit Note") {
+                    if let cardId = ids.first {
+                        Task {
+                            let card = try? await appState.service.getCard(id: cardId)
+                            if let noteId = card?.noteID {
+                                editingNoteId = noteId
+                            }
+                        }
+                    }
+                }
+                Divider()
+                Button("Set Due Date...") {
+                    dueDateInput = ""
+                    showingSetDueDate = true
+                }
+                Button("Add Tags...") {
+                    tagInput = ""
+                    showingAddTags = true
+                }
+                Button("Remove Tags...") {
+                    tagInput = ""
+                    showingRemoveTags = true
+                }
+                Divider()
+                Button("Suspend") { Task { await model.suspendSelected() } }
+                Button("Bury") { Task { await model.burySelected() } }
+                Button("Forget") { Task { await model.forgetSelected() } }
+                Divider()
+                Button("Find and Replace...") {
+                    findText = ""
+                    replaceText = ""
+                    showingFindReplace = true
+                }
+                Divider()
+                Button("Delete", role: .destructive) {
+                    Task { await model.deleteSelected() }
+                }
+            }
+        } primaryAction: { ids in
+            if let cardId = ids.first {
+                Task {
+                    let card = try? await appState.service.getCard(id: cardId)
+                    if let noteId = card?.noteID {
+                        editingNoteId = noteId
+                    }
                 }
             }
         }
@@ -432,7 +427,8 @@ private struct ColumnPickerView: View {
                 .padding(.vertical, 8)
             }
         }
-        .frame(width: 220, maxHeight: 350)
+        .frame(width: 220)
+        .frame(maxHeight: 350)
     }
 }
 
