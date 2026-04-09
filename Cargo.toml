@@ -28,6 +28,7 @@ members = [
   "atlas/validation",
   "bins/cli",
   "bins/mcp",
+  "bins/server",
   "atlas_bridge",
   "bridge",
   "ffi_common",

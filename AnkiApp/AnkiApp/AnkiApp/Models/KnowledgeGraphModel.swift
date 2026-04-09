@@ -9,9 +9,9 @@ final class KnowledgeGraphModel {
     var isLoading: Bool = false
     var error: String?
 
-    private let atlas: AtlasService
+    private let atlas: any AtlasServiceProtocol
 
-    init(atlas: AtlasService) {
+    init(atlas: any AtlasServiceProtocol) {
         self.atlas = atlas
     }
 }

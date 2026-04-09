@@ -3,8 +3,10 @@ pub mod migrations;
 pub mod pgvector;
 pub mod pool;
 pub mod queries;
+pub mod sqlite_vector;
 
 pub use pgvector::PgVectorRepository;
+pub use sqlite_vector::SqliteVectorRepository;
 
 pub use migrations::{MigrationResult, run_migrations, run_migrations_owned};
 pub use pool::{check_connection, create_pool};

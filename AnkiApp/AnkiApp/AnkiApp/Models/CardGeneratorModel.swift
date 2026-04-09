@@ -12,9 +12,9 @@ final class CardGeneratorModel {
     var savedCount: Int?
     var error: String?
 
-    private let atlas: AtlasService
+    private let atlas: any AtlasServiceProtocol
 
-    init(atlas: AtlasService) {
+    init(atlas: any AtlasServiceProtocol) {
         self.atlas = atlas
     }
 
@@ -28,7 +28,7 @@ final class CardGeneratorModel {
                 sourceText: sourceText,
                 topic: topic.isEmpty ? nil : topic
             )
-            let result: GeneratePreview = try await atlas.command(method: "generate_preview", request: request)
+            let result = try await atlas.generatePreviewFromText(request)
             preview = result
         } catch {
             self.error = error.localizedDescription

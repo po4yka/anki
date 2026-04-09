@@ -13,7 +13,7 @@ final class AppState {
 
     let service: AnkiService
     let ttsSettings = TTSSettings()
-    var atlasService: AtlasService?
+    var atlasService: (any AtlasServiceProtocol)?
     var isAtlasAvailable: Bool {
         atlasService != nil
     }

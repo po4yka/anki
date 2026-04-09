@@ -11,7 +11,7 @@ enum AtlasError: Error {
     case decodingFailed(Error)
 }
 
-actor AtlasService {
+actor AtlasService: AtlasServiceProtocol {
     private let handle: UnsafeMutableRawPointer
 
     init(config: AtlasConfig = AtlasConfig()) throws {
@@ -71,6 +71,10 @@ actor AtlasService {
 
     func generatePreview(filePath: String) async throws -> GeneratePreview {
         try command(method: "generate_preview", request: GeneratePreviewFromFileRequest(filePath: filePath))
+    }
+
+    func generatePreviewFromText(_ request: GeneratePreviewRequest) async throws -> GeneratePreview {
+        try command(method: "generate_preview", request: request)
     }
 
     func getTaxonomyTree(rootPath: String? = nil) async throws -> [TaxonomyNode] {
