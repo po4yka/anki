@@ -12,6 +12,7 @@ import "anki/generic.proto";
 import "anki/collection.proto";
 import "anki/decks.proto";
 
+// Deck scheduling options (steps, intervals, FSRS parameters).
 service DeckConfigService {
   rpc GetDeckConfig(DeckConfigId) returns (DeckConfig);
   rpc RemoveDeckConfig(DeckConfigId) returns (generic.Empty);

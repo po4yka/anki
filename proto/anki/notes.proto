@@ -11,6 +11,7 @@ import "anki/collection.proto";
 import "anki/decks.proto";
 import "anki/cards.proto";
 
+// Note CRUD operations and field validation.
 service NotesService {
   rpc NewNote(notetypes.NotetypeId) returns (Note);
   rpc AddNote(AddNoteRequest) returns (AddNoteResponse);

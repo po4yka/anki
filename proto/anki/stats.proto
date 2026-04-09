@@ -9,6 +9,7 @@ package anki.stats;
 import "anki/generic.proto";
 import "anki/cards.proto";
 
+// Review statistics, card history, and graph data.
 service StatsService {
   rpc CardStats(cards.CardId) returns (CardStatsResponse);
   rpc GetReviewLogs(cards.CardId) returns (ReviewLogs);

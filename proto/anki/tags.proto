@@ -9,6 +9,7 @@ package anki.tags;
 import "anki/generic.proto";
 import "anki/collection.proto";
 
+// Tag management (add, remove, rename, reparent, autocomplete).
 service TagsService {
   rpc ClearUnusedTags(generic.Empty) returns (collection.OpChangesWithCount);
   rpc AllTags(generic.Empty) returns (generic.StringList);

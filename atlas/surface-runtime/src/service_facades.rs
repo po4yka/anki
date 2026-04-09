@@ -33,9 +33,11 @@ pub(crate) fn map_search_error(error: SearchError) -> SurfaceError {
         SearchError::Database(source) => SurfaceError::Database(source),
         SearchError::Embedding(source) => SurfaceError::Embedding(source),
         SearchError::VectorStore(source) => SurfaceError::VectorStore(source),
-        SearchError::Rerank(RerankError::Transport { message })
-        | SearchError::Rerank(RerankError::Http { body: message, .. })
-        | SearchError::Rerank(RerankError::Protocol { message }) => SurfaceError::Provider(message),
+        SearchError::Rerank(rerank_err) => match rerank_err {
+            RerankError::Http { status, body } => SurfaceError::RerankHttp { status, body },
+            RerankError::Transport { message } => SurfaceError::RerankTransport(message),
+            RerankError::Protocol { message } => SurfaceError::RerankProtocol(message),
+        },
     }
 }
 

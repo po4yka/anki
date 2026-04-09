@@ -28,6 +28,12 @@ pub enum SurfaceError {
     VectorStore(#[from] indexer::vector::VectorStoreError),
     #[error("provider error: {0}")]
     Provider(String),
+    #[error("rerank transport error: {0}")]
+    RerankTransport(String),
+    #[error("rerank HTTP error (status {status}): {body}")]
+    RerankHttp { status: u16, body: String },
+    #[error("rerank protocol error: {0}")]
+    RerankProtocol(String),
     #[error("search error: {0}")]
     Search(#[from] search::error::SearchError),
     #[error("analytics error: {0}")]

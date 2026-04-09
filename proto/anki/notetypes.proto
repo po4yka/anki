@@ -9,6 +9,7 @@ package anki.notetypes;
 import "anki/generic.proto";
 import "anki/collection.proto";
 
+// Note type (model) definitions: templates, fields, and stock types.
 service NotetypesService {
   rpc AddNotetype(Notetype) returns (collection.OpChangesWithId);
   rpc UpdateNotetype(Notetype) returns (collection.OpChanges);

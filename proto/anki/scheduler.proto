@@ -13,6 +13,7 @@ import "anki/collection.proto";
 import "anki/config.proto";
 import "anki/deck_config.proto";
 
+// Scheduling and card queue management (answer cards, bury/suspend, FSRS).
 service SchedulerService {
   rpc GetQueuedCards(GetQueuedCardsRequest) returns (QueuedCards);
   rpc AnswerCard(CardAnswer) returns (collection.OpChanges);
@@ -65,6 +66,7 @@ service SchedulerService {
   rpc FuzzDelta(FuzzDeltaRequest) returns (FuzzDeltaResponse);
 }
 
+// Extended scheduler operations: FSRS benchmark, dataset export, param computation from items.
 // Implicitly includes any of the above methods that are not listed in the
 // backend service.
 service BackendSchedulerService {

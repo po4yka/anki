@@ -11,6 +11,7 @@ import "anki/collection.proto";
 import "anki/notes.proto";
 import "anki/generic.proto";
 
+// APKG/COLPKG/CSV import and export operations.
 service ImportExportService {
   rpc ImportAnkiPackage(ImportAnkiPackageRequest) returns (ImportResponse);
   rpc GetImportAnkiPackagePresets(generic.Empty)
@@ -24,6 +25,7 @@ service ImportExportService {
   rpc ImportJsonString(generic.String) returns (ImportResponse);
 }
 
+// Collection package import/export (requires open collection handle).
 // Implicitly includes any of the above methods that are not listed in the
 // backend service.
 service BackendImportExportService {

@@ -9,6 +9,7 @@ package anki.decks;
 import "anki/generic.proto";
 import "anki/collection.proto";
 
+// Deck tree management (add, rename, remove, reparent, filtered decks).
 service DecksService {
   rpc NewDeck(generic.Empty) returns (Deck);
   rpc AddDeck(Deck) returns (collection.OpChangesWithId);

@@ -449,10 +449,10 @@ pub extern "C" fn atlas_command(
     });
     match result {
         Ok(buf) => buf,
-        Err(_) => {
+        Err(ffi_err) => {
             // SAFETY: `is_error` is a valid pointer provided by the Swift caller.
             unsafe { *is_error = true };
-            ByteBuffer::from_str("internal panic in atlas_command")
+            ByteBuffer::from_str(&ffi_err.to_string())
         }
     }
 }

@@ -66,10 +66,10 @@ pub extern "C" fn anki_command(
     });
     match result {
         Ok(buf) => buf,
-        Err(_) => {
+        Err(ffi_err) => {
             // SAFETY: `is_error` is a valid pointer provided by the Swift caller.
             unsafe { *is_error = true };
-            ByteBuffer::from_vec(b"internal panic in anki_command".to_vec())
+            ByteBuffer::from_str(&ffi_err.to_string())
         }
     }
 }

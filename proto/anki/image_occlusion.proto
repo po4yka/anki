@@ -9,6 +9,7 @@ package anki.image_occlusion;
 import "anki/collection.proto";
 import "anki/generic.proto";
 
+// Image occlusion note creation and retrieval.
 service ImageOcclusionService {
   rpc GetImageForOcclusion(GetImageForOcclusionRequest)
       returns (GetImageForOcclusionResponse);

@@ -8,9 +8,10 @@ package anki.sync;
 
 import "anki/generic.proto";
 
-// Syncing methods are only available with a Backend handle.
+// Frontend-only service (not implemented in Rust backend).
 service SyncService {}
 
+// AnkiWeb synchronization (login, collection sync, media sync).
 service BackendSyncService {
   rpc SyncMedia(SyncAuth) returns (generic.Empty);
   rpc AbortMediaSync(generic.Empty) returns (generic.Empty);

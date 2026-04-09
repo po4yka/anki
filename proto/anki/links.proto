@@ -8,6 +8,7 @@ package anki.links;
 
 import "anki/generic.proto";
 
+// Help page URL generation.
 service LinksService {
   rpc HelpPageLink(HelpPageLinkRequest) returns (generic.String);
 }

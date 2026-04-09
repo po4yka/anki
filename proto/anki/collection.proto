@@ -9,6 +9,7 @@ package anki.collection;
 import "anki/generic.proto";
 import "anki/sync.proto";
 
+// Collection integrity, undo/redo stack, and progress reporting.
 service CollectionService {
   rpc CheckDatabase(generic.Empty) returns (CheckDatabaseResponse);
   rpc GetUndoStatus(generic.Empty) returns (UndoStatus);
@@ -22,6 +23,7 @@ service CollectionService {
   rpc GetCustomColours(generic.Empty) returns (GetCustomColoursResponse);
 }
 
+// Collection lifecycle: open, close, backup, and progress/abort control.
 // Implicitly includes any of the above methods that are not listed in the
 // backend service.
 service BackendCollectionService {

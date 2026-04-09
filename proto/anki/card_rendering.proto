@@ -10,6 +10,7 @@ import "anki/generic.proto";
 import "anki/notes.proto";
 import "anki/notetypes.proto";
 
+// Card HTML rendering, LaTeX extraction, and answer comparison.
 service CardRenderingService {
   rpc ExtractAvTags(ExtractAvTagsRequest) returns (ExtractAvTagsResponse);
   rpc ExtractLatex(ExtractLatexRequest) returns (ExtractLatexResponse);
@@ -29,6 +30,7 @@ service CardRenderingService {
       returns (generic.String);
 }
 
+// Extended card rendering: TTS voices, HTML stripping (backend-only overload).
 // Implicitly includes any of the above methods that are not listed in the
 // backend service.
 service BackendCardRenderingService {

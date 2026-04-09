@@ -9,6 +9,7 @@ package anki.media;
 import "anki/generic.proto";
 import "anki/notetypes.proto";
 
+// Media file management (add, check, trash, restore).
 service MediaService {
   rpc CheckMedia(generic.Empty) returns (CheckMediaResponse);
   rpc AddMediaFile(AddMediaFileRequest) returns (generic.String);

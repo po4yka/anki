@@ -9,6 +9,7 @@ package anki.search;
 import "anki/generic.proto";
 import "anki/collection.proto";
 
+// Search query building, card/note search, and browser row rendering.
 service SearchService {
   rpc BuildSearchString(SearchNode) returns (generic.String);
   rpc SearchCards(SearchRequest) returns (SearchResponse);

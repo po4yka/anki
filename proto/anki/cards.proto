@@ -8,6 +8,7 @@ package anki.cards;
 
 import "anki/collection.proto";
 
+// Card CRUD operations (get, update, remove, set deck/flag).
 service CardsService {
   rpc GetCard(CardId) returns (Card);
   rpc UpdateCards(UpdateCardsRequest) returns (collection.OpChanges);

@@ -8,12 +8,14 @@ package anki.i18n;
 
 import "anki/generic.proto";
 
+// Localization string translation and timespan formatting.
 service I18nService {
   rpc TranslateString(TranslateStringRequest) returns (generic.String);
   rpc FormatTimespan(FormatTimespanRequest) returns (generic.String);
   rpc I18nResources(I18nResourcesRequest) returns (generic.Json);
 }
 
+// I18n service available without a collection (standalone backend init).
 // Implicitly includes any of the above methods that are not listed in the
 // backend service.
 service BackendI18nService {
