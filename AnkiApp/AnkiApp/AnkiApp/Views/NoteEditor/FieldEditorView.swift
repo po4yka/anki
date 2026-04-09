@@ -11,6 +11,8 @@ struct FieldEditorView: View {
 
     @State private var richEditorCoordinator: RichFieldEditor.Coordinator?
     @State private var isShowingHTML: Bool = false
+    @State private var isShowingLinkSheet: Bool = false
+    @State private var linkURL: String = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -34,6 +36,16 @@ struct FieldEditorView: View {
                         onBold: { richEditorCoordinator?.executeCommand("bold") },
                         onItalic: { richEditorCoordinator?.executeCommand("italic") },
                         onUnderline: { richEditorCoordinator?.executeCommand("underline") },
+                        onStrikethrough: { richEditorCoordinator?.executeCommand("strikeThrough") },
+                        onOrderedList: { richEditorCoordinator?.executeCommand("insertOrderedList") },
+                        onUnorderedList: { richEditorCoordinator?.executeCommand("insertUnorderedList") },
+                        onAlignLeft: { richEditorCoordinator?.executeCommand("justifyLeft") },
+                        onAlignCenter: { richEditorCoordinator?.executeCommand("justifyCenter") },
+                        onAlignRight: { richEditorCoordinator?.executeCommand("justifyRight") },
+                        onInsertLink: {
+                            linkURL = ""
+                            isShowingLinkSheet = true
+                        },
                         onCloze: onCloze,
                         onAttachImage: onAttachImage != nil ? { onAttachImage?(richEditorCoordinator) } : nil,
                         onToggleHTML: { isShowingHTML.toggle() },
@@ -49,8 +61,14 @@ struct FieldEditorView: View {
                             .font(.system(.body, design: .monospaced))
                             .frame(minHeight: 60)
                     } else {
-                        RichFieldEditor(html: $text) { _ in }
-                            .frame(minHeight: 60)
+                        RichFieldEditor(
+                            html: $text,
+                            onContentChange: nil,
+                            onCoordinatorReady: { coordinator in
+                                richEditorCoordinator = coordinator
+                            }
+                        )
+                        .frame(minHeight: 60)
                     }
                 }
                 .overlay(
@@ -60,6 +78,48 @@ struct FieldEditorView: View {
             }
         }
         .padding(.vertical, 4)
+        .sheet(isPresented: $isShowingLinkSheet) {
+            InsertLinkSheet(url: $linkURL) { confirmedURL in
+                richEditorCoordinator?.executeCommand("createLink", value: confirmedURL)
+            }
+        }
+    }
+}
+
+private struct InsertLinkSheet: View {
+    @Binding var url: String
+    var onConfirm: (String) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("Insert Link")
+                .font(.headline)
+
+            TextField("https://example.com", text: $url)
+                .textFieldStyle(.roundedBorder)
+                .frame(minWidth: 300)
+
+            HStack {
+                Button("Cancel") {
+                    dismiss()
+                }
+                .keyboardShortcut(.cancelAction)
+
+                Spacer()
+
+                Button("Insert") {
+                    let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !trimmed.isEmpty else { return }
+                    onConfirm(trimmed)
+                    dismiss()
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(url.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+        }
+        .padding(24)
     }
 }
 

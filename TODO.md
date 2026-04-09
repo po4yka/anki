@@ -90,110 +90,110 @@ one work session. Check off items as completed.
 ## Phase 2: Swift FFI Bridge
 
 ### 2a. Rust bridge crate
-- [ ] Create `bridge/Cargo.toml` (crate-type = ["staticlib"])
-- [ ] Implement `ByteBuffer` struct for FFI byte transfer
-- [ ] Implement `anki_init()` -- create Backend from protobuf bytes
-- [ ] Implement `anki_command()` -- RPC dispatch
-- [ ] Implement `anki_free()` -- drop Backend
-- [ ] Implement `anki_free_buffer()` -- free returned bytes
-- [ ] Add `bridge` to workspace members
-- [ ] Verify `cargo build -p anki_bridge` produces `libanki_bridge.a`
+- [x] Create `bridge/Cargo.toml` (crate-type = ["staticlib"])
+- [x] Implement `ByteBuffer` struct for FFI byte transfer
+- [x] Implement `anki_init()` -- create Backend from protobuf bytes
+- [x] Implement `anki_command()` -- RPC dispatch
+- [x] Implement `anki_free()` -- drop Backend
+- [x] Implement `anki_free_buffer()` -- free returned bytes
+- [x] Add `bridge` to workspace members
+- [x] Verify `cargo build -p anki_bridge` produces `libanki_bridge.a`
 
 ### 2b. Swift protobuf generation
-- [ ] Install swift-protobuf: `brew install swift-protobuf`
-- [ ] Generate Swift types: `protoc --swift_out=AnkiApp/Proto/ proto/anki/*.proto`
-- [ ] Verify generated types compile
+- [x] Install swift-protobuf: `brew install swift-protobuf`
+- [x] Generate Swift types: `protoc --swift_out=AnkiApp/Proto/ proto/anki/*.proto`
+- [x] Verify generated types compile
 
 ### 2c. Xcode project setup
-- [ ] Create `AnkiApp/` Xcode project (SwiftUI, macOS 13+)
-- [ ] Add `AnkiBridge.h` bridging header
-- [ ] Link `libanki_bridge.a` in Build Settings
-- [ ] Set Library Search Paths to `target/release/`
-- [ ] Add Run Script build phase for `cargo build --release -p anki_bridge`
+- [x] Create `AnkiApp/` Xcode project (SwiftUI, macOS 13+)
+- [x] Add `AnkiBridge.h` bridging header
+- [x] Link `libanki_bridge.a` in Build Settings
+- [x] Set Library Search Paths to `target/release/`
+- [x] Add Run Script build phase for `cargo build --release -p anki_bridge`
 
 ### 2d. Swift bridge layer
-- [ ] Implement `AnkiBackend.swift` -- init, command, deinit wrappers
-- [ ] Implement `AnkiService.swift` -- async actor with typed methods
-- [ ] Test: open collection file from SwiftUI
+- [x] Implement `AnkiBackend.swift` -- init, command, deinit wrappers
+- [x] Implement `AnkiService.swift` -- async actor with typed methods
+- [x] Test: open collection file from SwiftUI
 
 ---
 
 ## Phase 3: Core SwiftUI App
 
 ### 3a. Navigation and data flow
-- [ ] Design app navigation structure (sidebar + detail)
-- [ ] Create `CollectionManager` for collection lifecycle
-- [ ] Implement collection open/close flow
+- [x] Design app navigation structure (sidebar + detail)
+- [x] Create `CollectionManager` for collection lifecycle (AppState)
+- [x] Implement collection open/close flow
 
 ### 3b. Deck browser
-- [ ] Deck list view with card counts
-- [ ] Due/new/review count display
-- [ ] Deck selection to start review
+- [x] Deck list view with card counts
+- [x] Due/new/review count display
+- [x] Deck selection to start review
 
 ### 3c. Reviewer
-- [ ] Card front display (HTML rendering via WKWebView)
-- [ ] Show answer / flip card
-- [ ] Answer buttons (Again / Hard / Good / Easy)
-- [ ] Progress bar (remaining cards)
-- [ ] Congratulations screen (deck complete)
+- [x] Card front display (HTML rendering via WKWebView)
+- [x] Show answer / flip card
+- [x] Answer buttons (Again / Hard / Good / Easy)
+- [x] Progress bar (remaining cards)
+- [x] Congratulations screen (deck complete)
 
 ### 3d. Note editor
-- [ ] Field-per-notetype layout
-- [ ] Rich text editing (bold, italic, cloze)
-- [ ] Tag editor
-- [ ] Deck selector
-- [ ] Note type selector
-- [ ] Save / update note
+- [x] Field-per-notetype layout
+- [x] Rich text editing (bold, italic, cloze) (basic formatting; lists/links pending)
+- [x] Tag editor
+- [x] Deck selector
+- [x] Note type selector
+- [x] Save / update note
 
 ### 3e. Search
-- [ ] Search bar with Anki query syntax
-- [ ] Results list (note preview, deck, tags)
-- [ ] Click to edit note
+- [x] Search bar with Anki query syntax
+- [x] Results list (note preview, deck, tags)
+- [x] Click to edit note
 - [ ] Browser-style column view
 
 ### 3f. Supporting screens
-- [ ] Deck options / scheduling settings
-- [ ] Statistics (review history, forecast charts)
-- [ ] Import .apkg files
-- [ ] Export .apkg files
-- [ ] AnkiWeb sync with progress
-- [ ] Preferences (collection path, language, appearance)
+- [x] Deck options / scheduling settings
+- [x] Statistics (review history, forecast charts)
+- [x] Import .apkg files
+- [x] Export .apkg files
+- [x] AnkiWeb sync with progress
+- [x] Preferences (collection path, language, appearance)
 
 ---
 
 ## Phase 4: Atlas Integration
 
 ### 4a. Copy and compile
-- [ ] Copy atlas crates into `atlas/` subdirectory
-- [ ] Add all atlas crates to workspace `Cargo.toml`
-- [ ] Upgrade workspace to Rust edition 2024
-- [ ] Update `rust-toolchain.toml` to 1.92+
-- [ ] Resolve `rusqlite` version conflict (upgrade atlas to 0.36)
-- [ ] Resolve `reqwest` version conflict
-- [ ] Resolve `strum` version conflict (upgrade anki to 0.28)
-- [ ] Resolve `phf` version conflict
-- [ ] Run `cargo check --workspace` -- fix remaining compile errors
+- [x] Copy atlas crates into `atlas/` subdirectory
+- [x] Add all atlas crates to workspace `Cargo.toml`
+- [x] Upgrade workspace to Rust edition 2024
+- [x] Update `rust-toolchain.toml` to 1.92+
+- [x] Resolve `rusqlite` version conflict (upgrade atlas to 0.36)
+- [x] Resolve `reqwest` version conflict
+- [x] Resolve `strum` version conflict (upgrade anki to 0.28)
+- [x] Resolve `phf` version conflict
+- [x] Run `cargo check --workspace` -- fix remaining compile errors
 
 ### 4b. Replace anki-reader
-- [ ] Define `AnkiDataSource` trait in `atlas/common/`
-- [ ] Implement `CollectionSource` adapter using `anki::backend::Backend`
-- [ ] Add `From` impls: `anki_proto` types -> atlas types
-- [ ] Update `anki-sync` to use `AnkiDataSource` trait
-- [ ] Update `surface-runtime` to wire `CollectionSource`
-- [ ] Remove `anki-reader` crate from workspace
+- [x] Define `AnkiDataSource` trait in `atlas/common/`
+- [x] Implement `CollectionSource` adapter using `anki::backend::Backend` (SqliteAnkiDataSource)
+- [x] Add `From` impls: `anki_proto` types -> atlas types
+- [x] Update `anki-sync` to use `AnkiDataSource` trait
+- [x] Update `surface-runtime` to wire `CollectionSource`
+- [x] Remove `anki-reader` crate from workspace
 
 ### 4c. Desktop infrastructure
-- [ ] Implement `InMemoryJobManager` (replace Redis)
-- [ ] Feature-gate Redis: `#[cfg(feature = "redis")]`
-- [ ] Configure Qdrant embedded mode
-- [ ] Evaluate PostgreSQL strategy (embedded-postgres vs SQLite)
-- [ ] Implement chosen PostgreSQL strategy
+- [x] Implement `InMemoryJobManager` (replace Redis)
+- [x] Feature-gate Redis: `#[cfg(feature = "redis")]`
+- [x] Configure Qdrant embedded mode (replaced with PostgreSQL + pgvector)
+- [x] Evaluate PostgreSQL strategy (embedded-postgres vs SQLite)
+- [x] Implement chosen PostgreSQL strategy (PostgreSQL with pgvector)
 
 ### 4d. Validation
-- [ ] Run `cargo check --workspace`
-- [ ] Run `cargo test --workspace --exclude database --exclude anki-sync`
-- [ ] Integration test: AnkiDataSource reads from real collection
-- [ ] Commit: "integrate anki-atlas crates into workspace"
+- [x] Run `cargo check --workspace`
+- [x] Run `cargo test --workspace --exclude database --exclude anki-sync`
+- [x] Integration test: AnkiDataSource reads from real collection
+- [x] Commit: "integrate anki-atlas crates into workspace"
 
 ---
 

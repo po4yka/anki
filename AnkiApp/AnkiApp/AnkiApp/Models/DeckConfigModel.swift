@@ -13,6 +13,13 @@ final class DeckConfigModel {
     let deckName: String
     private let service: AnkiServiceProtocol
 
+    var fsrsEnabled: Bool {
+        get { configsForUpdate?.fsrs ?? false }
+        set { configsForUpdate?.fsrs = newValue }
+    }
+
+    var fsrsReschedule: Bool = false
+
     var allConfigs: [Anki_DeckConfig_DeckConfigsForUpdate.ConfigWithExtra] {
         configsForUpdate?.allConfig ?? []
     }
@@ -56,6 +63,7 @@ final class DeckConfigModel {
             req.mode = .normal
             req.limits = configsForUpdate.currentDeck.limits
             req.fsrs = configsForUpdate.fsrs
+            req.fsrsReschedule = fsrsReschedule
             req.newCardsIgnoreReviewLimit = configsForUpdate.newCardsIgnoreReviewLimit
             req.applyAllParentLimits = configsForUpdate.applyAllParentLimits
             _ = try await service.updateDeckConfigs(request: req)

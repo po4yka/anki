@@ -4,6 +4,7 @@ import WebKit
 struct RichFieldEditor: NSViewRepresentable {
     @Binding var html: String
     var onContentChange: ((String) -> Void)?
+    var onCoordinatorReady: ((Coordinator) -> Void)?
 
     // swiftlint:disable:next function_body_length
     func makeNSView(context: Context) -> WKWebView {
@@ -82,6 +83,7 @@ struct RichFieldEditor: NSViewRepresentable {
         </html>
         """
         webView.loadHTMLString(htmlPage, baseURL: nil)
+        onCoordinatorReady?(context.coordinator)
         return webView
     }
 

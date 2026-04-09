@@ -9,11 +9,37 @@ final class ExportModel {
     var errorMessage: String?
     var options = ExportOptions()
     var exportScope: ExportScope = .wholeCollection
+    var availableDecks: [(id: Int64, name: String)] = []
+    var selectedDeckId: Int64 = 0
 
     private let service: AnkiServiceProtocol
 
     init(service: AnkiServiceProtocol) {
         self.service = service
+        Task { await load() }
+    }
+
+    func load() async {
+        do {
+            let tree = try await service.getDeckTree(now: 0)
+            availableDecks = flattenDeckTree(tree)
+            if let first = availableDecks.first {
+                selectedDeckId = first.id
+            }
+        } catch {
+            // Non-fatal: deck picker just stays empty
+        }
+    }
+
+    private func flattenDeckTree(_ node: Anki_Decks_DeckTreeNode) -> [(id: Int64, name: String)] {
+        var result: [(id: Int64, name: String)] = []
+        if node.deckID != 0 {
+            result.append((id: node.deckID, name: node.name))
+        }
+        for child in node.children {
+            result.append(contentsOf: flattenDeckTree(child))
+        }
+        return result
     }
 
     struct ExportOptions {

@@ -46,7 +46,7 @@ extension AnkiService {
         if let delimiter { req.delimiter = delimiter }
         if let notetypeId { req.notetypeID = notetypeId }
         if let deckId { req.deckID = deckId }
-        if let isHtml { req.isHTML = isHtml }
+        if let isHtml { req.isHtml = isHtml }
         return try backend.command(
             service: ServiceIndex.importExport,
             method: ImportExportMethod.getCsvMetadata,

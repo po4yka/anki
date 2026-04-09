@@ -36,11 +36,35 @@ struct ExportView: View {
 
                 Picker("Export scope", selection: Binding(
                     get: { model.exportScope == .wholeCollection },
-                    set: { model.exportScope = $0 ? .wholeCollection : model.exportScope }
+                    set: { isWholeCollection in
+                        if isWholeCollection {
+                            model.exportScope = .wholeCollection
+                        } else {
+                            let id = model.selectedDeckId
+                            let name = model.availableDecks.first { $0.id == id }?.name ?? ""
+                            model.exportScope = .deck(id: id, name: name)
+                        }
+                    }
                 )) {
                     Text("Whole Collection").tag(true)
+                    Text("Single Deck").tag(false)
                 }
-                .labelsHidden()
+                .pickerStyle(.segmented)
+
+                if model.exportScope != .wholeCollection {
+                    Picker("Deck", selection: Binding(
+                        get: { model.selectedDeckId },
+                        set: { id in
+                            model.selectedDeckId = id
+                            let name = model.availableDecks.first { $0.id == id }?.name ?? ""
+                            model.exportScope = .deck(id: id, name: name)
+                        }
+                    )) {
+                        ForEach(model.availableDecks, id: \.id) { deck in
+                            Text(deck.name).tag(deck.id)
+                        }
+                    }
+                }
 
                 Text("Options")
                     .font(.headline)

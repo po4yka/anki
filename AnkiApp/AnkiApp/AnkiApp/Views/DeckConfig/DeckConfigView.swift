@@ -266,6 +266,37 @@ struct DeckConfigView: View {
                     ))
                     .labelsHidden()
                 }
+
+                Section("FSRS Parameters") {
+                    LabeledContent("Enable FSRS Scheduler") {
+                        Toggle("", isOn: Binding(
+                            get: { model.fsrsEnabled },
+                            set: { model.fsrsEnabled = $0 }
+                        ))
+                        .labelsHidden()
+                    }
+
+                    if model.fsrsEnabled {
+                        LabeledContent("Desired Retention") {
+                            TextField("", value: Binding(
+                                get: { model.selectedConfig?.config.desiredRetention ?? 0.9 },
+                                set: { val in config.desiredRetention = val
+                                    updateConfig(config)
+                                }
+                            ), format: .percent)
+                                .frame(width: 80)
+                                .multilineTextAlignment(.trailing)
+                        }
+
+                        LabeledContent("Reschedule on Parameter Change") {
+                            Toggle("", isOn: Binding(
+                                get: { model.fsrsReschedule },
+                                set: { model.fsrsReschedule = $0 }
+                            ))
+                            .labelsHidden()
+                        }
+                    }
+                }
             }
         }
     }
