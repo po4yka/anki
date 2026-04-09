@@ -21,6 +21,7 @@ impl ByteBuffer {
         buf
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Self {
         Self::from_vec(s.as_bytes().to_vec())
     }

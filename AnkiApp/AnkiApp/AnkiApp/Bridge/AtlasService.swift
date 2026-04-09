@@ -1,7 +1,30 @@
 import Foundation
 
 struct AtlasConfig: Codable {
-    // Placeholder for future configuration (database URL, Qdrant URL, etc.)
+    var postgresUrl: String?
+    var embeddingProvider: String?
+    var embeddingModel: String?
+    var embeddingDimension: UInt32?
+    var embeddingApiKey: String?
+
+    enum CodingKeys: String, CodingKey {
+        case postgresUrl = "postgres_url"
+        case embeddingProvider = "embedding_provider"
+        case embeddingModel = "embedding_model"
+        case embeddingDimension = "embedding_dimension"
+        case embeddingApiKey = "embedding_api_key"
+    }
+
+    static func fromStoredSettings() -> AtlasConfig {
+        let dim = UserDefaults.standard.integer(forKey: "atlasEmbeddingDimension")
+        return AtlasConfig(
+            postgresUrl: KeychainHelper.loadAtlasPostgresUrl(),
+            embeddingProvider: UserDefaults.standard.string(forKey: "atlasEmbeddingProvider"),
+            embeddingModel: UserDefaults.standard.string(forKey: "atlasEmbeddingModel"),
+            embeddingDimension: dim > 0 ? UInt32(dim) : nil,
+            embeddingApiKey: KeychainHelper.loadAtlasApiKey()
+        )
+    }
 }
 
 enum AtlasError: Error {

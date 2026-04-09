@@ -36,6 +36,7 @@ final class AppState {
             isCollectionOpen = true
             error = nil
             await refreshUndoStatus()
+            await reinitializeAtlas()
         } catch let error as AnkiError {
             self.error = error
         } catch {}
@@ -46,6 +47,15 @@ final class AppState {
             undoStatus = try await service.getUndoStatus()
         } catch {
             undoStatus = nil
+        }
+    }
+
+    func reinitializeAtlas() async {
+        let config = AtlasConfig.fromStoredSettings()
+        do {
+            atlasService = try AtlasService(config: config)
+        } catch {
+            atlasService = nil
         }
     }
 

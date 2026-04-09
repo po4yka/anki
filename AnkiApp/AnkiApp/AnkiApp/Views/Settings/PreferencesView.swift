@@ -25,10 +25,13 @@ struct PreferencesView: View {
                 .tabItem { Label("Appearance", systemImage: "paintbrush") }
             SyncSettingsView()
                 .tabItem { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
+            AtlasSettingsView()
+                .environment(appState)
+                .tabItem { Label("Atlas", systemImage: "brain") }
             AboutView()
                 .tabItem { Label("About", systemImage: "info.circle") }
         }
-        .frame(width: 500, height: 400)
+        .frame(width: 500, height: 450)
     }
 }
 
