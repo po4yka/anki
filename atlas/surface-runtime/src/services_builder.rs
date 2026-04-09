@@ -208,6 +208,136 @@ pub(crate) fn build_reranker(settings: &Settings) -> Option<SharedReranker> {
     )))
 }
 
+/// Configuration for building surface services from explicit values (no env var reads).
+/// Used by the FFI bridge where config comes from the Swift UI.
+#[derive(Debug, Clone)]
+pub struct BridgeServicesConfig {
+    pub postgres_url: String,
+    pub embedding_provider: EmbeddingProviderKind,
+    pub embedding_model: String,
+    pub embedding_dimension: usize,
+    pub embedding_api_key: Option<String>,
+}
+
+/// Build surface services from explicit configuration (used by FFI bridge).
+///
+/// Unlike `build_surface_services`, this does not read environment variables
+/// for API keys -- all values come from the provided config.
+pub async fn build_surface_services_from_bridge_config(
+    config: &BridgeServicesConfig,
+) -> Result<SurfaceServices, SurfaceError> {
+    let db = create_pool(&common::config::DatabaseSettings {
+        postgres_url: config.postgres_url.clone(),
+    })
+    .await?;
+
+    let embedding_config = match config.embedding_provider {
+        EmbeddingProviderKind::Mock => EmbeddingProviderConfig::Mock {
+            dimension: config.embedding_dimension,
+        },
+        EmbeddingProviderKind::OpenAi => {
+            let api_key = config.embedding_api_key.clone().ok_or_else(|| {
+                SurfaceError::Configuration("API key required for OpenAI provider".into())
+            })?;
+            EmbeddingProviderConfig::OpenAi {
+                model: config.embedding_model.clone(),
+                dimension: config.embedding_dimension,
+                batch_size: None,
+                api_key,
+            }
+        }
+        EmbeddingProviderKind::Google => {
+            let api_key = config.embedding_api_key.clone().ok_or_else(|| {
+                SurfaceError::Configuration("API key required for Google provider".into())
+            })?;
+            EmbeddingProviderConfig::Google {
+                model: config.embedding_model.clone(),
+                dimension: config.embedding_dimension,
+                batch_size: None,
+                api_key,
+            }
+        }
+        EmbeddingProviderKind::FastEmbed => {
+            return Err(SurfaceError::Configuration(
+                "FastEmbed provider requires the 'local-embeddings' feature".into(),
+            ));
+        }
+    };
+
+    let embedding: SharedEmbeddingProvider = Arc::from(
+        create_embedding_provider(&embedding_config).map_err(|e| {
+            SurfaceError::Configuration(format!("create embedding provider: {e}"))
+        })?,
+    );
+
+    let vector_store = Arc::new(PgVectorRepository::new(db.clone()));
+    let vector_repo = vector_store as SharedVectorRepository;
+
+    let search = Arc::new(SearchFacadeImpl {
+        inner: SearchService::new(
+            embedding.clone(),
+            vector_repo.clone(),
+            None::<SharedReranker>,
+            Arc::new(SqlxSearchReadRepository::new(db.clone())),
+            false,
+            50,
+        ),
+    }) as Arc<dyn crate::SearchFacade>;
+
+    let analytics = Arc::new(AnalyticsFacadeImpl {
+        inner: AnalyticsService::new(
+            embedding,
+            vector_repo,
+            Arc::new(SqlxAnalyticsRepository::new(db.clone())),
+        ),
+    }) as Arc<dyn crate::AnalyticsFacade>;
+
+    let job_manager = Arc::new(NoopBridgeJobManager) as Arc<dyn JobManager>;
+    Ok(SurfaceServices::new(db, job_manager, search, analytics))
+}
+
+/// Minimal job manager for bridge mode (no background job queue).
+struct NoopBridgeJobManager;
+
+#[async_trait::async_trait]
+impl JobManager for NoopBridgeJobManager {
+    async fn enqueue_sync_job(
+        &self,
+        _payload: jobs::SyncJobPayload,
+        _run_at: Option<chrono::DateTime<chrono::Utc>>,
+    ) -> Result<jobs::JobRecord, jobs::JobError> {
+        Err(jobs::JobError::Unsupported(
+            "job queue not available in bridge mode".to_string(),
+        ))
+    }
+
+    async fn enqueue_index_job(
+        &self,
+        _payload: jobs::IndexJobPayload,
+        _run_at: Option<chrono::DateTime<chrono::Utc>>,
+    ) -> Result<jobs::JobRecord, jobs::JobError> {
+        Err(jobs::JobError::Unsupported(
+            "job queue not available in bridge mode".to_string(),
+        ))
+    }
+
+    async fn get_job(&self, _job_id: &str) -> Result<jobs::JobRecord, jobs::JobError> {
+        Err(jobs::JobError::Unsupported(
+            "job queue not available in bridge mode".to_string(),
+        ))
+    }
+
+    async fn cancel_job(&self, _job_id: &str) -> Result<jobs::JobRecord, jobs::JobError> {
+        Err(jobs::JobError::Unsupported(
+            "job queue not available in bridge mode".to_string(),
+        ))
+    }
+
+    async fn close(&self) -> Result<(), jobs::JobError> {
+        Ok(())
+    }
+}
+
 pub async fn build_surface_services(
     settings: &Settings,
     options: BuildSurfaceServicesOptions,

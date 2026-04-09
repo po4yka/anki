@@ -20,7 +20,10 @@ use surface_contracts::analytics::{
 use surface_contracts::search::{
     ChunkSearchRequest, ChunkSearchResponse, SearchRequest, SearchResponse,
 };
-use surface_runtime::{AnalyticsFacade, SearchFacade, SurfaceError, SurfaceServices};
+use surface_runtime::{
+    AnalyticsFacade, BridgeServicesConfig, SearchFacade, SurfaceError, SurfaceServices,
+    build_surface_services_from_bridge_config,
+};
 use tokio::runtime::Runtime;
 
 /// Configuration passed from Swift as a JSON blob.
@@ -192,7 +195,34 @@ fn build_noop_services(postgres_url: Option<&str>) -> Result<SurfaceServices, St
     ))
 }
 
+/// Try to build a `BridgeServicesConfig` from the atlas config fields.
+/// Returns `None` if required fields (postgres_url, embedding_provider, model) are missing.
+fn try_bridge_config(config: &AtlasConfig) -> Option<BridgeServicesConfig> {
+    let postgres_url = config.postgres_url.as_ref().filter(|s| !s.is_empty())?;
+    let provider_str = config.embedding_provider.as_ref().filter(|s| !s.is_empty())?;
+    let provider: common::config::EmbeddingProviderKind = provider_str.parse().ok()?;
+    let model = config
+        .embedding_model
+        .as_ref()
+        .filter(|s| !s.is_empty())
+        .cloned()
+        .unwrap_or_else(|| "mock".to_string());
+    let dimension = config.embedding_dimension.unwrap_or(1536) as usize;
+
+    Some(BridgeServicesConfig {
+        postgres_url: postgres_url.clone(),
+        embedding_provider: provider,
+        embedding_model: model,
+        embedding_dimension: dimension,
+        embedding_api_key: config.embedding_api_key.clone().filter(|s| !s.is_empty()),
+    })
+}
+
 /// Initialize an Atlas handle from a JSON-encoded AtlasConfig.
+///
+/// When the config contains a valid postgres_url and embedding provider,
+/// real search and analytics services are created. Otherwise, noop facades
+/// are used (all operations return "not configured" errors).
 ///
 /// Returns an opaque pointer on success. The caller must pass this pointer to
 /// all subsequent atlas_command calls and must call atlas_free() when done.
@@ -213,8 +243,31 @@ pub extern "C" fn atlas_init(config_data: *const u8, config_len: usize) -> *mut 
             return std::ptr::null_mut();
         };
 
-        let Ok(services) = build_noop_services(config.postgres_url.as_deref()) else {
-            return std::ptr::null_mut();
+        // Try to build real services from config; fall back to noop on failure.
+        let services = if let Some(bridge_config) = try_bridge_config(&config) {
+            match runtime.block_on(build_surface_services_from_bridge_config(&bridge_config)) {
+                Ok(s) => {
+                    tracing::info!(
+                        provider = %bridge_config.embedding_provider,
+                        model = %bridge_config.embedding_model,
+                        dimension = bridge_config.embedding_dimension,
+                        "atlas bridge: initialized with real embedding provider"
+                    );
+                    s
+                }
+                Err(e) => {
+                    tracing::warn!("atlas bridge: failed to build real services ({e}), using noop facades");
+                    match build_noop_services(config.postgres_url.as_deref()) {
+                        Ok(s) => s,
+                        Err(_) => return std::ptr::null_mut(),
+                    }
+                }
+            }
+        } else {
+            match build_noop_services(config.postgres_url.as_deref()) {
+                Ok(s) => s,
+                Err(_) => return std::ptr::null_mut(),
+            }
         };
 
         let handle = Box::new(AtlasHandle {

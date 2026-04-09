@@ -31,6 +31,10 @@ ffi_common.workspace = true
 surface-runtime = { path = "../atlas/surface-runtime" }
 surface-contracts = { path = "../atlas/surface-contracts" }
 common = { path = "../atlas/common" }
+indexer = { path = "../atlas/indexer" }
+search = { path = "../atlas/search" }
+analytics = { path = "../atlas/analytics" }
+database = { path = "../atlas/database" }
 jobs = { path = "../atlas/jobs" }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -39,3 +43,4 @@ thiserror = { workspace = true }
 async-trait = { workspace = true }
 chrono = { workspace = true }
 sqlx = { workspace = true }
+tracing = { workspace = true }

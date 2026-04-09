@@ -601,11 +601,15 @@ dependencies = [
 name = "atlas_bridge"
 version = "0.1.0"
 dependencies = [
+ "analytics",
  "async-trait",
  "chrono",
  "common",
+ "database",
  "ffi_common",
+ "indexer",
  "jobs",
+ "search",
  "serde",
  "serde_json",
  "sqlx",
@@ -613,6 +617,7 @@ dependencies = [
  "surface-runtime",
  "thiserror 2.0.18",
  "tokio",
+ "tracing",
 ]
 
 [[package]]

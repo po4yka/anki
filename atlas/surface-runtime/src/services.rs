@@ -10,7 +10,8 @@ use crate::workflows::{
 
 pub use crate::service_facades::{AnalyticsFacade, SearchFacade};
 pub use crate::services_builder::{
-    BuildSurfaceServicesOptions, EmbeddingFingerprint, build_surface_services,
+    BridgeServicesConfig, BuildSurfaceServicesOptions, EmbeddingFingerprint,
+    build_surface_services, build_surface_services_from_bridge_config,
 };
 
 pub struct SurfaceServices {
