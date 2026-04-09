@@ -33,7 +33,7 @@ SwiftUI App -> C-ABI FFI -> Rust Backend + Atlas Services
     ↓              ↓                ↓
  (UI, views)  (bridge/)    (rslib + atlas/)
                                    ↓
-                        (SQLite + Qdrant + optional PostgreSQL)
+                    (SQLite + PostgreSQL + pgvector)
 ```
 
 ### Stack Overview
@@ -44,7 +44,7 @@ SwiftUI App -> C-ABI FFI -> Rust Backend + Atlas Services
 | Bridge | C-ABI FFI | Protocol Buffers + staticlib |
 | Core | Scheduling & sync | Anki's Rust backend (rslib) |
 | Analytics | AI services | Atlas crates (search, generation, analytics) |
-| Storage | Persistence | SQLite, Qdrant (embedded), optional PostgreSQL |
+| Storage | Persistence | SQLite (local), PostgreSQL + pgvector (vector embeddings) |
 | Integration | Claude Code | MCP server binary |
 
 ## Prerequisites
@@ -54,6 +54,8 @@ SwiftUI App -> C-ABI FFI -> Rust Backend + Atlas Services
 - **Rust 1.88+** (via [rustup](https://rustup.rs/))
 - **Protocol Buffers**: `brew install protobuf`
 - **Swift Protobuf**: `brew install swift-protobuf`
+- **PostgreSQL 15+** (for vector embeddings): `brew install postgresql@15`
+- **Docker** (optional, for testcontainers in integration tests)
 
 ## Build Instructions
 
@@ -150,7 +152,8 @@ anki/
 │
 ├── atlas/                      # AI/analytics crates
 │   ├── search/                 # Hybrid FTS + semantic search
-│   ├── indexer/                # Embeddings + Qdrant integration
+│   ├── indexer/                # Embeddings + PostgreSQL/pgvector
+│   ├── database/               # PostgreSQL connection pooling
 │   ├── analytics/              # Coverage, gaps, duplicates
 │   ├── generator/              # LLM card generation
 │   ├── validation/             # Quality pipeline
@@ -167,7 +170,9 @@ anki/
 │   │   ├── Services/           # AnkiService, async coordination
 │   │   ├── Views/              # SwiftUI views
 │   │   └── Models/             # View models (@Observable)
-│   └── Proto/                  # Generated Swift protobuf types
+│   ├── Proto/                  # Generated Swift protobuf types
+│   ├── AnkiAppTests/           # Unit tests
+│   └── AnkiAppUITests/         # UI/integration tests
 │
 ├── proto/anki/                 # 24 .proto service definitions
 │   └── *.proto                 # Shared API spec (source of truth)
@@ -177,6 +182,10 @@ anki/
 │   └── cli/                    # CLI for automation/scripting
 │
 ├── ftl/core/                   # Fluent translation files
+│
+├── docs/
+│   ├── TESTING.md              # Testing strategy & patterns
+│   └── migration/              # Migration documentation
 │
 └── Cargo.toml                  # Unified workspace manifest
 ```
