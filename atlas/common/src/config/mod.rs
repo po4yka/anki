@@ -1,18 +1,18 @@
 use std::env;
 
 use serde::Deserialize;
-use strum::{Display, EnumString};
 
-/// Supported embedding providers.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, EnumString, Display)]
-#[serde(rename_all = "lowercase")]
-#[strum(serialize_all = "lowercase")]
-pub enum EmbeddingProviderKind {
-    OpenAi,
-    Google,
-    FastEmbed,
-    Mock,
-}
+pub mod api;
+pub mod database;
+pub mod embedding;
+pub mod jobs;
+pub mod rerank;
+
+pub use api::ApiSettings;
+pub use database::DatabaseSettings;
+pub use embedding::{EmbeddingProviderKind, EmbeddingSettings};
+pub use jobs::JobSettings;
+pub use rerank::RerankSettings;
 
 /// Configuration error returned by Settings::load() and Settings::validate().
 #[derive(Debug)]
@@ -46,47 +46,6 @@ pub struct Settings {
     pub debug: bool,
     pub anki_collection_path: Option<String>,
     pub anki_media_root: Option<String>,
-}
-
-/// Database bootstrap settings.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct DatabaseSettings {
-    pub postgres_url: String,
-}
-
-/// Job runtime settings.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct JobSettings {
-    pub postgres_url: String,
-    pub queue_name: String,
-    pub result_ttl_seconds: u32,
-    pub max_retries: u32,
-}
-
-/// API server runtime settings.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ApiSettings {
-    pub host: String,
-    pub port: u16,
-    pub api_key: Option<String>,
-    pub debug: bool,
-}
-
-/// Embedding runtime settings.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct EmbeddingSettings {
-    pub provider: EmbeddingProviderKind,
-    pub model: String,
-    pub dimension: u32,
-}
-
-/// Reranking runtime settings.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RerankSettings {
-    pub enabled: bool,
-    pub model: String,
-    pub top_n: u32,
-    pub batch_size: u32,
 }
 
 impl Settings {

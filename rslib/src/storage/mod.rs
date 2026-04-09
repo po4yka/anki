@@ -15,6 +15,7 @@ mod sqlite;
 mod sync;
 mod sync_check;
 mod tag;
+pub(crate) mod traits;
 mod upgrades;
 
 use std::fmt::Write;
