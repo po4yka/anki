@@ -11,6 +11,7 @@ mod remove;
 mod reparent;
 mod schema11;
 mod service;
+pub(crate) mod service_helpers;
 mod stats;
 pub mod tree;
 pub(crate) mod undo;

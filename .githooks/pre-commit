@@ -45,4 +45,7 @@ if command -v swiftformat &>/dev/null; then
     }
 fi
 
+# Optional: check Swift-Rust type sync
+# ./scripts/check-swift-types.sh
+
 echo "[pre-commit] All checks passed."
