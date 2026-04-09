@@ -4,28 +4,29 @@
 
 ```
 SwiftUI App -> C-ABI FFI (bridge/ + atlas_bridge/) -> Rust Backend (rslib/) + Atlas Services (atlas/)
+                                                   -> HTTP API (bins/server/) for remote iOS clients
 ```
 
-The workspace is organized into 32 crates across five groups: the Anki core engine (rslib), FFI bridges, Atlas AI/analytics services, executables, and translation infrastructure.
+The workspace is organized into 33 crates across five groups: the Anki core engine (rslib), FFI bridges, Atlas AI/analytics services, executables, and translation infrastructure.
 
 ## Layer Diagram
 
 ```
-┌─────────────────────────────────────────┐
-│  SwiftUI (AnkiApp/)                     │  macOS native UI
-├─────────────────────────────────────────┤
-│  FFI Bridges                            │
-│  • bridge/ (protobuf-based core RPC)    │  C-ABI staticlibs
-│  • atlas_bridge/ (JSON-based analytics) │  exported to Swift
-│  • ffi_common/ (ByteBuffer, error mgmt) │
-├───────────────────┬─────────────────────┤
-│  rslib/           │  atlas/             │
-│  • anki (core)    │  • analytics        │  Rust backend services
-│  • i18n           │  • search           │  with SQLite/PostgreSQL
-│  • proto          │  • generator        │
-│  • sync           │  • rag              │
-│  • io, process    │  • 14 other crates  │
-└───────────────────┴─────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│  SwiftUI (AnkiApp/)                                         │  macOS native UI
+├──────────────────────────┬──────────────────────────────────┤
+│  FFI Bridges             │  HTTP Server (bins/server/)      │
+│  • bridge/               │  • atlas-server (Axum)           │  Local C-ABI
+│  • atlas_bridge/         │  • JSON RPC routes               │  or Remote HTTP
+│  • ffi_common/           │  • iOS client support            │  for iOS clients
+├──────────────────┬───────┴──────────────────────────────────┤
+│  rslib/          │  atlas/                                  │
+│  • anki (core)   │  • analytics, search, generator         │  Rust backend
+│  • i18n          │  • surface-runtime, database            │  with SQLite/
+│  • proto         │  • surface-contracts, 15+ other crates  │  PostgreSQL
+│  • sync          │                                         │
+│  • io, process   │                                         │
+└──────────────────┴─────────────────────────────────────────┘
 ```
 
 ## Crate Directory
@@ -46,9 +47,9 @@ The workspace is organized into 32 crates across five groups: the Anki core engi
 
 | Crate | Package Name | Purpose |
 |-------|-------------|---------|
+| `ffi_common/` | `ffi_common` | Shared FFI utilities: `ByteBuffer` for owned data transfer, panic catching, `FfiError` type, and shared error handling |
 | `bridge/` | `anki_bridge` | C-ABI bridge exporting protobuf-based RPC interface to Swift; `anki_init()`, `anki_command()`, `anki_free()` |
 | `atlas_bridge/` | `atlas_bridge` | C-ABI bridge for atlas services (analytics, search, generation); JSON-based responses |
-| `ffi_common/` | `ffi_common` | Shared FFI utilities: `ByteBuffer` for owned data transfer, panic catching, error handling |
 
 ### Atlas -- AI and Analytics Services (19 crates)
 
@@ -79,6 +80,7 @@ The workspace is organized into 32 crates across five groups: the Anki core engi
 | Crate | Package Name | Purpose |
 |-------|-------------|---------|
 | `bins/cli/` | `anki_cli` | Terminal CLI for batch operations; collection management, card import, sync |
+| `bins/server/` | `anki_atlas_server` | Axum HTTP API server for remote atlas access; supports iOS/iPadOS clients via JSON-based endpoints |
 | `bins/mcp/` | `anki_mcp` | Model Context Protocol server for Claude Code integration; read-only codebase access |
 
 ### Other

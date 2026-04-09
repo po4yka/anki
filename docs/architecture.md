@@ -75,6 +75,27 @@ The macOS app (`AnkiApp/`) follows modern SwiftUI patterns:
 
 See `AnkiApp/README.md` for the full SwiftUI architecture guide.
 
+## Multi-Platform Architecture
+
+The architecture supports both local (macOS) and remote (iOS/iPadOS) atlas access:
+
+### macOS (Local)
+- SwiftUI app calls atlas_bridge via C-ABI FFI
+- PostgreSQL + pgvector for vector storage
+- All features available locally
+
+### iOS/iPadOS (Remote)
+- SwiftUI app uses RemoteAtlasService (HTTP client)
+- Connects to anki-atlas-server running on desktop/cloud
+- SQLite + brute-force cosine similarity for local vectors
+- Core Anki features (rslib) work locally via FFI
+
+### Storage Backends
+| Backend | Use Case | Vector Search |
+|---------|----------|---------------|
+| PostgreSQL + pgvector | macOS, server | HNSW index, hybrid RRF |
+| SQLite (brute-force) | iOS, embedded | O(n) cosine similarity |
+
 ## Protobuf
 
 Protocol Buffer definitions in `proto/anki/` (20 files, 38 services) define

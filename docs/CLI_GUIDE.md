@@ -323,6 +323,44 @@ Input: mode (incremental|force)
 Output: indexing status
 ```
 
+## HTTP API Server
+
+The `anki-atlas-server` binary exposes atlas features as a REST API.
+
+### Starting the Server
+
+```bash
+cargo build --release -p anki-atlas-server
+./target/release/anki-atlas-server
+```
+
+### Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | /health | Health check |
+| POST | /api/search | Hybrid search |
+| POST | /api/search_chunks | Chunk-level search |
+| POST | /api/get_taxonomy_tree | Topic taxonomy |
+| POST | /api/get_coverage | Topic coverage |
+| POST | /api/get_gaps | Gap detection |
+| POST | /api/get_weak_notes | Weak notes |
+| POST | /api/find_duplicates | Duplicate detection |
+| POST | /api/generate_preview | Card generation |
+| POST | /api/obsidian_scan | Obsidian vault scan |
+
+### Configuration
+
+Uses the same environment variables as the CLI (see CONFIG.md).
+Additionally:
+- `ANKIATLAS_API_HOST` — bind address (default: 0.0.0.0)
+- `ANKIATLAS_API_PORT` — port (default: 8080)
+
+### iOS Client Setup
+
+Configure the iOS app to connect to the server URL.
+The RemoteAtlasService handles JSON serialization automatically.
+
 ## Configuration
 
 ### Environment Variables
