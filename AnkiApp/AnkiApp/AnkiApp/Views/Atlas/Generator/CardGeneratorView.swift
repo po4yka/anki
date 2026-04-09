@@ -21,6 +21,7 @@ struct CardGeneratorView: View {
 }
 
 private struct GeneratorContentView: View {
+    @Environment(AppState.self) private var appState
     @State var model: CardGeneratorModel
 
     var body: some View {
@@ -67,6 +68,31 @@ private struct GeneratorContentView: View {
                     List(model.preview?.cards ?? []) { card in
                         CardPreviewView(card: card)
                     }
+
+                    Divider()
+
+                    HStack {
+                        if let savedCount = model.savedCount {
+                            Label("\(savedCount) card\(savedCount == 1 ? "" : "s") added to Default deck.", systemImage: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .font(.callout)
+                        }
+                        if let errorMsg = model.error {
+                            Label(errorMsg, systemImage: "exclamationmark.triangle")
+                                .foregroundStyle(.red)
+                                .font(.callout)
+                        }
+                        Spacer()
+                        if model.isSaving {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
+                        Button("Save \(model.preview?.cards.count ?? 0) Cards to Deck") {
+                            Task { await model.saveCards(service: appState.service) }
+                        }
+                        .disabled(model.preview?.cards.isEmpty ?? true || model.isSaving)
+                    }
+                    .padding([.horizontal, .bottom])
                 }
             }
             .frame(minWidth: 300)

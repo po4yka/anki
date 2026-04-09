@@ -25,7 +25,7 @@ final class AtlasSearchModel {
         error = nil
         let request = SearchRequest(query: query, searchMode: searchMode)
         do {
-            let response: SearchResponse = try await atlas.command(method: "search", request: request)
+            let response = try await atlas.search(request)
             results = response.results
         } catch {
             self.error = error.localizedDescription

@@ -36,7 +36,7 @@ final class ObsidianModel {
         error = nil
         let request = ObsidianScanRequest(vaultPath: vaultPath.path)
         do {
-            let result: ObsidianScanPreview = try await atlas.command(method: "obsidian_scan", request: request)
+            let result = try await atlas.obsidianScan(request)
             scanPreview = result
         } catch {
             self.error = error.localizedDescription

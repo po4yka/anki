@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DuplicatesView: View {
     @Bindable var model: AnalyticsModel
+    @Environment(AppState.self) private var appState
 
     var body: some View {
         VStack {
@@ -13,7 +14,9 @@ struct DuplicatesView: View {
                 )
             } else {
                 List(model.duplicateClusters) { cluster in
-                    ClusterRow(cluster: cluster)
+                    ClusterRow(cluster: cluster) { noteId in
+                        await deleteNote(noteId)
+                    }
                 }
             }
         }
@@ -23,10 +26,20 @@ struct DuplicatesView: View {
             }
         }
     }
+
+    private func deleteNote(_ noteId: Int64) async {
+        do {
+            _ = try await appState.service.removeNotes(noteIds: [noteId], cardIds: [])
+            await model.loadDuplicates()
+        } catch {
+            model.error = error.localizedDescription
+        }
+    }
 }
 
 private struct ClusterRow: View {
     let cluster: DuplicateCluster
+    let onDelete: (Int64) async -> Void
     @State private var isExpanded = false
 
     var body: some View {
@@ -45,6 +58,20 @@ private struct ClusterRow: View {
                         .foregroundStyle(.secondary)
                 }
                 .padding(.vertical, 2)
+                .contextMenu {
+                    Button(role: .destructive) {
+                        Task { await onDelete(item.noteId) }
+                    } label: {
+                        Label("Delete Note", systemImage: "trash")
+                    }
+                }
+                .swipeActions(edge: .trailing) {
+                    Button(role: .destructive) {
+                        Task { await onDelete(item.noteId) }
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                }
             }
         } label: {
             HStack {

@@ -23,7 +23,7 @@ final class AnalyticsModel {
         isLoading = true
         error = nil
         do {
-            let nodes: [TaxonomyNode] = try await atlas.command(method: "get_taxonomy_tree", request: EmptyRequest())
+            let nodes = try await atlas.getTaxonomyTree()
             taxonomyTree = nodes
         } catch {
             self.error = error.localizedDescription
@@ -35,8 +35,7 @@ final class AnalyticsModel {
         isLoading = true
         error = nil
         do {
-            let req = TopicPathRequest(topicPath: topicPath)
-            let result: TopicCoverage? = try await atlas.command(method: "get_coverage", request: req)
+            let result = try await atlas.getCoverage(topicPath: topicPath)
             coverage = result
         } catch {
             self.error = error.localizedDescription
@@ -48,8 +47,7 @@ final class AnalyticsModel {
         isLoading = true
         error = nil
         do {
-            let req = GapsRequest(topicPath: topicPath, minCoverage: minCoverage)
-            let result: [TopicGap] = try await atlas.command(method: "get_gaps", request: req)
+            let result = try await atlas.getGaps(topicPath: topicPath, minCoverage: minCoverage)
             gaps = result
         } catch {
             self.error = error.localizedDescription
@@ -61,8 +59,7 @@ final class AnalyticsModel {
         isLoading = true
         error = nil
         do {
-            let req = TopicPathRequest(topicPath: topicPath)
-            let result: [WeakNote] = try await atlas.command(method: "get_weak_notes", request: req)
+            let result = try await atlas.getWeakNotes(topicPath: topicPath)
             weakNotes = result
         } catch {
             self.error = error.localizedDescription
@@ -74,36 +71,11 @@ final class AnalyticsModel {
         isLoading = true
         error = nil
         do {
-            let req = DuplicatesRequest(threshold: threshold)
-            let result: [DuplicateCluster] = try await atlas.command(method: "find_duplicates", request: req)
-            duplicateClusters = result
+            let response = try await atlas.findDuplicates(threshold: threshold)
+            duplicateClusters = response.clusters
         } catch {
             self.error = error.localizedDescription
         }
         isLoading = false
     }
-}
-
-// MARK: - Request helpers
-
-private struct EmptyRequest: Encodable {}
-
-private struct TopicPathRequest: Encodable {
-    let topicPath: String
-    enum CodingKeys: String, CodingKey {
-        case topicPath = "topic_path"
-    }
-}
-
-private struct GapsRequest: Encodable {
-    let topicPath: String
-    let minCoverage: Int
-    enum CodingKeys: String, CodingKey {
-        case topicPath = "topic_path"
-        case minCoverage = "min_coverage"
-    }
-}
-
-private struct DuplicatesRequest: Encodable {
-    let threshold: Double
 }

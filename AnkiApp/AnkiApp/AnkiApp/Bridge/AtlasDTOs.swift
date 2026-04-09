@@ -315,6 +315,80 @@ struct ObsidianScanPreview: Codable {
     }
 }
 
+// MARK: - Chunk Search
+
+struct ChunkSearchRequest: Codable {
+    var query: String
+    var limit: Int = 20
+    var filters: SearchFilterInput?
+}
+
+struct ChunkSearchResult: Codable, Identifiable {
+    var chunkId: Int64
+    var noteId: Int64
+    var score: Double
+    var text: String
+    var chunkKind: String?
+    var sourceField: String?
+
+    var id: Int64 { chunkId }
+
+    enum CodingKeys: String, CodingKey {
+        case chunkId = "chunk_id"
+        case noteId = "note_id"
+        case score
+        case text
+        case chunkKind = "chunk_kind"
+        case sourceField = "source_field"
+    }
+}
+
+struct ChunkSearchResponse: Codable {
+    var query: String
+    var results: [ChunkSearchResult]
+}
+
+// MARK: - Shared Request Helpers
+
+struct EmptyRequest: Encodable {}
+
+struct TopicPathRequest: Encodable {
+    let topicPath: String
+    enum CodingKeys: String, CodingKey {
+        case topicPath = "topic_path"
+    }
+}
+
+struct GapsRequest: Encodable {
+    let topicPath: String
+    let minCoverage: Int
+    enum CodingKeys: String, CodingKey {
+        case topicPath = "topic_path"
+        case minCoverage = "min_coverage"
+    }
+}
+
+struct DuplicatesRequest: Encodable {
+    let threshold: Double
+}
+
+struct FindDuplicatesResponse: Decodable {
+    let clusters: [DuplicateCluster]
+    let stats: DuplicateStats
+}
+
+struct DuplicateStats: Codable {
+    var totalNotes: Int
+    var clustersFound: Int
+    var duplicateNotes: Int
+
+    enum CodingKeys: String, CodingKey {
+        case totalNotes = "total_notes"
+        case clustersFound = "clusters_found"
+        case duplicateNotes = "duplicate_notes"
+    }
+}
+
 // MARK: - Card Generator
 
 struct GeneratePreviewRequest: Codable {
@@ -324,6 +398,14 @@ struct GeneratePreviewRequest: Codable {
     enum CodingKeys: String, CodingKey {
         case sourceText = "source_text"
         case topic
+    }
+}
+
+struct GeneratePreviewFromFileRequest: Encodable {
+    var filePath: String
+
+    enum CodingKeys: String, CodingKey {
+        case filePath = "file_path"
     }
 }
 
