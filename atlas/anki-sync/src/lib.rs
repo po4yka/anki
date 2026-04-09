@@ -1,4 +1,4 @@
-pub(crate) mod anki_reader;
+pub mod anki_reader;
 pub mod core;
 pub mod engine;
 pub mod progress;

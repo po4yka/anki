@@ -11,6 +11,7 @@ validation = { path = "../validation" }
 taxonomy = { path = "../taxonomy" }
 obsidian = { path = "../obsidian" }
 common = { path = "../common" }
+anki-sync = { path = "../anki-sync" }
 llm = { path = "../llm" }
 fsrs = { workspace = true }
 sha2 = { workspace = true }

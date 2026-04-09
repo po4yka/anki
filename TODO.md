@@ -77,12 +77,12 @@ one work session. Check off items as completed.
 - [x] Edit root `Cargo.toml` -- remove non-Rust workspace members (build/*, pylib/rsbridge, tools/minilints)
 - [x] Edit root `Cargo.toml` -- remove Windows deps (winapi, windows, widestring, embed-resource, junction, libc-stdhandle)
 - [x] Edit root `Cargo.toml` -- remove `pyo3` dependency
-- [ ] Edit `qt/launcher/Cargo.toml` -- remove Windows/Linux platform configs
+- [x] Edit `qt/launcher/Cargo.toml` -- remove Windows/Linux platform configs (qt/ directory removed)
 
 ### 1i. Validation
 - [x] Run `cargo check --workspace`
 - [ ] Run `cargo test --workspace`
-- [ ] Grep for stale references: `grep -r "pylib\|aqt\|rsbridge\|pyo3" rslib/ --include="*.rs"`
+- [x] Grep for stale references: `grep -r "pylib\|aqt\|rsbridge\|pyo3" rslib/ --include="*.rs"` (no matches found)
 - [ ] Commit: "strip non-Rust code for macOS-only SwiftUI build"
 
 ---

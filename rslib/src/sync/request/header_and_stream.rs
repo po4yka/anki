@@ -145,7 +145,11 @@ impl Header for SyncHeader {
             .ok_or_else(axum_extra::headers::Error::invalid)
     }
 
-    fn encode<E: Extend<HeaderValue>>(&self, _values: &mut E) {
-        todo!()
+    fn encode<E: Extend<HeaderValue>>(&self, values: &mut E) {
+        if let Ok(json) = serde_json::to_string(self) {
+            if let Ok(value) = HeaderValue::from_str(&json) {
+                values.extend(std::iter::once(value));
+            }
+        }
     }
 }

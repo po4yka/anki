@@ -1406,6 +1406,7 @@ dependencies = [
 name = "cardloop"
 version = "0.0.0"
 dependencies = [
+ "anki-sync",
  "async-trait",
  "card",
  "chrono",
@@ -4702,6 +4703,7 @@ dependencies = [
 name = "jobs"
 version = "0.0.0"
 dependencies = [
+ "anki-sync",
  "async-trait",
  "chrono",
  "common",
