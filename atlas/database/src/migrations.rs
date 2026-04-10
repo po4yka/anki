@@ -33,6 +33,10 @@ pub static MIGRATIONS: &[(&str, &str)] = &[
         "004_pgvector_note_chunks",
         include_str!("../migrations/004_pgvector_note_chunks.sql"),
     ),
+    (
+        "005_knowledge_graph_topic_cooccurrence",
+        include_str!("../migrations/005_knowledge_graph_topic_cooccurrence.sql"),
+    ),
 ];
 
 /// Run all pending SQL migrations.

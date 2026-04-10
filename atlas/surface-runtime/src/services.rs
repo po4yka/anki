@@ -8,7 +8,7 @@ use crate::workflows::{
     SyncExecutionService, TagAuditService, ValidationService,
 };
 
-pub use crate::service_facades::{AnalyticsFacade, SearchFacade};
+pub use crate::service_facades::{AnalyticsFacade, KnowledgeGraphFacade, SearchFacade};
 pub use crate::services_builder::{
     BridgeServicesConfig, BuildSurfaceServicesOptions, EmbeddingFingerprint,
     build_surface_services, build_surface_services_from_bridge_config,
@@ -19,6 +19,7 @@ pub struct SurfaceServices {
     pub job_manager: Arc<dyn JobManager>,
     pub search: Arc<dyn SearchFacade>,
     pub analytics: Arc<dyn AnalyticsFacade>,
+    pub knowledge_graph: Arc<dyn KnowledgeGraphFacade>,
     pub sync: Arc<SyncExecutionService>,
     pub index: Arc<dyn IndexExecutor>,
     pub generate_preview: Arc<GeneratePreviewService>,
@@ -42,6 +43,7 @@ impl SurfaceServices {
             validation: Arc::new(ValidationService::new()),
             obsidian_scan: Arc::new(ObsidianScanService::new()),
             tag_audit: Arc::new(TagAuditService::new()),
+            knowledge_graph: Arc::new(crate::service_facades::NoopKnowledgeGraphFacade),
             direct_execution_enabled: false,
             db,
             job_manager,
@@ -144,5 +146,6 @@ mod tests {
         );
 
         assert!(!services.direct_execution_enabled());
+        assert_eq!(services.knowledge_graph.status().await.unwrap().concept_edge_count, 0);
     }
 }

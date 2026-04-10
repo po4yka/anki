@@ -141,6 +141,103 @@ struct AnkiAppTests {
         #expect(state.isShowingReviewer)
         #expect(await service.setCurrentDeckCalls() == [42])
     }
+
+    @Test @MainActor
+    func knowledgeGraphModelLoadsStatusAndTaxonomy() async {
+        let atlas = TestAtlasService(
+            statusResponses: [
+                KnowledgeGraphStatus(
+                    conceptEdgeCount: 12,
+                    topicEdgeCount: 4,
+                    lastRefreshedAt: "2026-04-10T12:00:00Z",
+                    similarityAvailable: true,
+                    warnings: []
+                )
+            ],
+            taxonomyTree: [sampleTaxonomyNode()]
+        )
+        let model = KnowledgeGraphModel(atlas: atlas)
+
+        await model.load()
+
+        #expect(model.status?.conceptEdgeCount == 12)
+        #expect(model.status?.topicEdgeCount == 4)
+        #expect(model.taxonomyTree.count == 1)
+        #expect(await atlas.statusCalls() == 1)
+        #expect(await atlas.taxonomyCalls() == 1)
+    }
+
+    @Test @MainActor
+    func knowledgeGraphModelSelectTopicLoadsNeighborhood() async {
+        let node = sampleTaxonomyNode()
+        let atlas = TestAtlasService(
+            taxonomyTree: [node],
+            neighborhoods: [node.topicId: sampleNeighborhoodResponse(rootTopicId: node.topicId)]
+        )
+        let model = KnowledgeGraphModel(atlas: atlas)
+
+        await model.selectTopic(node)
+
+        #expect(model.selectedTopicId == node.topicId)
+        #expect(model.neighborhood?.rootTopicId == node.topicId)
+        #expect(await atlas.neighborhoodCalls() == [node.topicId])
+    }
+
+    @Test @MainActor
+    func knowledgeGraphModelRebuildReloadsStatusAndNeighborhood() async {
+        let node = sampleTaxonomyNode()
+        let atlas = TestAtlasService(
+            statusResponses: [
+                KnowledgeGraphStatus(
+                    conceptEdgeCount: 0,
+                    topicEdgeCount: 0,
+                    lastRefreshedAt: nil,
+                    similarityAvailable: false,
+                    warnings: []
+                ),
+                KnowledgeGraphStatus(
+                    conceptEdgeCount: 8,
+                    topicEdgeCount: 6,
+                    lastRefreshedAt: "2026-04-10T13:00:00Z",
+                    similarityAvailable: true,
+                    warnings: ["Vectors were unavailable for some notes."]
+                )
+            ],
+            taxonomyTree: [node],
+            neighborhoods: [node.topicId: sampleNeighborhoodResponse(rootTopicId: node.topicId)]
+        )
+        let model = KnowledgeGraphModel(atlas: atlas)
+
+        await model.load()
+        await model.selectTopic(node)
+        await model.rebuild()
+
+        #expect(model.status?.conceptEdgeCount == 8)
+        #expect(model.status?.topicEdgeCount == 6)
+        #expect(await atlas.refreshCalls() == 1)
+        #expect(await atlas.neighborhoodCalls() == [node.topicId, node.topicId])
+    }
+
+    @Test @MainActor
+    func noteLinksModelLoadsRelatedNotes() async {
+        let related = NoteLink(
+            noteId: 99,
+            weight: 0.84,
+            edgeType: .related,
+            edgeSource: .tagCooccurrence,
+            textPreview: "Related note preview",
+            deckNames: ["Default"],
+            tags: ["swift"]
+        )
+        let atlas = TestAtlasService(noteLinks: [42: [related]])
+        let model = NoteLinksModel(atlas: atlas)
+
+        await model.load(noteId: 42)
+
+        #expect(model.relatedNotes.count == 1)
+        #expect(model.relatedNotes.first?.noteId == 99)
+        #expect(await atlas.noteLinkCalls() == [42])
+    }
 }
 
 private struct CompareAnswerCall: Equatable, Sendable {
@@ -257,6 +354,155 @@ private actor TestAnkiService: AnkiServiceProtocol {
     }
 }
 
+private actor TestAtlasService: AtlasServiceProtocol {
+    private var remainingStatuses: [KnowledgeGraphStatus]
+    private let taxonomyTreeValue: [TaxonomyNode]
+    private let noteLinksByNoteId: [Int64: [NoteLink]]
+    private let neighborhoodsByTopicId: [Int64: TopicNeighborhoodResponse]
+    private let refreshValue: RefreshKnowledgeGraphResponse
+
+    private var statusCallCount = 0
+    private var taxonomyCallCount = 0
+    private var refreshCallCount = 0
+    private var requestedNoteIds: [Int64] = []
+    private var requestedTopicIds: [Int64] = []
+
+    init(
+        statusResponses: [KnowledgeGraphStatus] = [KnowledgeGraphStatus(
+            conceptEdgeCount: 0,
+            topicEdgeCount: 0,
+            lastRefreshedAt: nil,
+            similarityAvailable: false,
+            warnings: []
+        )],
+        taxonomyTree: [TaxonomyNode] = [],
+        noteLinks: [Int64: [NoteLink]] = [:],
+        neighborhoods: [Int64: TopicNeighborhoodResponse] = [:],
+        refreshValue: RefreshKnowledgeGraphResponse = RefreshKnowledgeGraphResponse(
+            conceptTagEdgesWritten: 0,
+            conceptSimilarityEdgesWritten: 0,
+            topicSpecializationEdgesWritten: 0,
+            topicCooccurrenceEdgesWritten: 0,
+            conceptEdgeCount: 0,
+            topicEdgeCount: 0,
+            warnings: []
+        )
+    ) {
+        self.remainingStatuses = statusResponses
+        self.taxonomyTreeValue = taxonomyTree
+        self.noteLinksByNoteId = noteLinks
+        self.neighborhoodsByTopicId = neighborhoods
+        self.refreshValue = refreshValue
+    }
+
+    func search(_ request: SearchRequest) async throws -> SearchResponse {
+        SearchResponse(
+            query: request.query,
+            results: [],
+            stats: FusionStats(semanticOnly: 0, ftsOnly: 0, both: 0, total: 0),
+            lexicalFallbackUsed: false,
+            querySuggestions: [],
+            autocompleteSuggestions: [],
+            rerankApplied: false,
+            rerankModel: nil,
+            rerankTopN: nil
+        )
+    }
+
+    func searchChunks(_ request: ChunkSearchRequest) async throws -> ChunkSearchResponse {
+        ChunkSearchResponse(query: request.query, results: [])
+    }
+
+    func generatePreview(filePath: String) async throws -> GeneratePreview {
+        GeneratePreview(cards: [], topic: nil)
+    }
+
+    func generatePreviewFromText(_ request: GeneratePreviewRequest) async throws -> GeneratePreview {
+        GeneratePreview(cards: [], topic: request.topic)
+    }
+
+    func getTaxonomyTree(rootPath: String?) async throws -> [TaxonomyNode] {
+        taxonomyCallCount += 1
+        return taxonomyTreeValue
+    }
+
+    func getCoverage(topicPath: String, includeSubtree: Bool) async throws -> TopicCoverage? {
+        nil
+    }
+
+    func getGaps(topicPath: String, minCoverage: Int) async throws -> [TopicGap] {
+        []
+    }
+
+    func getWeakNotes(topicPath: String) async throws -> [WeakNote] {
+        []
+    }
+
+    func findDuplicates(threshold: Double) async throws -> FindDuplicatesResponse {
+        FindDuplicatesResponse(clusters: [], stats: DuplicateStats(totalNotes: 0, clustersFound: 0, duplicateNotes: 0))
+    }
+
+    func kgStatus() async throws -> KnowledgeGraphStatus {
+        statusCallCount += 1
+        if remainingStatuses.count > 1 {
+            return remainingStatuses.removeFirst()
+        }
+        return remainingStatuses.first ?? KnowledgeGraphStatus(
+            conceptEdgeCount: 0,
+            topicEdgeCount: 0,
+            lastRefreshedAt: nil,
+            similarityAvailable: false,
+            warnings: []
+        )
+    }
+
+    func refreshKnowledgeGraph(_ request: RefreshKnowledgeGraphRequest) async throws -> RefreshKnowledgeGraphResponse {
+        refreshCallCount += 1
+        return refreshValue
+    }
+
+    func getNoteLinks(noteId: Int64, limit: Int) async throws -> NoteLinksResponse {
+        requestedNoteIds.append(noteId)
+        return NoteLinksResponse(
+            focusNoteId: noteId,
+            relatedNotes: noteLinksByNoteId[noteId] ?? []
+        )
+    }
+
+    func getTopicNeighborhood(topicId: Int64, maxHops: Int, limitPerHop: Int) async throws -> TopicNeighborhoodResponse {
+        requestedTopicIds.append(topicId)
+        return neighborhoodsByTopicId[topicId] ?? TopicNeighborhoodResponse(
+            rootTopicId: topicId,
+            topics: [],
+            edges: []
+        )
+    }
+
+    func obsidianScan(_ request: ObsidianScanRequest) async throws -> ObsidianScanPreview {
+        ObsidianScanPreview(totalNotes: 0, notes: [])
+    }
+
+    func statusCalls() -> Int {
+        statusCallCount
+    }
+
+    func taxonomyCalls() -> Int {
+        taxonomyCallCount
+    }
+
+    func refreshCalls() -> Int {
+        refreshCallCount
+    }
+
+    func noteLinkCalls() -> [Int64] {
+        requestedNoteIds
+    }
+
+    func neighborhoodCalls() -> [Int64] {
+        requestedTopicIds
+    }
+}
+
 private func makeQueuedCards(cardId: Int64, noteId: Int64, deckId: Int64, templateIdx: UInt32) -> Anki_Scheduler_QueuedCards {
     let card = makeCard(id: cardId, noteId: noteId, deckId: deckId, templateIdx: templateIdx)
     var queuedCard = Anki_Scheduler_QueuedCards.QueuedCard()
@@ -300,4 +546,33 @@ private func replacementNode(fieldName: String, currentText: String) -> Anki_Car
     var node = Anki_CardRendering_RenderedTemplateNode()
     node.replacement = replacement
     return node
+}
+
+private func sampleTaxonomyNode() -> TaxonomyNode {
+    TaxonomyNode(
+        topicId: 1,
+        path: "rust/ownership",
+        label: "Ownership",
+        noteCount: 3,
+        children: []
+    )
+}
+
+private func sampleNeighborhoodResponse(rootTopicId: Int64) -> TopicNeighborhoodResponse {
+    TopicNeighborhoodResponse(
+        rootTopicId: rootTopicId,
+        topics: [
+            TopicNodeSummary(topicId: rootTopicId, path: "rust/ownership", label: "Ownership", noteCount: 3),
+            TopicNodeSummary(topicId: 2, path: "rust/borrowing", label: "Borrowing", noteCount: 2)
+        ],
+        edges: [
+            TopicEdgeView(
+                sourceTopicId: rootTopicId,
+                targetTopicId: 2,
+                edgeType: .related,
+                edgeSource: .topicCooccurrence,
+                weight: 0.66
+            )
+        ]
+    )
 }

@@ -51,6 +51,9 @@ struct GeneralSettingsView: View {
                         Text(name).tag(code)
                     }
                 }
+                Text("Language changes apply the next time the app starts.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)

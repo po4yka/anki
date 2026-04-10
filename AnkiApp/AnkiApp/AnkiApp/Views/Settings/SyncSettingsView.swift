@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct SyncSettingsView: View {
+    @Environment(AppState.self) private var appState
     @AppStorage("ankiwebUsername") private var username = ""
     @AppStorage("syncOnOpen") private var syncOnOpen = false
     @AppStorage("autoSyncInterval") private var autoSyncInterval = 0
@@ -31,9 +32,19 @@ struct SyncSettingsView: View {
         }
         .formStyle(.grouped)
         .padding()
+        .onAppear {
+            appState.refreshSyncSchedule()
+        }
+        .onChange(of: syncOnOpen) { _, _ in
+            appState.refreshSyncSchedule()
+        }
+        .onChange(of: autoSyncInterval) { _, _ in
+            appState.refreshSyncSchedule()
+        }
     }
 }
 
 #Preview {
     SyncSettingsView()
+        .environment(AppState())
 }

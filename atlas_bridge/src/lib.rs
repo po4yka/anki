@@ -17,12 +17,16 @@ use surface_contracts::analytics::{
     DuplicateCluster, DuplicateStats, LabelingStats, TaxonomyLoadSummary, TopicCoverage, TopicGap,
     WeakNote,
 };
+use surface_contracts::knowledge_graph::{
+    KnowledgeGraphStatus, NoteLinksRequest, NoteLinksResponse, RefreshKnowledgeGraphRequest,
+    RefreshKnowledgeGraphResponse, TopicNeighborhoodRequest, TopicNeighborhoodResponse,
+};
 use surface_contracts::search::{
     ChunkSearchRequest, ChunkSearchResponse, SearchRequest, SearchResponse,
 };
 use surface_runtime::{
-    AnalyticsFacade, BridgeServicesConfig, SearchFacade, SurfaceError, SurfaceServices,
-    build_surface_services_from_bridge_config,
+    AnalyticsFacade, BridgeServicesConfig, KnowledgeGraphFacade, SearchFacade, SurfaceError,
+    SurfaceServices, build_surface_services_from_bridge_config,
 };
 use tokio::runtime::Runtime;
 
@@ -175,6 +179,42 @@ impl AnalyticsFacade for NoopAnalytics {
     }
 }
 
+struct NoopKnowledgeGraph;
+
+#[async_trait::async_trait]
+impl KnowledgeGraphFacade for NoopKnowledgeGraph {
+    async fn status(&self) -> Result<KnowledgeGraphStatus, SurfaceError> {
+        Ok(KnowledgeGraphStatus::default())
+    }
+
+    async fn refresh(
+        &self,
+        _request: &RefreshKnowledgeGraphRequest,
+    ) -> Result<RefreshKnowledgeGraphResponse, SurfaceError> {
+        Err(SurfaceError::Configuration(
+            "knowledge graph not configured: provide postgres_url in AtlasConfig".to_string(),
+        ))
+    }
+
+    async fn note_links(
+        &self,
+        _request: &NoteLinksRequest,
+    ) -> Result<NoteLinksResponse, SurfaceError> {
+        Err(SurfaceError::Configuration(
+            "knowledge graph not configured: provide postgres_url in AtlasConfig".to_string(),
+        ))
+    }
+
+    async fn topic_neighborhood(
+        &self,
+        _request: &TopicNeighborhoodRequest,
+    ) -> Result<TopicNeighborhoodResponse, SurfaceError> {
+        Err(SurfaceError::Configuration(
+            "knowledge graph not configured: provide postgres_url in AtlasConfig".to_string(),
+        ))
+    }
+}
+
 /// Opaque handle holding real SurfaceServices and a tokio Runtime.
 pub struct AtlasHandle {
     services: Arc<SurfaceServices>,
@@ -187,12 +227,14 @@ fn build_noop_services(postgres_url: Option<&str>) -> Result<SurfaceServices, St
     let pool = sqlx::postgres::PgPoolOptions::new()
         .connect_lazy(url)
         .map_err(|e| format!("failed to create lazy postgres pool: {e}"))?;
-    Ok(SurfaceServices::new(
+    let mut services = SurfaceServices::new(
         pool,
         Arc::new(NoopJobManager),
         Arc::new(NoopSearch),
         Arc::new(NoopAnalytics),
-    ))
+    );
+    services.knowledge_graph = Arc::new(NoopKnowledgeGraph);
+    Ok(services)
 }
 
 /// Try to build a `BridgeServicesConfig` from the atlas config fields.
@@ -408,6 +450,40 @@ fn dispatch_command(handle: &AtlasHandle, method: &str, input: &[u8]) -> Result<
             serde_json::to_vec(&serde_json::json!({ "clusters": clusters, "stats": stats }))
                 .map_err(|e| e.to_string())
         }
+        "kg_status" => {
+            let response = handle
+                .runtime
+                .block_on(handle.services.knowledge_graph.status())
+                .map_err(|e| e.to_string())?;
+            serde_json::to_vec(&response).map_err(|e| e.to_string())
+        }
+        "kg_refresh" => {
+            let request: RefreshKnowledgeGraphRequest = serde_json::from_slice(input)
+                .map_err(|e| format!("invalid kg_refresh request: {e}"))?;
+            let response = handle
+                .runtime
+                .block_on(handle.services.knowledge_graph.refresh(&request))
+                .map_err(|e| e.to_string())?;
+            serde_json::to_vec(&response).map_err(|e| e.to_string())
+        }
+        "kg_note_links" => {
+            let request: NoteLinksRequest = serde_json::from_slice(input)
+                .map_err(|e| format!("invalid kg_note_links request: {e}"))?;
+            let response = handle
+                .runtime
+                .block_on(handle.services.knowledge_graph.note_links(&request))
+                .map_err(|e| e.to_string())?;
+            serde_json::to_vec(&response).map_err(|e| e.to_string())
+        }
+        "kg_topic_neighborhood" => {
+            let request: TopicNeighborhoodRequest = serde_json::from_slice(input)
+                .map_err(|e| format!("invalid kg_topic_neighborhood request: {e}"))?;
+            let response = handle
+                .runtime
+                .block_on(handle.services.knowledge_graph.topic_neighborhood(&request))
+                .map_err(|e| e.to_string())?;
+            serde_json::to_vec(&response).map_err(|e| e.to_string())
+        }
         "generate_preview" => {
             #[derive(Deserialize)]
             struct Input {
@@ -535,6 +611,10 @@ pub extern "C" fn atlas_free_buffer(buf: ByteBuffer) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use common::types::{NoteId, TopicId};
+    use surface_contracts::knowledge_graph::{
+        NoteLinksRequest, RefreshKnowledgeGraphRequest, TopicNeighborhoodRequest,
+    };
 
     #[test]
     fn init_with_null_config() {
@@ -575,5 +655,72 @@ mod tests {
     #[test]
     fn free_buffer_valid_data_does_not_crash() {
         atlas_free_buffer(ByteBuffer::from_vec(vec![1u8, 2, 3]));
+    }
+
+    fn noop_handle() -> AtlasHandle {
+        let runtime = Runtime::new().expect("create runtime");
+        let services = {
+            let _guard = runtime.enter();
+            build_noop_services(None).expect("build noop services")
+        };
+        AtlasHandle {
+            services: Arc::new(services),
+            runtime,
+        }
+    }
+
+    #[test]
+    fn kg_status_dispatch_round_trips() {
+        let handle = noop_handle();
+
+        let bytes = dispatch_command(&handle, "kg_status", b"{}").expect("kg_status response");
+        let response: KnowledgeGraphStatus =
+            serde_json::from_slice(&bytes).expect("decode kg status");
+
+        assert_eq!(response.concept_edge_count, 0);
+        assert_eq!(response.topic_edge_count, 0);
+        assert!(!response.similarity_available);
+    }
+
+    #[test]
+    fn kg_refresh_dispatch_uses_contract_request() {
+        let handle = noop_handle();
+        let request = RefreshKnowledgeGraphRequest::default();
+        let input = serde_json::to_vec(&request).expect("encode request");
+
+        let error = dispatch_command(&handle, "kg_refresh", &input).expect_err("kg_refresh error");
+
+        assert!(error.contains("knowledge graph not configured"));
+    }
+
+    #[test]
+    fn kg_note_links_dispatch_uses_contract_request() {
+        let handle = noop_handle();
+        let request = NoteLinksRequest {
+            note_id: NoteId(42),
+            limit: 12,
+        };
+        let input = serde_json::to_vec(&request).expect("encode request");
+
+        let error =
+            dispatch_command(&handle, "kg_note_links", &input).expect_err("kg_note_links error");
+
+        assert!(error.contains("knowledge graph not configured"));
+    }
+
+    #[test]
+    fn kg_topic_neighborhood_dispatch_uses_contract_request() {
+        let handle = noop_handle();
+        let request = TopicNeighborhoodRequest {
+            topic_id: TopicId(9),
+            max_hops: 2,
+            limit_per_hop: 20,
+        };
+        let input = serde_json::to_vec(&request).expect("encode request");
+
+        let error = dispatch_command(&handle, "kg_topic_neighborhood", &input)
+            .expect_err("kg_topic_neighborhood error");
+
+        assert!(error.contains("knowledge graph not configured"));
     }
 }

@@ -3,11 +3,13 @@ import SwiftUI
 @main
 struct AnkiApp: App {
     @State private var appState = AppState()
+    @AppStorage("appearance") private var appearance = "system"
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environment(appState)
+                .preferredColorScheme(colorScheme)
                 .sheet(isPresented: Binding(
                     get: { appState.isShowingAddNote },
                     set: { appState.isShowingAddNote = $0 }
@@ -94,6 +96,15 @@ struct AnkiApp: App {
         Settings {
             PreferencesView()
                 .environment(appState)
+                .preferredColorScheme(colorScheme)
+        }
+    }
+
+    private var colorScheme: ColorScheme? {
+        switch appearance {
+            case "light": .light
+            case "dark": .dark
+            default: nil
         }
     }
 }

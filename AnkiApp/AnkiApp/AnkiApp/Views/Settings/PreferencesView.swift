@@ -175,6 +175,7 @@ struct ReviewPreferencesView: View {
         do {
             try await appState.service.setPreferences(prefs: preferences)
             prefs = preferences
+            await appState.refreshReviewPreferences()
         } catch {}
     }
 }

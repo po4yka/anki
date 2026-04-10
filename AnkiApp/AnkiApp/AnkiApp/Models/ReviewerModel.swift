@@ -242,6 +242,11 @@ final class ReviewerModel {
         return String(format: "%d:%02d", mins, secs)
     }
 
+    func hasReachedTimeLimit(_ timeLimitSecs: UInt32) -> Bool {
+        guard timeLimitSecs > 0 else { return false }
+        return elapsedSeconds >= Int(timeLimitSecs)
+    }
+
     // MARK: - Auto-advance
 
     func scheduleAutoShowAnswer() -> Task<Void, Never>? {
@@ -318,18 +323,25 @@ final class ReviewerModel {
         cardId: Int64,
         rating: Anki_Scheduler_CardAnswer.Rating,
         currentState: Anki_Scheduler_SchedulingState,
-        newState: Anki_Scheduler_SchedulingState
+        newState: Anki_Scheduler_SchedulingState,
+        timeLimitSecs: UInt32 = 0
     ) async {
         do {
             let now = Int64(Date().timeIntervalSince1970 * 1000)
-            let milliseconds = UInt32(elapsedSeconds * 1000)
+            let elapsedMilliseconds = elapsedSeconds * 1000
+            let cappedMilliseconds: Int
+            if timeLimitSecs > 0 {
+                cappedMilliseconds = min(elapsedMilliseconds, Int(timeLimitSecs) * 1000)
+            } else {
+                cappedMilliseconds = elapsedMilliseconds
+            }
             _ = try await service.answerCard(
                 cardId: cardId,
                 rating: rating,
                 currentState: currentState,
                 newState: newState,
                 answeredAtMillis: now,
-                millisecondsTaken: milliseconds
+                millisecondsTaken: UInt32(cappedMilliseconds)
             )
             stopTimer()
             await loadQueue()
@@ -403,6 +415,91 @@ final class ReviewerModel {
         } catch {
             undoLabel = nil
         }
+    }
+
+    func intervalLabel(for rating: Anki_Scheduler_CardAnswer.Rating) -> String? {
+        guard let states = queuedCards?.cards.first?.states else { return nil }
+
+        let state: Anki_Scheduler_SchedulingState = switch rating {
+            case .again: states.again
+            case .hard: states.hard
+            case .good: states.good
+            case .easy: states.easy
+            case .UNRECOGNIZED: states.good
+        }
+
+        return formattedInterval(for: state)
+    }
+
+    private func formattedInterval(for state: Anki_Scheduler_SchedulingState) -> String? {
+        switch state.kind {
+            case .normal(let normal):
+                return formattedInterval(for: normal)
+            case .filtered(let filtered):
+                return formattedInterval(for: filtered)
+            case .none:
+                return nil
+        }
+    }
+
+    private func formattedInterval(for normal: Anki_Scheduler_SchedulingState.Normal) -> String? {
+        switch normal.kind {
+            case .new:
+                return nil
+            case .learning(let learning):
+                return formattedSeconds(learning.scheduledSecs)
+            case .review(let review):
+                return formattedDays(review.scheduledDays)
+            case .relearning(let relearning):
+                if relearning.hasLearning {
+                    return formattedSeconds(relearning.learning.scheduledSecs)
+                }
+                if relearning.hasReview {
+                    return formattedDays(relearning.review.scheduledDays)
+                }
+                return nil
+            case .none:
+                return nil
+        }
+    }
+
+    private func formattedInterval(for filtered: Anki_Scheduler_SchedulingState.Filtered) -> String? {
+        switch filtered.kind {
+            case .preview(let preview):
+                return formattedSeconds(preview.scheduledSecs)
+            case .rescheduling(let rescheduling):
+                return formattedInterval(for: rescheduling.originalState)
+            case .none:
+                return nil
+        }
+    }
+
+    private func formattedSeconds(_ seconds: UInt32) -> String {
+        let seconds = Int(seconds)
+        if seconds < 60 {
+            return "\(max(1, seconds))s"
+        }
+        if seconds < 3600 {
+            return "\(Int((Double(seconds) / 60).rounded()))m"
+        }
+        if seconds < 86_400 {
+            return "\(Int((Double(seconds) / 3600).rounded()))h"
+        }
+        return "\(Int((Double(seconds) / 86_400).rounded()))d"
+    }
+
+    private func formattedDays(_ days: UInt32) -> String {
+        let days = Int(days)
+        if days == 0 {
+            return "<1d"
+        }
+        if days < 30 {
+            return "\(days)d"
+        }
+        if days < 365 {
+            return "\(Int((Double(days) / 30).rounded()))mo"
+        }
+        return "\(Int((Double(days) / 365).rounded()))y"
     }
 }
 

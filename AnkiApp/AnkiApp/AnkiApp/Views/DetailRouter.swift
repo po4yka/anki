@@ -25,6 +25,8 @@ struct DetailRouter: View {
                 AtlasSearchView()
             case .analytics:
                 AnalyticsDashboardView()
+            case .knowledgeGraph:
+                KnowledgeGraphView()
             case .generator:
                 CardGeneratorView()
             case .obsidian:

@@ -73,7 +73,11 @@ private struct GeneratorContentView: View {
 
                     HStack {
                         if let savedCount = model.savedCount {
-                            Label("\(savedCount) card\(savedCount == 1 ? "" : "s") added to Default deck.", systemImage: "checkmark.circle.fill")
+                            let deckName = model.savedDeckName ?? "selected deck"
+                            Label(
+                                "\(savedCount) card\(savedCount == 1 ? "" : "s") added to \(deckName).",
+                                systemImage: "checkmark.circle.fill"
+                            )
                                 .foregroundStyle(.green)
                                 .font(.callout)
                         }

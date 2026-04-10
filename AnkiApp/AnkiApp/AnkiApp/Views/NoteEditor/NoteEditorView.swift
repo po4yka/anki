@@ -7,7 +7,11 @@ struct NoteEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showFieldWarning: Bool = false
     @State private var fieldWarningMessage: String = ""
-    var noteId: Int64?
+    @State private var currentNoteId: Int64?
+
+    init(noteId: Int64? = nil) {
+        _currentNoteId = State(initialValue: noteId)
+    }
 
     var body: some View {
         Group {
@@ -26,6 +30,15 @@ struct NoteEditorView: View {
 
                     Section("Tags") {
                         TagEditor(model: model)
+                    }
+
+                    if let currentNoteId, let atlas = appState.atlasService {
+                        Section("See Also") {
+                            SeeAlsoNotesView(atlas: atlas, noteId: currentNoteId) { linkedNoteId in
+                                self.currentNoteId = linkedNoteId
+                                Task { await model.loadNote(id: linkedNoteId) }
+                            }
+                        }
                     }
 
                     if !model.isClozeNotetype, let reqs = model.fieldRequirements {
@@ -60,7 +73,7 @@ struct NoteEditorView: View {
                         .disabled(model.isSaving)
                     }
                 }
-                .navigationTitle(noteId != nil ? "Edit Note" : "Add Note")
+                .navigationTitle(currentNoteId != nil ? "Edit Note" : "Add Note")
                 .alert("Warning", isPresented: $showFieldWarning) {
                     Button("Save Anyway") {
                         Task {
@@ -82,8 +95,8 @@ struct NoteEditorView: View {
                 model = noteEditorModel
                 Task {
                     await noteEditorModel.load()
-                    if let noteId {
-                        await noteEditorModel.loadNote(id: noteId)
+                    if let currentNoteId {
+                        await noteEditorModel.loadNote(id: currentNoteId)
                     }
                 }
             }

@@ -8591,6 +8591,7 @@ dependencies = [
  "hex",
  "indexer",
  "jobs",
+ "knowledge-graph",
  "mockall",
  "obsidian",
  "regex",

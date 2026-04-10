@@ -11,6 +11,7 @@ enum SidebarItem: String, CaseIterable, Identifiable {
     case sync = "Sync"
     case atlasSearch = "Search+"
     case analytics = "Analytics"
+    case knowledgeGraph = "Knowledge Graph"
     case generator = "Generator"
     case obsidian = "Obsidian"
 
@@ -30,6 +31,7 @@ enum SidebarItem: String, CaseIterable, Identifiable {
             case .sync: "arrow.triangle.2.circlepath"
             case .atlasSearch: "sparkle.magnifyingglass"
             case .analytics: "brain.head.profile"
+            case .knowledgeGraph: "point.3.connected.trianglepath.dotted"
             case .generator: "wand.and.stars"
             case .obsidian: "doc.text.magnifyingglass"
         }
@@ -37,7 +39,7 @@ enum SidebarItem: String, CaseIterable, Identifiable {
 
     var isAtlas: Bool {
         switch self {
-            case .atlasSearch, .analytics, .generator, .obsidian: true
+            case .atlasSearch, .analytics, .knowledgeGraph, .generator, .obsidian: true
             default: false
         }
     }
@@ -56,7 +58,7 @@ struct SidebarView: View {
         .exportPkg,
         .sync
     ]
-    private let atlasItems: [SidebarItem] = [.atlasSearch, .analytics, .generator, .obsidian]
+    private let atlasItems: [SidebarItem] = [.atlasSearch, .analytics, .knowledgeGraph, .generator, .obsidian]
 
     var body: some View {
         @Bindable var appState = appState

@@ -12,5 +12,9 @@ protocol AtlasServiceProtocol: Sendable {
     func getGaps(topicPath: String, minCoverage: Int) async throws -> [TopicGap]
     func getWeakNotes(topicPath: String) async throws -> [WeakNote]
     func findDuplicates(threshold: Double) async throws -> FindDuplicatesResponse
+    func kgStatus() async throws -> KnowledgeGraphStatus
+    func refreshKnowledgeGraph(_ request: RefreshKnowledgeGraphRequest) async throws -> RefreshKnowledgeGraphResponse
+    func getNoteLinks(noteId: Int64, limit: Int) async throws -> NoteLinksResponse
+    func getTopicNeighborhood(topicId: Int64, maxHops: Int, limitPerHop: Int) async throws -> TopicNeighborhoodResponse
     func obsidianScan(_ request: ObsidianScanRequest) async throws -> ObsidianScanPreview
 }

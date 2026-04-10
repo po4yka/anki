@@ -57,7 +57,11 @@ struct ReviewerView: View {
 
                         if showCardInfo, let stats = model.cardStats {
                             Divider()
-                            CardInfoSidebar(stats: stats) {
+                            CardInfoSidebar(
+                                stats: stats,
+                                noteId: model.queuedCards?.cards.first?.card.noteID,
+                                onOpenNote: { editingNoteId = $0 }
+                            ) {
                                 showCardInfo = false
                             }
                             .frame(width: 260)
@@ -134,16 +138,20 @@ struct ReviewerView: View {
     // swiftlint:disable:next function_body_length
     private func toolbar(model: ReviewerModel) -> some View {
         HStack {
-            ReviewProgress(
-                newCount: model.queuedCards?.newCount ?? 0,
-                learnCount: model.queuedCards?.learningCount ?? 0,
-                reviewCount: model.queuedCards?.reviewCount ?? 0
-            )
+            if appState.reviewPreferences.showRemainingDueCounts {
+                ReviewProgress(
+                    newCount: model.queuedCards?.newCount ?? 0,
+                    learnCount: model.queuedCards?.learningCount ?? 0,
+                    reviewCount: model.queuedCards?.reviewCount ?? 0
+                )
+            }
 
             if model.showTimer {
                 Text(model.formattedTime)
                     .monospacedDigit()
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(
+                        model.hasReachedTimeLimit(appState.reviewPreferences.timeLimitSecs) ? .red : .secondary
+                    )
                     .font(.caption)
             }
 
@@ -170,7 +178,7 @@ struct ReviewerView: View {
             .buttonStyle(.borderless)
             .help("Edit Note")
 
-            if !model.currentAvTags.isEmpty {
+            if !appState.reviewPreferences.hideAudioPlayButtons && !model.currentAvTags.isEmpty {
                 Button {
                     replayAudio()
                 } label: {
@@ -216,7 +224,9 @@ struct ReviewerView: View {
             }
 
             if showingAnswer {
-                AnswerBar { rating in
+                AnswerBar(
+                    choices: answerChoices(for: model)
+                ) { rating in
                     performAnswer(model: model, rating: rating)
                 }
                 .padding()
@@ -235,7 +245,9 @@ struct ReviewerView: View {
 
     private func performAnswer(model: ReviewerModel, rating: Anki_Scheduler_CardAnswer.Rating) {
         cancelAutoTasks()
-        stopAllAudio()
+        if appState.reviewPreferences.interruptAudioWhenAnswering {
+            stopAllAudio()
+        }
         showingAnswer = false
         if let card = model.queuedCards?.cards.first,
            card.hasStates {
@@ -252,7 +264,8 @@ struct ReviewerView: View {
                     cardId: card.card.id,
                     rating: rating,
                     currentState: states.current,
-                    newState: newState
+                    newState: newState,
+                    timeLimitSecs: appState.reviewPreferences.timeLimitSecs
                 )
             }
         }
@@ -390,6 +403,39 @@ struct ReviewerView: View {
         Task { await ttsService.stop() }
         audioPlayer?.pause()
     }
+
+    private func answerChoices(for model: ReviewerModel) -> [AnswerBar.Choice] {
+        [
+            AnswerBar.Choice(
+                rating: .again,
+                label: "Again",
+                interval: appState.reviewPreferences.showIntervalsOnButtons ? model.intervalLabel(for: .again) : nil,
+                color: .red,
+                shortcut: "1"
+            ),
+            AnswerBar.Choice(
+                rating: .hard,
+                label: "Hard",
+                interval: appState.reviewPreferences.showIntervalsOnButtons ? model.intervalLabel(for: .hard) : nil,
+                color: .orange,
+                shortcut: "2"
+            ),
+            AnswerBar.Choice(
+                rating: .good,
+                label: "Good",
+                interval: appState.reviewPreferences.showIntervalsOnButtons ? model.intervalLabel(for: .good) : nil,
+                color: .green,
+                shortcut: "3"
+            ),
+            AnswerBar.Choice(
+                rating: .easy,
+                label: "Easy",
+                interval: appState.reviewPreferences.showIntervalsOnButtons ? model.intervalLabel(for: .easy) : nil,
+                color: .blue,
+                shortcut: "4"
+            )
+        ]
+    }
 }
 
 // MARK: - Type Answer Comparison
@@ -425,7 +471,10 @@ private struct TypeAnswerComparison: View {
 // MARK: - Card Info Sidebar
 
 private struct CardInfoSidebar: View {
+    @Environment(AppState.self) private var appState
     let stats: Anki_Stats_CardStatsResponse
+    let noteId: Int64?
+    let onOpenNote: (Int64) -> Void
     let onClose: () -> Void
 
     var body: some View {
@@ -476,6 +525,16 @@ private struct CardInfoSidebar: View {
 
                     infoRow("Average Time", String(format: "%.1fs", stats.averageSecs))
                     infoRow("Total Time", String(format: "%.1fs", stats.totalSecs))
+
+                    if let noteId, let atlas = appState.atlasService {
+                        Divider()
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("See Also")
+                                .font(.headline)
+                            SeeAlsoNotesView(atlas: atlas, noteId: noteId, onOpenNote: onOpenNote)
+                        }
+                    }
                 }
                 .padding()
             }

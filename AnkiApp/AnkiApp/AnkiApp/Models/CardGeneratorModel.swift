@@ -10,6 +10,7 @@ final class CardGeneratorModel {
     var isGenerating: Bool = false
     var isSaving: Bool = false
     var savedCount: Int?
+    var savedDeckName: String?
     var error: String?
 
     private let atlas: any AtlasServiceProtocol
@@ -37,42 +38,36 @@ final class CardGeneratorModel {
         isGenerating = false
     }
 
-    func saveCards(service: AnkiService) async {
+    func saveCards(service: any AnkiServiceProtocol) async {
         guard let cards = preview?.cards, !cards.isEmpty else { return }
         isSaving = true
         error = nil
         savedCount = nil
+        savedDeckName = nil
         do {
-            // Fetch notetype names to find the Basic notetype ID
-            let notetypeNames = try await service.getNotetypeNames()
-            guard let basicEntry = notetypeNames.entries.first(where: { $0.name == "Basic" })
-                ?? notetypeNames.entries.first
-            else {
-                error = "No notetypes available."
-                isSaving = false
-                return
-            }
-            let notetypeId = basicEntry.id
-            // Fetch the full notetype to get field order
-            let notetype = try await service.getNotetype(id: notetypeId)
+            let defaults = try await service.defaultsForAdding(homeDeckOfCurrentReviewCard: 0)
+            let deck = try await service.getDeck(id: defaults.deckID)
+            let notetypeId = defaults.notetypeID
 
             var count = 0
             for card in cards {
-                var note = Anki_Notes_Note()
+                var note = try await service.newNote(notetypeId: notetypeId)
                 note.notetypeID = notetypeId
-                // Map front to first field, back to second field (Basic notetype layout)
-                if notetype.fields.count >= 2 {
-                    note.fields = [card.front, card.back]
-                } else if notetype.fields.count == 1 {
-                    note.fields = [card.front]
+
+                if note.fields.count >= 2 {
+                    note.fields[0] = card.front
+                    note.fields[1] = card.back
+                } else if note.fields.count == 1 {
+                    note.fields[0] = card.front
                 } else {
                     note.fields = [card.front, card.back]
                 }
-                // Use deck ID 1 (Default deck)
-                _ = try await service.addNote(note: note, deckId: 1)
+
+                _ = try await service.addNote(note: note, deckId: defaults.deckID)
                 count += 1
             }
             savedCount = count
+            savedDeckName = deck.name
         } catch {
             self.error = error.localizedDescription
         }

@@ -16,15 +16,6 @@ struct AppearanceSettingsView: View {
         }
         .formStyle(.grouped)
         .padding()
-        .preferredColorScheme(colorScheme)
-    }
-
-    private var colorScheme: ColorScheme? {
-        switch appearance {
-            case "light": .light
-            case "dark": .dark
-            default: nil
-        }
     }
 }
 

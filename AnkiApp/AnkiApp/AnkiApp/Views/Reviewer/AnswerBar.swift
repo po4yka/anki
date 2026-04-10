@@ -1,21 +1,32 @@
 import SwiftUI
 
 struct AnswerBar: View {
+    struct Choice: Identifiable {
+        let rating: Anki_Scheduler_CardAnswer.Rating
+        let label: String
+        let interval: String?
+        let color: Color
+        let shortcut: String
+
+        var id: Int {
+            rating.rawValue
+        }
+    }
+
+    let choices: [Choice]
     let onAnswer: (Anki_Scheduler_CardAnswer.Rating) -> Void
 
     var body: some View {
         HStack(spacing: 12) {
-            AnswerButton(label: "Again", color: .red, shortcut: "1") {
-                onAnswer(.again)
-            }
-            AnswerButton(label: "Hard", color: .orange, shortcut: "2") {
-                onAnswer(.hard)
-            }
-            AnswerButton(label: "Good", color: .green, shortcut: "3") {
-                onAnswer(.good)
-            }
-            AnswerButton(label: "Easy", color: .blue, shortcut: "4") {
-                onAnswer(.easy)
+            ForEach(choices) { choice in
+                AnswerButton(
+                    label: choice.label,
+                    interval: choice.interval,
+                    color: choice.color,
+                    shortcut: choice.shortcut
+                ) {
+                    onAnswer(choice.rating)
+                }
             }
         }
     }
@@ -23,14 +34,22 @@ struct AnswerBar: View {
 
 private struct AnswerButton: View {
     let label: String
+    let interval: String?
     let color: Color
     let shortcut: String
     let action: () -> Void
 
     var body: some View {
         let button = Button(action: action) {
-            Text(label)
-                .frame(minWidth: 80)
+            VStack(spacing: 2) {
+                Text(label)
+                if let interval {
+                    Text(interval)
+                        .font(.caption2)
+                        .foregroundStyle(.primary.opacity(0.85))
+                }
+            }
+            .frame(minWidth: 80)
         }
 
         if let key = shortcut.first {

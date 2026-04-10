@@ -125,6 +125,33 @@ actor AtlasService: AtlasServiceProtocol {
         try command(method: "find_duplicates", request: DuplicatesRequest(threshold: threshold))
     }
 
+    func kgStatus() async throws -> KnowledgeGraphStatus {
+        try command(method: "kg_status", request: EmptyRequest())
+    }
+
+    func refreshKnowledgeGraph(_ request: RefreshKnowledgeGraphRequest) async throws -> RefreshKnowledgeGraphResponse {
+        try command(method: "kg_refresh", request: request)
+    }
+
+    func getNoteLinks(noteId: Int64, limit: Int = 12) async throws -> NoteLinksResponse {
+        try command(method: "kg_note_links", request: NoteLinksRequest(noteId: noteId, limit: limit))
+    }
+
+    func getTopicNeighborhood(
+        topicId: Int64,
+        maxHops: Int = 2,
+        limitPerHop: Int = 20
+    ) async throws -> TopicNeighborhoodResponse {
+        try command(
+            method: "kg_topic_neighborhood",
+            request: TopicNeighborhoodRequest(
+                topicId: topicId,
+                maxHops: maxHops,
+                limitPerHop: limitPerHop
+            )
+        )
+    }
+
     func obsidianScan(_ request: ObsidianScanRequest) async throws -> ObsidianScanPreview {
         try command(method: "obsidian_scan", request: request)
     }

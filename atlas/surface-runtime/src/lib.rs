@@ -7,8 +7,8 @@ pub mod workflows;
 
 pub use error::SurfaceError;
 pub use services::{
-    AnalyticsFacade, BridgeServicesConfig, BuildSurfaceServicesOptions, SearchFacade,
-    SurfaceServices, build_surface_services, build_surface_services_from_bridge_config,
+    AnalyticsFacade, BridgeServicesConfig, BuildSurfaceServicesOptions, KnowledgeGraphFacade,
+    SearchFacade, SurfaceServices, build_surface_services, build_surface_services_from_bridge_config,
 };
 pub use workflows::{
     GeneratePreview, GeneratePreviewService, IndexExecutionSummary, IndexExecutor, IndexingService,

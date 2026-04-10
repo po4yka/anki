@@ -89,6 +89,29 @@ actor RemoteAtlasService: AtlasServiceProtocol {
         try await request(method: "find_duplicates", body: DuplicatesRequest(threshold: threshold))
     }
 
+    func kgStatus() async throws -> KnowledgeGraphStatus {
+        try await request(method: "kg_status", body: EmptyRequest())
+    }
+
+    func refreshKnowledgeGraph(_ req: RefreshKnowledgeGraphRequest) async throws -> RefreshKnowledgeGraphResponse {
+        try await request(method: "kg_refresh", body: req)
+    }
+
+    func getNoteLinks(noteId: Int64, limit: Int = 12) async throws -> NoteLinksResponse {
+        try await request(method: "kg_note_links", body: NoteLinksRequest(noteId: noteId, limit: limit))
+    }
+
+    func getTopicNeighborhood(
+        topicId: Int64,
+        maxHops: Int = 2,
+        limitPerHop: Int = 20
+    ) async throws -> TopicNeighborhoodResponse {
+        try await request(
+            method: "kg_topic_neighborhood",
+            body: TopicNeighborhoodRequest(topicId: topicId, maxHops: maxHops, limitPerHop: limitPerHop)
+        )
+    }
+
     func obsidianScan(_ req: ObsidianScanRequest) async throws -> ObsidianScanPreview {
         try await request(method: "obsidian_scan", body: req)
     }

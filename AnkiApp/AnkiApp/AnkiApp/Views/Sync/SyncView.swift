@@ -2,12 +2,13 @@ import SwiftUI
 
 struct SyncView: View {
     @Environment(AppState.self) private var appState
-    @State private var model: SyncModel?
+    @AppStorage("ankiwebUsername") private var storedUsername = ""
     @State private var username: String = ""
     @State private var password: String = ""
     @State private var showFullSyncAlert: Bool = false
 
     var body: some View {
+        let model = appState.syncModel
         Group {
             if !appState.isCollectionOpen {
                 ContentUnavailableView {
@@ -20,25 +21,23 @@ struct SyncView: View {
                     }
                     .buttonStyle(.borderedProminent)
                 }
-            } else if let model {
+            } else {
                 if model.isAuthenticated {
                     authenticatedView(model: model)
                 } else {
                     loginView(model: model)
                 }
-            } else {
-                ProgressView()
             }
         }
         .navigationTitle("Sync")
         .onAppear {
-            if model == nil {
-                model = SyncModel(service: appState.service)
+            if username.isEmpty {
+                username = storedUsername
             }
         }
         .ankiErrorAlert(Binding(
-            get: { model?.lastSyncError },
-            set: { model?.lastSyncError = $0 }
+            get: { model.lastSyncError },
+            set: { model.lastSyncError = $0 }
         ))
     }
 
@@ -115,7 +114,6 @@ struct SyncView: View {
 
             Button("Sign Out", role: .destructive) {
                 model.logout()
-                username = ""
                 password = ""
             }
             .buttonStyle(.plain)
@@ -195,7 +193,9 @@ struct SyncView: View {
         guard !username.isEmpty, !password.isEmpty else { return }
         await model.login(username: username, password: password)
         if model.isAuthenticated {
+            storedUsername = username
             password = ""
+            appState.refreshSyncSchedule()
         }
     }
 }

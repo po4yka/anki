@@ -12,6 +12,9 @@ use axum::{
 use common::config::Settings;
 use serde::Deserialize;
 use serde_json::Value;
+use surface_contracts::knowledge_graph::{
+    NoteLinksRequest, RefreshKnowledgeGraphRequest, TopicNeighborhoodRequest,
+};
 use surface_runtime::{BuildSurfaceServicesOptions, SurfaceServices, build_surface_services};
 use tower_http::cors::CorsLayer;
 use tracing::info;
@@ -50,6 +53,10 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/get_gaps", post(handle_gaps))
         .route("/api/get_weak_notes", post(handle_weak_notes))
         .route("/api/find_duplicates", post(handle_duplicates))
+        .route("/api/kg_status", post(handle_kg_status))
+        .route("/api/kg_refresh", post(handle_kg_refresh))
+        .route("/api/kg_note_links", post(handle_kg_note_links))
+        .route("/api/kg_topic_neighborhood", post(handle_kg_topic_neighborhood))
         .route("/api/generate_preview", post(handle_generate_preview))
         .route("/api/obsidian_scan", post(handle_obsidian_scan))
         .route("/health", get(handle_health))
@@ -233,6 +240,59 @@ async fn handle_duplicates(
         .await
         .map_err(AppError::internal)?;
     serde_json::to_value(serde_json::json!({ "clusters": clusters, "stats": stats }))
+        .map(Json)
+        .map_err(AppError::internal)
+}
+
+async fn handle_kg_status(State(services): State<AppState>) -> Result<Json<Value>, AppError> {
+    let result = services
+        .knowledge_graph
+        .status()
+        .await
+        .map_err(AppError::internal)?;
+    serde_json::to_value(result)
+        .map(Json)
+        .map_err(AppError::internal)
+}
+
+async fn handle_kg_refresh(
+    State(services): State<AppState>,
+    Json(request): Json<RefreshKnowledgeGraphRequest>,
+) -> Result<Json<Value>, AppError> {
+    let result = services
+        .knowledge_graph
+        .refresh(&request)
+        .await
+        .map_err(AppError::internal)?;
+    serde_json::to_value(result)
+        .map(Json)
+        .map_err(AppError::internal)
+}
+
+async fn handle_kg_note_links(
+    State(services): State<AppState>,
+    Json(request): Json<NoteLinksRequest>,
+) -> Result<Json<Value>, AppError> {
+    let result = services
+        .knowledge_graph
+        .note_links(&request)
+        .await
+        .map_err(AppError::internal)?;
+    serde_json::to_value(result)
+        .map(Json)
+        .map_err(AppError::internal)
+}
+
+async fn handle_kg_topic_neighborhood(
+    State(services): State<AppState>,
+    Json(request): Json<TopicNeighborhoodRequest>,
+) -> Result<Json<Value>, AppError> {
+    let result = services
+        .knowledge_graph
+        .topic_neighborhood(&request)
+        .await
+        .map_err(AppError::internal)?;
+    serde_json::to_value(result)
         .map(Json)
         .map_err(AppError::internal)
 }

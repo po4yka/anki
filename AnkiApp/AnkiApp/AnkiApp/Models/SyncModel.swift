@@ -31,6 +31,13 @@ final class SyncModel {
         auth != nil
     }
 
+    var isSyncing: Bool {
+        if case .syncing = state {
+            return true
+        }
+        return false
+    }
+
     func login(username: String, password: String) async {
         state = .syncing("Logging in...")
         do {

@@ -40,6 +40,8 @@ pub enum SurfaceError {
     Analytics(#[from] analytics::AnalyticsError),
     #[error("obsidian error: {0}")]
     Obsidian(#[from] obsidian::ObsidianError),
+    #[error("knowledge graph error: {0}")]
+    KnowledgeGraph(#[from] knowledge_graph::KnowledgeGraphError),
     #[error("configuration error: {0}")]
     Configuration(String),
     #[error("reindex required: {0}")]

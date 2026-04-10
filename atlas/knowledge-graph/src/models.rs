@@ -33,6 +33,8 @@ pub enum EdgeSource {
     Wikilink,
     /// Parent/child path relationship in taxonomy.
     Taxonomy,
+    /// Topics that frequently co-occur on the same notes.
+    TopicCooccurrence,
     /// User-curated relationship.
     Manual,
 }
@@ -83,6 +85,10 @@ mod tests {
         assert_eq!(
             EdgeSource::from_str("tag_cooccurrence").unwrap(),
             EdgeSource::TagCooccurrence
+        );
+        assert_eq!(
+            EdgeSource::from_str("topic_cooccurrence").unwrap(),
+            EdgeSource::TopicCooccurrence
         );
         assert_eq!(EdgeSource::Embedding.to_string(), "embedding");
     }

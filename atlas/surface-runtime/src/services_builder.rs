@@ -10,6 +10,7 @@ use database::create_pool;
 use indexer::embeddings::{EmbeddingProvider, EmbeddingProviderConfig, create_embedding_provider};
 use indexer::vector::VectorRepository;
 use jobs::{JobManager, PgJobManager};
+use knowledge_graph::SqlxKnowledgeGraphRepository;
 use search::repository::SqlxSearchReadRepository;
 use search::reranker::CrossEncoderReranker;
 use search::service::SearchService;
@@ -17,8 +18,8 @@ use sqlx::PgPool;
 
 use crate::error::SurfaceError;
 use crate::service_facades::{
-    AnalyticsFacadeImpl, SearchFacadeImpl, SharedEmbeddingProvider, SharedReranker,
-    SharedVectorRepository,
+    AnalyticsFacadeImpl, KnowledgeGraphFacadeImpl, SearchFacadeImpl, SharedEmbeddingProvider,
+    SharedReranker, SharedVectorRepository,
 };
 use crate::services::SurfaceServices;
 use crate::workflows::{IndexingService, SyncExecutionService};
@@ -287,13 +288,19 @@ pub async fn build_surface_services_from_bridge_config(
     let analytics = Arc::new(AnalyticsFacadeImpl {
         inner: AnalyticsService::new(
             embedding,
-            vector_repo,
+            vector_repo.clone(),
             Arc::new(SqlxAnalyticsRepository::new(db.clone())),
         ),
     }) as Arc<dyn crate::AnalyticsFacade>;
 
     let job_manager = Arc::new(NoopBridgeJobManager) as Arc<dyn JobManager>;
-    Ok(SurfaceServices::new(db, job_manager, search, analytics))
+    let mut services = SurfaceServices::new(db.clone(), job_manager, search, analytics);
+    services.knowledge_graph = Arc::new(KnowledgeGraphFacadeImpl {
+        pool: db.clone(),
+        repo: Arc::new(SqlxKnowledgeGraphRepository::new(db)),
+        vector_store: vector_repo,
+    });
+    Ok(services)
 }
 
 /// Minimal job manager for bridge mode (no background job queue).
@@ -393,6 +400,11 @@ pub async fn build_surface_services(
     ) as Arc<dyn JobManager>;
 
     let mut services = SurfaceServices::new(db.clone(), job_manager, search, analytics);
+    services.knowledge_graph = Arc::new(KnowledgeGraphFacadeImpl {
+        pool: db.clone(),
+        repo: Arc::new(SqlxKnowledgeGraphRepository::new(db.clone())),
+        vector_store: vector_repo.clone(),
+    });
     if options.enable_direct_execution {
         let index = Arc::new(IndexingService::new(
             db.clone(),

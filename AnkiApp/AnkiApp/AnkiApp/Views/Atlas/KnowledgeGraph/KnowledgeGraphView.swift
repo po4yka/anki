@@ -1,543 +1,286 @@
 import SwiftUI
 
-// MARK: - Data types
-
-struct GraphNode: Identifiable, Equatable {
-    let id: String
-    let label: String
-    let noteCount: Int
-    let childTags: [String]
+private extension TaxonomyNode {
+    var childrenOrNil: [TaxonomyNode]? {
+        children.isEmpty ? nil : children
+    }
 }
-
-struct GraphEdge: Identifiable {
-    var id: String { "\(source)-\(target)" }
-    let source: String
-    let target: String
-    let weight: CGFloat
-}
-
-// MARK: - Main view
 
 struct KnowledgeGraphView: View {
     @Environment(AppState.self) private var appState
-    @State private var nodes: [GraphNode] = []
-    @State private var edges: [GraphEdge] = []
-    @State private var selectedNode: GraphNode?
-    @State private var isLoading = false
-    @State private var searchText = ""
+    @State private var model: KnowledgeGraphModel?
+
+    var body: some View {
+        guard let atlas = appState.atlasService else {
+            return AnyView(ContentUnavailableView(
+                "Atlas Not Configured",
+                systemImage: "point.3.connected.trianglepath.dotted",
+                description: Text("Configure Atlas in Settings to use the Knowledge Graph.")
+            ))
+        }
+
+        let knowledgeGraphModel = model ?? KnowledgeGraphModel(atlas: atlas)
+        return AnyView(KnowledgeGraphContentView(model: knowledgeGraphModel)
+            .onAppear {
+                if model == nil {
+                    model = knowledgeGraphModel
+                    Task { await knowledgeGraphModel.load() }
+                }
+            })
+    }
+}
+
+private struct KnowledgeGraphContentView: View {
+    @State var model: KnowledgeGraphModel
 
     var body: some View {
         HSplitView {
-            graphPanel
-                .frame(minWidth: 300, idealWidth: 500)
-            detailPanel
-                .frame(minWidth: 240, idealWidth: 280)
-        }
-        .task { await loadGraph() }
-    }
-
-    // MARK: - Graph panel
-
-    private var graphPanel: some View {
-        VStack(spacing: 0) {
-            searchBar
-            Divider()
-            if isLoading {
-                loadingView
-            } else if nodes.isEmpty {
-                emptyView
-            } else {
-                GraphCanvasView(
-                    nodes: filteredNodes,
-                    edges: filteredEdges,
-                    selectedNodeId: selectedNode?.id,
-                    onSelectNode: { id in
-                        selectedNode = nodes.first { $0.id == id }
-                    }
-                )
-            }
-        }
-    }
-
-    private var searchBar: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(.secondary)
-                .imageScale(.small)
-            TextField("Filter concepts...", text: $searchText)
-                .textFieldStyle(.plain)
-            if !searchText.isEmpty {
-                Button {
-                    searchText = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.secondary)
-                        .imageScale(.small)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Clear search")
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-    }
-
-    private var loadingView: some View {
-        VStack(spacing: 12) {
-            ProgressView()
-            Text("Building knowledge graph...")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private var emptyView: some View {
-        ContentUnavailableView(
-            "No Concepts",
-            systemImage: "brain",
-            description: Text("Add tags to your notes to build a knowledge graph.")
-        )
-    }
-
-    // MARK: - Detail panel
-
-    private var detailPanel: some View {
-        Group {
-            if let node = selectedNode {
-                NodeDetailView(
+            List(model.taxonomyTree, children: \.childrenOrNil) { node in
+                KnowledgeGraphTaxonomyRow(
                     node: node,
-                    relatedNodes: relatedNodes(for: node),
-                    onSelectRelated: { related in
-                        selectedNode = related
-                    }
+                    isSelected: model.selectedTopicId == node.topicId
                 )
-            } else {
-                ContentUnavailableView(
-                    "Select a Concept",
-                    systemImage: "arrow.left",
-                    description: Text("Click a node in the graph to view details.")
-                )
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    // MARK: - Filtering
-
-    private var filteredNodes: [GraphNode] {
-        guard !searchText.isEmpty else { return nodes }
-        return nodes.filter { $0.label.localizedCaseInsensitiveContains(searchText) }
-    }
-
-    private var filteredEdges: [GraphEdge] {
-        guard !searchText.isEmpty else { return edges }
-        let ids = Set(filteredNodes.map { $0.id })
-        return edges.filter { ids.contains($0.source) && ids.contains($0.target) }
-    }
-
-    private func relatedNodes(for node: GraphNode) -> [GraphNode] {
-        let connectedIds = edges
-            .filter { $0.source == node.id || $0.target == node.id }
-            .flatMap { [$0.source, $0.target] }
-        let ids = Set(connectedIds).subtracting([node.id])
-        return nodes.filter { ids.contains($0.id) }
-    }
-
-    // MARK: - Data loading
-
-    private func loadGraph() async {
-        guard appState.isCollectionOpen else { return }
-        isLoading = true
-        defer { isLoading = false }
-        do {
-            let tagList = try await appState.service.allTags()
-            let allTags = tagList.vals
-            let topLevel = Set(allTags.map { $0.components(separatedBy: "::").first ?? $0 })
-            var builtNodes: [GraphNode] = []
-            for tagName in topLevel.sorted() {
-                let children = allTags.filter { $0.hasPrefix(tagName + "::") || $0 == tagName }
-                builtNodes.append(GraphNode(
-                    id: tagName,
-                    label: tagName,
-                    noteCount: children.count,
-                    childTags: children.sorted()
-                ))
-            }
-            // Build edges: nodes that share child tags are related
-            var builtEdges: [GraphEdge] = []
-            for i in builtNodes.indices {
-                for j in builtNodes.indices where j > i {
-                    let setA = Set(builtNodes[i].childTags)
-                    let setB = Set(builtNodes[j].childTags)
-                    let shared = setA.intersection(setB).count
-                    if shared > 0 {
-                        let weight = CGFloat(shared) / CGFloat(max(setA.count, setB.count))
-                        builtEdges.append(GraphEdge(
-                            source: builtNodes[i].id,
-                            target: builtNodes[j].id,
-                            weight: min(1.0, weight)
-                        ))
-                    }
+                .onTapGesture {
+                    Task { await model.selectTopic(node) }
                 }
             }
-            nodes = builtNodes
-            edges = builtEdges
-        } catch {}
-    }
-}
+            .frame(minWidth: 240)
 
-// MARK: - Canvas graph view
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    headerCard
 
-struct GraphCanvasView: View {
-    let nodes: [GraphNode]
-    let edges: [GraphEdge]
-    let selectedNodeId: String?
-    let onSelectNode: (String) -> Void
-
-    @State private var positions: [String: CGPoint] = [:]
-    @State private var canvasSize: CGSize = .zero
-    @State private var scale: CGFloat = 1.0
-    @State private var offset: CGSize = .zero
-    @GestureState private var gestureScale: CGFloat = 1.0
-    @GestureState private var gestureDrag: CGSize = .zero
-
-    var body: some View {
-        GeometryReader { geo in
-            Canvas { context, size in
-                let effectiveScale = scale * gestureScale
-                let tx = offset.width + gestureDrag.width
-                let ty = offset.height + gestureDrag.height
-                var ctx = context
-                ctx.translateBy(x: tx, y: ty)
-                ctx.scaleBy(x: effectiveScale, y: effectiveScale)
-
-                drawEdges(context: &ctx)
-                drawNodes(context: &ctx)
-            }
-            .gesture(panGesture.simultaneously(with: magnifyGesture))
-            .onTapGesture { location in
-                handleTap(at: location)
-            }
-            .onChange(of: nodes) { _, _ in
-                layoutNodes(in: geo.size)
-            }
-            .onAppear {
-                canvasSize = geo.size
-                layoutNodes(in: geo.size)
-            }
-        }
-        .overlay(alignment: .bottomTrailing) {
-            zoomControls
-                .padding(12)
-        }
-        .overlay(alignment: .topLeading) {
-            graphLegend
-                .padding(12)
-        }
-    }
-
-    // MARK: - Drawing
-
-    private func drawEdges(context: inout GraphicsContext) {
-        for edge in edges {
-            guard let from = positions[edge.source],
-                  let to = positions[edge.target] else { continue }
-            var path = Path()
-            path.move(to: from)
-            path.addLine(to: to)
-            let alpha = 0.15 + Double(edge.weight) * 0.35
-            context.stroke(
-                path,
-                with: .color(.secondary.opacity(alpha)),
-                lineWidth: 1 + edge.weight * 2
-            )
-        }
-    }
-
-    private func drawNodes(context: inout GraphicsContext) {
-        for node in nodes {
-            guard let pos = positions[node.id] else { continue }
-            let isSelected = node.id == selectedNodeId
-            let radius: CGFloat = nodeRadius(for: node, selected: isSelected)
-            let rect = CGRect(
-                x: pos.x - radius, y: pos.y - radius,
-                width: radius * 2, height: radius * 2
-            )
-
-            // Shadow
-            var shadowCtx = context
-            shadowCtx.opacity = 0.15
-            shadowCtx.fill(
-                Path(ellipseIn: rect.insetBy(dx: -2, dy: -2).offsetBy(dx: 0, dy: 2)),
-                with: .color(.black)
-            )
-
-            // Fill
-            let fillColor: Color = isSelected ? .accentColor : nodeColor(for: node)
-            context.fill(Path(ellipseIn: rect), with: .color(fillColor))
-
-            // Stroke
-            let strokeColor: Color = isSelected ? .accentColor : .white.opacity(0.4)
-            context.stroke(Path(ellipseIn: rect), with: .color(strokeColor), lineWidth: isSelected ? 2.5 : 1)
-
-            // Label
-            let labelY = pos.y + radius + 10
-            let resolved = context.resolve(
-                Text(node.label)
-                    .font(.system(size: 10, weight: isSelected ? .semibold : .regular))
-                    .foregroundStyle(isSelected ? Color.primary : Color.secondary)
-            )
-            context.draw(resolved, at: CGPoint(x: pos.x, y: labelY))
-        }
-    }
-
-    private func nodeRadius(for node: GraphNode, selected: Bool) -> CGFloat {
-        let base: CGFloat = selected ? 22 : 14
-        return base + CGFloat(min(node.noteCount, 10)) * 0.8
-    }
-
-    private func nodeColor(for node: GraphNode) -> Color {
-        let hue = CGFloat(abs(node.id.hashValue) % 360) / 360.0
-        return Color(hue: Double(hue), saturation: 0.55, brightness: 0.75)
-    }
-
-    // MARK: - Layout
-
-    private func layoutNodes(in size: CGSize) {
-        guard !nodes.isEmpty else { return }
-        canvasSize = size
-        let center = CGPoint(x: size.width / 2, y: size.height / 2)
-        let count = nodes.count
-        let radius: CGFloat = count == 1 ? 0 : min(size.width, size.height) * 0.35
-        var newPositions: [String: CGPoint] = [:]
-        for (i, node) in nodes.enumerated() {
-            let angle = CGFloat(i) / CGFloat(count) * .pi * 2 - .pi / 2
-            newPositions[node.id] = CGPoint(
-                x: center.x + cos(angle) * radius,
-                y: center.y + sin(angle) * radius
-            )
-        }
-        positions = newPositions
-        // Reset transform so layout is centered
-        offset = .zero
-        scale = 1.0
-    }
-
-    // MARK: - Interaction
-
-    private func handleTap(at location: CGPoint) {
-        let effectiveScale = scale * gestureScale
-        let tx = offset.width + gestureDrag.width
-        let ty = offset.height + gestureDrag.height
-        // Convert tap location to canvas space
-        let canvasX = (location.x - tx) / effectiveScale
-        let canvasY = (location.y - ty) / effectiveScale
-        let tappedPoint = CGPoint(x: canvasX, y: canvasY)
-
-        for node in nodes {
-            guard let pos = positions[node.id] else { continue }
-            let radius = nodeRadius(for: node, selected: node.id == selectedNodeId)
-            let dist = hypot(tappedPoint.x - pos.x, tappedPoint.y - pos.y)
-            if dist <= radius + 4 {
-                onSelectNode(node.id)
-                return
-            }
-        }
-    }
-
-    private var panGesture: some Gesture {
-        DragGesture()
-            .updating($gestureDrag) { value, state, _ in
-                state = value.translation
-            }
-            .onEnded { value in
-                offset.width += value.translation.width
-                offset.height += value.translation.height
-            }
-    }
-
-    private var magnifyGesture: some Gesture {
-        MagnifyGesture()
-            .updating($gestureScale) { value, state, _ in
-                state = value.magnification
-            }
-            .onEnded { value in
-                scale = max(0.3, min(3.0, scale * value.magnification))
-            }
-    }
-
-    // MARK: - Overlay controls
-
-    private var zoomControls: some View {
-        VStack(spacing: 4) {
-            Button {
-                withAnimation(.spring(duration: 0.3)) { scale = min(3.0, scale * 1.3) }
-            } label: {
-                Image(systemName: "plus.magnifyingglass")
-            }
-            .accessibilityLabel("Zoom in")
-
-            Button {
-                withAnimation(.spring(duration: 0.3)) { scale = max(0.3, scale / 1.3) }
-            } label: {
-                Image(systemName: "minus.magnifyingglass")
-            }
-            .accessibilityLabel("Zoom out")
-
-            Button {
-                withAnimation(.spring(duration: 0.3)) {
-                    scale = 1.0
-                    offset = .zero
+                    if let error = model.error, !model.isAtlasConfigured {
+                        ContentUnavailableView(
+                            "Atlas Not Configured",
+                            systemImage: "point.3.connected.trianglepath.dotted",
+                            description: Text(error)
+                        )
+                    } else if model.isLoading {
+                        ProgressView("Loading knowledge graph...")
+                            .frame(maxWidth: .infinity, minHeight: 280)
+                    } else if !model.hasBuiltGraph {
+                        ContentUnavailableView(
+                            "No Graph Built Yet",
+                            systemImage: "square.stack.3d.up",
+                            description: Text("Build the knowledge graph to discover related notes and topic neighborhoods.")
+                        )
+                    } else if model.selectedTopicId == nil {
+                        ContentUnavailableView(
+                            "Select a Topic",
+                            systemImage: "list.bullet.indent",
+                            description: Text("Choose a topic from the taxonomy tree to inspect its neighborhood.")
+                        )
+                    } else if model.isLoadingNeighborhood {
+                        ProgressView("Loading topic neighborhood...")
+                            .frame(maxWidth: .infinity, minHeight: 280)
+                    } else if let neighborhood = model.neighborhood {
+                        TopicNeighborhoodDetails(model: model, neighborhood: neighborhood)
+                    } else {
+                        ContentUnavailableView(
+                            "No Topic Data",
+                            systemImage: "point.3.connected.trianglepath.dotted",
+                            description: Text("The selected topic does not have any graph data yet.")
+                        )
+                    }
                 }
-            } label: {
-                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                .padding()
             }
-            .accessibilityLabel("Reset view")
+            .frame(minWidth: 420)
         }
-        .buttonStyle(.accessoryBar)
-        .controlSize(.small)
-        .padding(6)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .navigationTitle("Knowledge Graph")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button(model.hasBuiltGraph ? "Rebuild Graph" : "Build Graph") {
+                    Task { await model.rebuild() }
+                }
+                .disabled(model.isRebuilding)
+            }
+        }
     }
 
-    private var graphLegend: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "circle.fill")
-                .imageScale(.small)
-                .foregroundStyle(.secondary)
-            Text("\(nodes.count) concepts")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text("·")
-                .foregroundStyle(.tertiary)
-            Image(systemName: "line.diagonal")
-                .imageScale(.small)
-                .foregroundStyle(.secondary)
-            Text("\(edges.count) connections")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
-    }
-}
+    private var headerCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                statusBadge
+                Spacer()
+                if let status = model.status, let lastRefreshedAt = status.lastRefreshedAt {
+                    Text("Updated \(lastRefreshedAt)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                }
+            }
 
-// MARK: - Node detail view
+            if let status = model.status {
+                HStack(spacing: 12) {
+                    StatPill(label: "Concept Edges", value: "\(status.conceptEdgeCount)")
+                    StatPill(label: "Topic Edges", value: "\(status.topicEdgeCount)")
+                    StatPill(
+                        label: "Similarity",
+                        value: status.similarityAvailable ? "Available" : "Unavailable"
+                    )
+                }
 
-private struct NodeDetailView: View {
-    let node: GraphNode
-    let relatedNodes: [GraphNode]
-    let onSelectRelated: (GraphNode) -> Void
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                // Header
-                HStack(alignment: .top) {
+                if !status.warnings.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(node.label)
-                            .font(.title3)
-                            .fontWeight(.semibold)
-                        Label("\(node.childTags.count) tag\(node.childTags.count == 1 ? "" : "s")", systemImage: "tag")
+                        ForEach(status.warnings, id: \.self) { warning in
+                            Label(warning, systemImage: "exclamationmark.triangle")
+                                .foregroundStyle(.orange)
+                                .font(.caption)
+                        }
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Color.secondary.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var statusBadge: some View {
+        let text = model.hasBuiltGraph ? "Graph Ready" : "Build Required"
+        let color: Color = model.hasBuiltGraph ? .green : .orange
+
+        return Text(text)
+            .font(.caption.weight(.semibold))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(color.opacity(0.15))
+            .foregroundStyle(color)
+            .clipShape(Capsule())
+    }
+}
+
+private struct KnowledgeGraphTaxonomyRow: View {
+    let node: TaxonomyNode
+    let isSelected: Bool
+
+    var body: some View {
+        HStack {
+            Text(node.label)
+                .fontWeight(isSelected ? .semibold : .regular)
+            Spacer()
+            Text("\(node.noteCount)")
+                .font(.caption)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color.blue.opacity(0.15))
+                .foregroundStyle(.blue)
+                .clipShape(Capsule())
+        }
+        .contentShape(Rectangle())
+    }
+}
+
+private struct TopicNeighborhoodDetails: View {
+    let model: KnowledgeGraphModel
+    let neighborhood: TopicNeighborhoodResponse
+
+    private var groupedEdges: [(KnowledgeGraphEdgeType, [TopicEdgeView])] {
+        let groups = Dictionary(grouping: neighborhood.edges, by: \.edgeType)
+        return groups
+            .map { ($0.key, $0.value.sorted { $0.weight > $1.weight }) }
+            .sorted { $0.0.rawValue < $1.0.rawValue }
+    }
+
+    var body: some View {
+        if neighborhood.edges.isEmpty {
+            ContentUnavailableView(
+                "No Connections Yet",
+                systemImage: "point.3.connected.trianglepath.dotted",
+                description: Text("The selected topic does not have any graph edges yet.")
+            )
+            .frame(maxWidth: .infinity, minHeight: 280)
+        } else {
+            VStack(alignment: .leading, spacing: 16) {
+                if let selectedTopicId = model.selectedTopicId,
+                   let summary = model.topicSummary(for: selectedTopicId) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(summary.label)
+                            .font(.title2.weight(.semibold))
+                        Text(summary.path)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text("\(summary.noteCount) linked notes in taxonomy coverage")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    Spacer()
                 }
 
-                Divider()
-
-                // Tags
-                if !node.childTags.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Tags")
+                ForEach(groupedEdges, id: \.0) { edgeType, edges in
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(sectionTitle(for: edgeType))
                             .font(.headline)
-                        FlowLayout(spacing: 4) {
-                            ForEach(node.childTags, id: \.self) { tag in
-                                Text(tag)
-                                    .font(.caption)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(.fill.tertiary)
-                                    .clipShape(RoundedRectangle(cornerRadius: 4))
-                            }
+
+                        ForEach(edges) { edge in
+                            TopicEdgeRow(edge: edge, linkedTopic: model.linkedTopic(for: edge))
                         }
                     }
                 }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
 
-                // Related
-                if !relatedNodes.isEmpty {
-                    Divider()
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Related Concepts")
-                            .font(.headline)
-                        ForEach(relatedNodes) { related in
-                            Button {
-                                onSelectRelated(related)
-                            } label: {
-                                Label(related.label, systemImage: "arrow.triangle.branch")
-                                    .font(.body)
-                            }
-                            .buttonStyle(.plain)
-                            .foregroundStyle(Color.accentColor)
-                            .accessibilityLabel("Navigate to \(related.label)")
-                        }
-                    }
+    private func sectionTitle(for edgeType: KnowledgeGraphEdgeType) -> String {
+        edgeType.rawValue
+            .split(separator: "_")
+            .map { $0.capitalized }
+            .joined(separator: " ")
+    }
+}
+
+private struct TopicEdgeRow: View {
+    let edge: TopicEdgeView
+    let linkedTopic: TopicNodeSummary?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(linkedTopic?.label ?? "Unknown Topic")
+                        .font(.subheadline.weight(.medium))
+                    Text(linkedTopic?.path ?? "No path available")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-
-                Spacer(minLength: 0)
+                Spacer(minLength: 12)
+                Text(String(format: "%.2f", edge.weight))
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
             }
-            .padding(16)
+
+            ProgressView(value: Double(edge.weight), total: 1.0)
+
+            HStack(spacing: 6) {
+                MetadataBadge(text: edge.edgeSource.rawValue.replacingOccurrences(of: "_", with: " "), color: .green)
+                if let linkedTopic {
+                    MetadataBadge(text: "\(linkedTopic.noteCount) notes", color: .blue)
+                }
+            }
         }
+        .padding()
+        .background(Color.secondary.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }
 
-// MARK: - Flow layout
+private struct StatPill: View {
+    let label: String
+    let value: String
 
-private struct FlowLayout: Layout {
-    var spacing: CGFloat = 4
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache _: inout ()) -> CGSize {
-        arrange(proposal: proposal, subviews: subviews).size
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache _: inout ()) {
-        let result = arrange(proposal: proposal, subviews: subviews)
-        for (index, position) in result.positions.enumerated() {
-            subviews[index].place(
-                at: CGPoint(x: bounds.minX + position.x, y: bounds.minY + position.y),
-                proposal: .unspecified
-            )
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.callout.weight(.semibold))
         }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(Color.secondary.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
-
-    private func arrange(proposal: ProposedViewSize, subviews: Subviews) -> (positions: [CGPoint], size: CGSize) {
-        let maxWidth = proposal.width ?? .infinity
-        var positions: [CGPoint] = []
-        var currentX: CGFloat = 0
-        var currentY: CGFloat = 0
-        var rowHeight: CGFloat = 0
-        var maxX: CGFloat = 0
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            if currentX + size.width > maxWidth, currentX > 0 {
-                currentX = 0
-                currentY += rowHeight + spacing
-                rowHeight = 0
-            }
-            positions.append(CGPoint(x: currentX, y: currentY))
-            rowHeight = max(rowHeight, size.height)
-            currentX += size.width + spacing
-            maxX = max(maxX, currentX)
-        }
-        return (positions, CGSize(width: maxX, height: currentY + rowHeight))
-    }
-}
-
-#Preview {
-    KnowledgeGraphView()
-        .environment(AppState())
-        .frame(width: 700, height: 500)
 }
