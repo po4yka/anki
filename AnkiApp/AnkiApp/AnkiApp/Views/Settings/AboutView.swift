@@ -42,8 +42,10 @@ struct AboutView: View {
                 .foregroundStyle(.secondary)
 
             Button("View Source on GitHub") {
-                // swiftlint:disable:next force_unwrapping
-                NSWorkspace.shared.open(URL(string: "https://github.com/ankitects/anki")!)
+                guard let url = URL(string: "https://github.com/ankitects/anki") else {
+                    return
+                }
+                NSWorkspace.shared.open(url)
             }
             .buttonStyle(.link)
         }

@@ -4,6 +4,26 @@
 import Foundation
 
 extension AnkiService {
+    func newNote(notetypeId: Int64) async throws -> Anki_Notes_Note {
+        var req = Anki_Notetypes_NotetypeId()
+        req.ntid = notetypeId
+        return try backend.command(
+            service: ServiceIndex.notes,
+            method: NotesMethod.newNote,
+            input: req
+        )
+    }
+
+    func defaultsForAdding(homeDeckOfCurrentReviewCard: Int64) async throws -> Anki_Notes_DeckAndNotetype {
+        var req = Anki_Notes_DefaultsForAddingRequest()
+        req.homeDeckOfCurrentReviewCard = homeDeckOfCurrentReviewCard
+        return try backend.command(
+            service: ServiceIndex.notes,
+            method: NotesMethod.defaultsForAdding,
+            input: req
+        )
+    }
+
     func getNote(id: Int64) async throws -> Anki_Notes_Note {
         var req = Anki_Notes_NoteId()
         req.nid = id
@@ -60,5 +80,16 @@ extension AnkiService {
             method: NotesMethod.noteFieldsCheck,
             input: note
         )
+    }
+
+    func cardsOfNote(noteId: Int64) async throws -> [Int64] {
+        var req = Anki_Notes_NoteId()
+        req.nid = noteId
+        let response: Anki_Cards_CardIds = try backend.command(
+            service: ServiceIndex.notes,
+            method: NotesMethod.cardsOfNote,
+            input: req
+        )
+        return response.cids
     }
 }

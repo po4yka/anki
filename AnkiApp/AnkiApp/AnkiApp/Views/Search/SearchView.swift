@@ -68,12 +68,12 @@ struct SearchView: View {
 
                                 Spacer()
 
-                                Text("\(model.cardIds.count) results")
+                                Text("\(model.resultIds.count) results")
                                     .foregroundStyle(.secondary)
                                     .font(.caption)
 
-                                if !model.selectedCardIds.isEmpty {
-                                    Text("\(model.selectedCardIds.count) selected")
+                                if !model.selectedResultIds.isEmpty {
+                                    Text("\(model.selectedResultIds.count) selected")
                                         .foregroundStyle(.blue)
                                         .font(.caption)
                                 }
@@ -83,7 +83,7 @@ struct SearchView: View {
 
                             Divider()
 
-                            if model.cardIds.isEmpty, !model.isSearching {
+                            if model.resultIds.isEmpty, !model.isSearching {
                                 ContentUnavailableView(
                                     "Search Notes",
                                     systemImage: "magnifyingglass",
@@ -113,7 +113,7 @@ struct SearchView: View {
                             } label: {
                                 Label("Set Due Date", systemImage: "calendar")
                             }
-                            .disabled(model.selectedCardIds.isEmpty)
+                            .disabled(model.selectedResultIds.isEmpty)
 
                             Button {
                                 tagInput = ""
@@ -121,14 +121,14 @@ struct SearchView: View {
                             } label: {
                                 Label("Add Tags", systemImage: "tag")
                             }
-                            .disabled(model.selectedCardIds.isEmpty)
+                            .disabled(model.selectedResultIds.isEmpty)
 
                             Button(role: .destructive) {
                                 Task { await model.deleteSelected() }
                             } label: {
                                 Label("Delete", systemImage: "trash")
                             }
-                            .disabled(model.selectedCardIds.isEmpty)
+                            .disabled(model.selectedResultIds.isEmpty)
                         }
                     }
                 }
@@ -187,8 +187,8 @@ struct SearchView: View {
     @ViewBuilder
     private func resultsTable(model: SearchModel) -> some View {
         let selection = Binding<Set<Int64>>(
-            get: { model.selectedCardIds },
-            set: { model.selectedCardIds = $0 }
+            get: { model.selectedResultIds },
+            set: { model.selectedResultIds = $0 }
         )
         Table(model.results, selection: selection) {
             TableColumn("Question") { (row: BrowserRowItem) in
@@ -207,10 +207,9 @@ struct SearchView: View {
         .contextMenu(forSelectionType: Int64.self) { ids in
             if !ids.isEmpty {
                 Button("Edit Note") {
-                    if let cardId = ids.first {
+                    if let resultID = ids.first {
                         Task {
-                            let card = try? await appState.service.getCard(id: cardId)
-                            if let noteId = card?.noteID {
+                            if let noteId = await model.noteID(for: resultID) {
                                 editingNoteId = noteId
                             }
                         }
@@ -245,10 +244,9 @@ struct SearchView: View {
                 }
             }
         } primaryAction: { ids in
-            if let cardId = ids.first {
+            if let resultID = ids.first {
                 Task {
-                    let card = try? await appState.service.getCard(id: cardId)
-                    if let noteId = card?.noteID {
+                    if let noteId = await model.noteID(for: resultID) {
                         editingNoteId = noteId
                     }
                 }

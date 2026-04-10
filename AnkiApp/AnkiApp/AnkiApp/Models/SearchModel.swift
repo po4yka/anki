@@ -26,14 +26,14 @@ struct BrowserRowItem: Identifiable {
 @MainActor
 final class SearchModel {
     var query: String = ""
-    var cardIds: [Int64] = []
+    var resultIds: [Int64] = []
     var rows: [Int64: Anki_Search_BrowserRow] = [:]
     var isSearching: Bool = false
     var error: AnkiError?
 
     var sortColumn: String = ""
     var sortReverse: Bool = false
-    var selectedCardIds: Set<Int64> = []
+    var selectedResultIds: Set<Int64> = []
     var searchMode: BrowserSearchMode = .cards
 
     var allColumns: [Anki_Search_BrowserColumns.Column] = []
@@ -46,7 +46,7 @@ final class SearchModel {
     }
 
     var results: [BrowserRowItem] {
-        cardIds.compactMap { id in
+        resultIds.compactMap { id in
             guard let row = rows[id] else { return nil }
             return BrowserRowItem(id: id, row: row)
         }
@@ -60,6 +60,7 @@ final class SearchModel {
 
     func loadColumns() async {
         do {
+            try await service.setBrowserTableNotesMode(searchMode == .notes)
             let response = try await service.allBrowserColumns()
             allColumns = response.columns
             let saved = UserDefaults.standard.stringArray(forKey: "browserVisibleColumns")
@@ -84,8 +85,17 @@ final class SearchModel {
     }
 
     func search() async {
+        do {
+            try await service.setBrowserTableNotesMode(searchMode == .notes)
+        } catch let ankiError as AnkiError {
+            error = ankiError
+            return
+        } catch let caughtError {
+            error = .message("Failed to configure browser mode: \(caughtError.localizedDescription)")
+            return
+        }
         guard !query.isEmpty else {
-            cardIds = []
+            resultIds = []
             rows = [:]
             return
         }
@@ -105,10 +115,10 @@ final class SearchModel {
                 case .notes:
                     try await service.searchNotes(search: query, order: order)
             }
-            cardIds = response.ids
+            resultIds = response.ids
             rows = [:]
             error = nil
-            for id in cardIds {
+            for id in resultIds {
                 await loadRow(id: id)
             }
         } catch let ankiError as AnkiError {
@@ -184,11 +194,17 @@ final class SearchModel {
     // MARK: - Batch Operations
 
     func deleteSelected() async {
-        guard !selectedCardIds.isEmpty else { return }
+        guard !selectedResultIds.isEmpty else { return }
         do {
-            let ids = Array(selectedCardIds)
-            _ = try await service.removeNotes(noteIds: [], cardIds: ids)
-            selectedCardIds.removeAll()
+            switch searchMode {
+            case .cards:
+                let ids = Array(selectedResultIds)
+                _ = try await service.removeNotes(noteIds: [], cardIds: ids)
+            case .notes:
+                let ids = Array(selectedResultIds)
+                _ = try await service.removeNotes(noteIds: ids, cardIds: [])
+            }
+            selectedResultIds.removeAll()
             await search()
         } catch let ankiError as AnkiError {
             error = ankiError
@@ -196,9 +212,9 @@ final class SearchModel {
     }
 
     func setDueDateForSelected(days: String) async {
-        guard !selectedCardIds.isEmpty else { return }
+        guard !selectedResultIds.isEmpty else { return }
         do {
-            let ids = Array(selectedCardIds)
+            let ids = try await selectedCardIDs()
             _ = try await service.setDueDate(cardIds: ids, days: days)
             await search()
         } catch let ankiError as AnkiError {
@@ -207,9 +223,9 @@ final class SearchModel {
     }
 
     func addTagsToSelected(tags: String) async {
-        guard !selectedCardIds.isEmpty else { return }
+        guard !selectedResultIds.isEmpty else { return }
         do {
-            let ids = Array(selectedCardIds)
+            let ids = try await selectedNoteIDs()
             _ = try await service.addNoteTags(noteIds: ids, tags: tags)
             await search()
         } catch let ankiError as AnkiError {
@@ -218,9 +234,9 @@ final class SearchModel {
     }
 
     func removeTagsFromSelected(tags: String) async {
-        guard !selectedCardIds.isEmpty else { return }
+        guard !selectedResultIds.isEmpty else { return }
         do {
-            let ids = Array(selectedCardIds)
+            let ids = try await selectedNoteIDs()
             _ = try await service.removeNoteTags(noteIds: ids, tags: tags)
             await search()
         } catch let ankiError as AnkiError {
@@ -229,9 +245,9 @@ final class SearchModel {
     }
 
     func suspendSelected() async {
-        guard !selectedCardIds.isEmpty else { return }
+        guard !selectedResultIds.isEmpty else { return }
         do {
-            let ids = Array(selectedCardIds)
+            let ids = try await selectedCardIDs()
             _ = try await service.buryOrSuspendCards(cardIds: ids, noteIds: [], mode: .suspend)
             await search()
         } catch let ankiError as AnkiError {
@@ -240,9 +256,9 @@ final class SearchModel {
     }
 
     func burySelected() async {
-        guard !selectedCardIds.isEmpty else { return }
+        guard !selectedResultIds.isEmpty else { return }
         do {
-            let ids = Array(selectedCardIds)
+            let ids = try await selectedCardIDs()
             _ = try await service.buryOrSuspendCards(cardIds: ids, noteIds: [], mode: .buryUser)
             await search()
         } catch let ankiError as AnkiError {
@@ -251,9 +267,9 @@ final class SearchModel {
     }
 
     func forgetSelected() async {
-        guard !selectedCardIds.isEmpty else { return }
+        guard !selectedResultIds.isEmpty else { return }
         do {
-            let ids = Array(selectedCardIds)
+            let ids = try await selectedCardIDs()
             _ = try await service.scheduleCardsAsNew(cardIds: ids, log: true, restorePosition: false, resetCounts: true)
             await search()
         } catch let ankiError as AnkiError {
@@ -262,9 +278,9 @@ final class SearchModel {
     }
 
     func findAndReplace(search: String, replacement: String, regex: Bool, matchCase: Bool, fieldName: String) async {
-        guard !selectedCardIds.isEmpty else { return }
+        guard !selectedResultIds.isEmpty else { return }
         do {
-            let ids = Array(selectedCardIds)
+            let ids = try await selectedNoteIDs()
             _ = try await service.findAndReplace(
                 nids: ids, search: search, replacement: replacement,
                 regex: regex, matchCase: matchCase, fieldName: fieldName
@@ -273,5 +289,45 @@ final class SearchModel {
         } catch let ankiError as AnkiError {
             error = ankiError
         } catch {}
+    }
+
+    func noteID(for resultID: Int64) async -> Int64? {
+        switch searchMode {
+        case .notes:
+            return resultID
+        case .cards:
+            do {
+                return try await service.getCard(id: resultID).noteID
+            } catch {
+                return nil
+            }
+        }
+    }
+
+    private func selectedNoteIDs() async throws -> [Int64] {
+        switch searchMode {
+        case .notes:
+            return Array(selectedResultIds)
+        case .cards:
+            var noteIDs = Set<Int64>()
+            for cardID in selectedResultIds {
+                let card = try await service.getCard(id: cardID)
+                noteIDs.insert(card.noteID)
+            }
+            return Array(noteIDs)
+        }
+    }
+
+    private func selectedCardIDs() async throws -> [Int64] {
+        switch searchMode {
+        case .cards:
+            return Array(selectedResultIds)
+        case .notes:
+            var cardIDs: [Int64] = []
+            for noteID in selectedResultIds {
+                cardIDs.append(contentsOf: try await service.cardsOfNote(noteId: noteID))
+            }
+            return cardIDs
+        }
     }
 }

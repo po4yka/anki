@@ -67,6 +67,8 @@ enum DecksMethod {
 enum NotesMethod {
     static let newNote: UInt32 = 0
     static let addNote: UInt32 = 1
+    static let defaultsForAdding: UInt32 = 3
+    static let defaultDeckForNotetype: UInt32 = 4
     static let updateNotes: UInt32 = 5
     static let getNote: UInt32 = 6
     static let removeNotes: UInt32 = 7
@@ -149,6 +151,8 @@ enum DeckConfigMethod {
 }
 
 enum ConfigMethod {
+    static let getConfigBool: UInt32 = 5
+    static let setConfigBool: UInt32 = 6
     static let getPreferences: UInt32 = 9
     static let setPreferences: UInt32 = 10
 }

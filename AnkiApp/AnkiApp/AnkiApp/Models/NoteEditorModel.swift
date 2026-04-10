@@ -96,6 +96,9 @@ final class NoteEditorModel {
     func load() async {
         await loadNotetypeNames()
         await loadDecks()
+        if editingNoteId == nil {
+            await prepareNewNote()
+        }
     }
 
     func loadNotetype() async {
@@ -104,6 +107,10 @@ final class NoteEditorModel {
             let notetype = try await service.getNotetype(id: selectedNotetypeId)
             currentNotetype = notetype
             isClozeNotetype = notetype.config.kind == .cloze
+            if editingNoteId == nil {
+                note = try await service.newNote(notetypeId: selectedNotetypeId)
+                note?.notetypeID = selectedNotetypeId
+            }
         } catch {}
     }
 
@@ -200,5 +207,17 @@ final class NoteEditorModel {
         } catch {
             return nil
         }
+    }
+
+    private func prepareNewNote() async {
+        do {
+            let defaults = try await service.defaultsForAdding(homeDeckOfCurrentReviewCard: 0)
+            selectedDeckId = defaults.deckID
+            selectedNotetypeId = defaults.notetypeID
+            await loadNotetype()
+            error = nil
+        } catch let ankiError as AnkiError {
+            error = ankiError
+        } catch {}
     }
 }

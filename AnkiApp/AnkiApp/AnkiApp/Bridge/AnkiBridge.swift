@@ -8,6 +8,21 @@ enum AnkiError: Error {
     case message(String)
 }
 
+extension AnkiError: LocalizedError {
+    var errorDescription: String? {
+        switch self {
+        case .initFailed:
+            return "Failed to initialize the Anki backend."
+        case .backend(let error):
+            return error.message
+        case .decodingFailed(let error):
+            return "Failed to decode backend response: \(error.localizedDescription)"
+        case .message(let message):
+            return message
+        }
+    }
+}
+
 class AnkiBackend {
     private let ptr: UnsafeMutableRawPointer
 

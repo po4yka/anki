@@ -8,6 +8,24 @@ struct AnkiApp: App {
         WindowGroup {
             ContentView()
                 .environment(appState)
+                .sheet(isPresented: Binding(
+                    get: { appState.isShowingAddNote },
+                    set: { appState.isShowingAddNote = $0 }
+                )) {
+                    NavigationStack {
+                        NoteEditorView()
+                            .environment(appState)
+                    }
+                    .frame(minWidth: 500, minHeight: 400)
+                }
+                .sheet(isPresented: Binding(
+                    get: { appState.isShowingReviewer },
+                    set: { appState.isShowingReviewer = $0 }
+                )) {
+                    ReviewerView()
+                        .environment(appState)
+                        .frame(minWidth: 600, minHeight: 500)
+                }
         }
         .commands {
             CommandGroup(replacing: .undoRedo) {
@@ -38,7 +56,7 @@ struct AnkiApp: App {
 
             CommandGroup(after: .newItem) {
                 Button("Add Note") {
-                    // Open add-note window (not yet implemented)
+                    appState.presentAddNote()
                 }
                 .keyboardShortcut("n", modifiers: .command)
             }
@@ -62,7 +80,7 @@ struct AnkiApp: App {
 
             CommandMenu("Study") {
                 Button("Start Review") {
-                    // Start review for current deck (not yet implemented)
+                    Task { await appState.startReview() }
                 }
                 .keyboardShortcut("r", modifiers: .command)
 

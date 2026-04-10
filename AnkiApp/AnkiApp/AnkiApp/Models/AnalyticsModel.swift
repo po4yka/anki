@@ -23,7 +23,7 @@ final class AnalyticsModel {
         isLoading = true
         error = nil
         do {
-            let nodes = try await atlas.getTaxonomyTree()
+            let nodes = try await atlas.getTaxonomyTree(rootPath: nil)
             taxonomyTree = nodes
         } catch {
             self.error = error.localizedDescription
@@ -35,7 +35,7 @@ final class AnalyticsModel {
         isLoading = true
         error = nil
         do {
-            let result = try await atlas.getCoverage(topicPath: topicPath)
+            let result = try await atlas.getCoverage(topicPath: topicPath, includeSubtree: true)
             coverage = result
         } catch {
             self.error = error.localizedDescription

@@ -25,10 +25,11 @@ extension AnkiService {
         )
     }
 
-    func compareAnswer(expected: String, provided: String) async throws -> String {
+    func compareAnswer(expected: String, provided: String, combining: Bool) async throws -> String {
         var req = Anki_CardRendering_CompareAnswerRequest()
         req.expected = expected
         req.provided = provided
+        req.combining = combining
         let response: Anki_Generic_String = try backend.command(
             service: ServiceIndex.cardRendering,
             method: CardRenderingMethod.compareAnswer,

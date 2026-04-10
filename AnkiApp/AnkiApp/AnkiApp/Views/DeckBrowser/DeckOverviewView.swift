@@ -5,7 +5,6 @@ struct DeckOverviewView: View {
     let service: AnkiServiceProtocol
     @Environment(AppState.self) private var appState
     @State private var deck: Anki_Decks_Deck?
-    @State private var showingReviewer = false
     @State private var showingCustomStudy = false
     @State private var error: AnkiError?
     @Environment(\.dismiss) private var dismiss
@@ -55,7 +54,12 @@ struct DeckOverviewView: View {
 
                 VStack(spacing: 12) {
                     Button {
-                        showingReviewer = true
+                        Task {
+                            await appState.startReview(deckId: node.deckID)
+                            if appState.error == nil {
+                                dismiss()
+                            }
+                        }
                     } label: {
                         Text("Study Now")
                             .frame(minWidth: 140)
@@ -102,10 +106,6 @@ struct DeckOverviewView: View {
             do {
                 deck = try await service.getDeck(id: node.deckID)
             } catch {}
-        }
-        .sheet(isPresented: $showingReviewer) {
-            ReviewerView()
-                .environment(appState)
         }
         .sheet(isPresented: $showingCustomStudy) {
             CustomStudyView(service: service, deckId: node.deckID)

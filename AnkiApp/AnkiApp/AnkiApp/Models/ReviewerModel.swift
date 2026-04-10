@@ -1,6 +1,51 @@
 import Foundation
 import Observation
 
+enum TypeAnswerKind: Equatable {
+    case field(combining: Bool)
+    case cloze
+}
+
+struct TypeAnswerSpec: Equatable {
+    let kind: TypeAnswerKind
+    let fieldName: String
+
+    var combining: Bool {
+        switch kind {
+        case .field(let combining):
+            return combining
+        case .cloze:
+            return true
+        }
+    }
+
+    static func parse(questionHTML: String) -> TypeAnswerSpec? {
+        guard let range = questionHTML.range(of: #"\[\[type:([^\]]+)\]\]"#, options: .regularExpression) else {
+            return nil
+        }
+        let token = String(questionHTML[range])
+            .replacingOccurrences(of: "[[type:", with: "")
+            .replacingOccurrences(of: "]]", with: "")
+
+        if let fieldName = token.removingPrefix("cloze:") {
+            return TypeAnswerSpec(kind: .cloze, fieldName: fieldName)
+        }
+        if let fieldName = token.removingPrefix("nc:") {
+            return TypeAnswerSpec(kind: .field(combining: false), fieldName: fieldName)
+        }
+        return TypeAnswerSpec(kind: .field(combining: true), fieldName: token)
+    }
+}
+
+private extension String {
+    func removingPrefix(_ prefix: String) -> String? {
+        guard hasPrefix(prefix) else {
+            return nil
+        }
+        return String(dropFirst(prefix.count))
+    }
+}
+
 @Observable
 @MainActor
 // swiftlint:disable:next type_body_length
@@ -20,6 +65,8 @@ final class ReviewerModel {
     var typeAnswerField: String = ""
     var typedAnswer: String = ""
     var comparisonHTML: String?
+    private var typeAnswerSpec: TypeAnswerSpec?
+    private var expectedAnswer: String = ""
 
     // Auto-advance
     var autoShowAnswerDelay: Float = 0
@@ -68,6 +115,8 @@ final class ReviewerModel {
         guard let rendered = currentCardHTML else {
             isTypeAnswerCard = false
             typeAnswerField = ""
+            typeAnswerSpec = nil
+            expectedAnswer = ""
             return
         }
         let questionHTML = rendered.questionNodes.map { node -> String in
@@ -75,26 +124,78 @@ final class ReviewerModel {
             return node.replacement.currentText
         }.joined()
 
-        if let range = questionHTML.range(of: "\\[\\[type:(.+?)\\]\\]", options: .regularExpression) {
-            let match = questionHTML[range]
-            let fieldName = match.replacingOccurrences(of: "[[type:", with: "")
-                .replacingOccurrences(of: "]]", with: "")
+        if let spec = TypeAnswerSpec.parse(questionHTML: questionHTML) {
             isTypeAnswerCard = true
-            typeAnswerField = fieldName
+            typeAnswerSpec = spec
+            typeAnswerField = spec.fieldName
+            let templateOrdinal = Int((queuedCards?.cards.first?.card.templateIdx ?? 0) + 1)
+            expectedAnswer = expectedTypeAnswer(from: rendered, spec: spec, templateOrdinal: templateOrdinal)
         } else {
             isTypeAnswerCard = false
             typeAnswerField = ""
+            typeAnswerSpec = nil
+            expectedAnswer = ""
         }
     }
 
     func compareTypedAnswer() async {
-        guard isTypeAnswerCard else { return }
+        guard isTypeAnswerCard, let spec = typeAnswerSpec else { return }
         do {
             comparisonHTML = try await service.compareAnswer(
-                expected: typeAnswerField,
-                provided: typedAnswer
+                expected: expectedAnswer,
+                provided: typedAnswer,
+                combining: spec.combining
             )
-        } catch {}
+        } catch {
+            comparisonHTML = nil
+        }
+    }
+
+    private func expectedTypeAnswer(
+        from rendered: Anki_CardRendering_RenderCardResponse,
+        spec: TypeAnswerSpec,
+        templateOrdinal: Int
+    ) -> String {
+        let replacementText = rendered.answerNodes
+            .compactMap(\.replacementIfPresent)
+            .first(where: { $0.fieldName == spec.fieldName })?.currentText
+            ?? rendered.questionNodes
+            .compactMap(\.replacementIfPresent)
+            .first(where: { $0.fieldName == spec.fieldName })?.currentText
+            ?? ""
+
+        switch spec.kind {
+        case .field:
+            return replacementText
+        case .cloze:
+            return extractClozeText(from: replacementText, ordinal: templateOrdinal)
+        }
+    }
+
+    private func extractClozeText(from text: String, ordinal: Int) -> String {
+        let pattern = #"\{\{c(\d+)::(.*?)(?:::(.*?))?\}\}"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.dotMatchesLineSeparators]) else {
+            return text
+        }
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        let matches = regex.matches(in: text, options: [], range: range)
+        let answers = matches.compactMap { match -> String? in
+            guard match.numberOfRanges >= 3,
+                  let ordRange = Range(match.range(at: 1), in: text),
+                  let textRange = Range(match.range(at: 2), in: text),
+                  Int(String(text[ordRange])) == ordinal else {
+                return nil
+            }
+            return String(text[textRange])
+        }
+
+        guard !answers.isEmpty else {
+            return ""
+        }
+        if Set(answers).count == 1 {
+            return answers[0]
+        }
+        return answers.joined(separator: ", ")
     }
 
     private func loadDeckConfig() async {
@@ -301,6 +402,17 @@ final class ReviewerModel {
             undoLabel = status.undo.isEmpty ? nil : status.undo
         } catch {
             undoLabel = nil
+        }
+    }
+}
+
+private extension Anki_CardRendering_RenderedTemplateNode {
+    var replacementIfPresent: Anki_CardRendering_RenderedTemplateReplacement? {
+        switch value {
+        case .replacement(let replacement):
+            return replacement
+        default:
+            return nil
         }
     }
 }

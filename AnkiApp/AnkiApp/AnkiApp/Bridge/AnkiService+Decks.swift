@@ -70,6 +70,16 @@ extension AnkiService {
         )
     }
 
+    func setCurrentDeck(deckId: Int64) async throws {
+        var req = Anki_Decks_DeckId()
+        req.did = deckId
+        let _: Anki_Collection_OpChanges = try backend.command(
+            service: ServiceIndex.decks,
+            method: DecksMethod.setCurrentDeck,
+            input: req
+        )
+    }
+
     func getDeckConfigsForUpdate(deckId: Int64) async throws -> Anki_DeckConfig_DeckConfigsForUpdate {
         var req = Anki_Decks_DeckId()
         req.did = deckId

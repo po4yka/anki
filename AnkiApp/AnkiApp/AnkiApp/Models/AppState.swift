@@ -10,8 +10,10 @@ final class AppState {
     var selectedSidebarItem: SidebarItem = .decks
     var error: AnkiError?
     var undoStatus: Anki_Collection_UndoStatus?
+    var isShowingAddNote = false
+    var isShowingReviewer = false
 
-    let service: AnkiService
+    let service: any AnkiServiceProtocol
     let ttsSettings = TTSSettings()
     var atlasService: (any AtlasServiceProtocol)?
     var isAtlasAvailable: Bool {
@@ -22,7 +24,8 @@ final class AppState {
         do {
             service = try AnkiService(langs: Locale.preferredLanguages)
         } catch {
-            fatalError("Failed to initialize Anki backend: \(error)")
+            service = UnavailableAnkiService()
+            self.error = .message("Failed to initialize the Anki backend: \(error)")
         }
     }
 
@@ -39,7 +42,11 @@ final class AppState {
             await reinitializeAtlas()
         } catch let error as AnkiError {
             self.error = error
-        } catch {}
+            isCollectionOpen = false
+        } catch {
+            self.error = .message("Failed to open collection: \(error.localizedDescription)")
+            isCollectionOpen = false
+        }
     }
 
     func refreshUndoStatus() async {
@@ -63,8 +70,40 @@ final class AppState {
         do {
             try await service.closeCollection(downgrade: false)
             isCollectionOpen = false
+            collectionPath = ""
+            mediaFolderURL = nil
+            undoStatus = nil
+            atlasService = nil
+            isShowingReviewer = false
         } catch let error as AnkiError {
             self.error = error
-        } catch {}
+        } catch {
+            self.error = .message("Failed to close collection: \(error.localizedDescription)")
+        }
+    }
+
+    func presentAddNote() {
+        guard isCollectionOpen else {
+            error = .message("Open a collection before adding notes.")
+            return
+        }
+        isShowingAddNote = true
+    }
+
+    func startReview(deckId: Int64? = nil) async {
+        guard isCollectionOpen else {
+            error = .message("Open a collection before starting review.")
+            return
+        }
+        do {
+            if let deckId {
+                try await service.setCurrentDeck(deckId: deckId)
+            }
+            isShowingReviewer = true
+        } catch let error as AnkiError {
+            self.error = error
+        } catch {
+            self.error = .message("Failed to start review: \(error.localizedDescription)")
+        }
     }
 }

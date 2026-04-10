@@ -28,13 +28,20 @@ private struct AnswerButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        let button = Button(action: action) {
             Text(label)
                 .frame(minWidth: 80)
         }
-        // swiftlint:disable:next force_unwrapping
-        .keyboardShortcut(KeyEquivalent(shortcut.first!), modifiers: [])
-        .buttonStyle(.borderedProminent)
-        .tint(color)
+
+        if let key = shortcut.first {
+            button
+                .keyboardShortcut(KeyEquivalent(key), modifiers: [])
+                .buttonStyle(.borderedProminent)
+                .tint(color)
+        } else {
+            button
+                .buttonStyle(.borderedProminent)
+                .tint(color)
+        }
     }
 }

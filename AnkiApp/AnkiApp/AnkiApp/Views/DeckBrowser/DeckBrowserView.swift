@@ -47,7 +47,7 @@ struct DeckBrowserView: View {
                         }
                         ToolbarItem {
                             Button("Add Note") {
-                                // Open add-note window (not yet implemented)
+                                appState.presentAddNote()
                             }
                             .keyboardShortcut("n", modifiers: .command)
                         }
