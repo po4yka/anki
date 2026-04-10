@@ -15,11 +15,14 @@ use anyhow::Result;
 use prost_reflect::DescriptorPool;
 
 pub fn write_rust_protos(descriptors_path: PathBuf) -> Result<DescriptorPool> {
-    let proto_dir = PathBuf::from("../../proto");
+    let proto_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../proto");
     let paths = gather_proto_paths(&proto_dir)?;
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     let tmp_descriptors = out_dir.join("descriptors.tmp");
-    prost_build::Config::new()
+    let protoc = protoc_bin_vendored::protoc_bin_path().context("vendored protoc path")?;
+    let mut config = prost_build::Config::new();
+    config
+        .protoc_executable(protoc)
         .out_dir(&out_dir)
         .file_descriptor_set_path(&tmp_descriptors)
         .type_attribute(
@@ -47,7 +50,8 @@ pub fn write_rust_protos(descriptors_path: PathBuf) -> Result<DescriptorPool> {
         .type_attribute(
             "ImportAnkiPackageUpdateCondition",
             "#[derive(serde::Deserialize, serde::Serialize)]",
-        )
+        );
+    config
         .compile_protos(paths.as_slice(), &[proto_dir])
         .context("prost build")?;
 

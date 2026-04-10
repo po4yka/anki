@@ -3,6 +3,7 @@ __pycache__
 .DS_Store
 *.xcuserstate
 anki.prof
+*.profraw
 target
 /user.bazelrc
 .dmypy.json
