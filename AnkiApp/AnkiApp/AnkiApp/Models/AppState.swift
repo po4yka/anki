@@ -12,19 +12,30 @@ final class AppState {
     var undoStatus: Anki_Collection_UndoStatus?
     var isShowingAddNote = false
     var isShowingReviewer = false
+    var reviewPreferences = ReviewRuntimePreferences()
 
     let service: any AnkiServiceProtocol
     let ttsSettings = TTSSettings()
+    let syncModel: SyncModel
     var atlasService: (any AtlasServiceProtocol)?
     var isAtlasAvailable: Bool {
         atlasService != nil
     }
 
-    init() {
+    @ObservationIgnored private var autoSyncTask: Task<Void, Never>?
+
+    init(service: any AnkiServiceProtocol, atlasService: (any AtlasServiceProtocol)? = nil) {
+        self.service = service
+        self.syncModel = SyncModel(service: service)
+        self.atlasService = atlasService
+    }
+
+    convenience init() {
         do {
-            service = try AnkiService(langs: Locale.preferredLanguages)
+            let service = try AnkiService(langs: Self.preferredLanguages())
+            self.init(service: service)
         } catch {
-            service = UnavailableAnkiService()
+            self.init(service: UnavailableAnkiService())
             self.error = .message("Failed to initialize the Anki backend: \(error)")
         }
     }
@@ -39,7 +50,10 @@ final class AppState {
             isCollectionOpen = true
             error = nil
             await refreshUndoStatus()
+            await refreshReviewPreferences()
             await reinitializeAtlas()
+            refreshSyncSchedule()
+            await performSyncOnOpenIfNeeded()
         } catch let error as AnkiError {
             self.error = error
             isCollectionOpen = false
@@ -75,6 +89,9 @@ final class AppState {
             undoStatus = nil
             atlasService = nil
             isShowingReviewer = false
+            reviewPreferences = ReviewRuntimePreferences()
+            autoSyncTask?.cancel()
+            autoSyncTask = nil
         } catch let error as AnkiError {
             self.error = error
         } catch {
@@ -96,6 +113,7 @@ final class AppState {
             return
         }
         do {
+            await refreshReviewPreferences()
             if let deckId {
                 try await service.setCurrentDeck(deckId: deckId)
             }
@@ -105,5 +123,60 @@ final class AppState {
         } catch {
             self.error = .message("Failed to start review: \(error.localizedDescription)")
         }
+    }
+
+    func refreshReviewPreferences() async {
+        do {
+            let preferences = try await service.getPreferences()
+            reviewPreferences = ReviewRuntimePreferences(reviewing: preferences.reviewing)
+        } catch {
+            reviewPreferences = ReviewRuntimePreferences()
+        }
+    }
+
+    func refreshSyncSchedule() {
+        autoSyncTask?.cancel()
+        autoSyncTask = nil
+
+        guard isCollectionOpen else { return }
+        let intervalMinutes = SyncSettings.autoSyncIntervalMinutes
+        guard intervalMinutes > 0 else { return }
+
+        autoSyncTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(Double(intervalMinutes * 60)))
+                guard let self else { return }
+                guard !Task.isCancelled else { return }
+                await self.performAutomaticSyncIfNeeded()
+            }
+        }
+    }
+
+    private func performSyncOnOpenIfNeeded() async {
+        guard SyncSettings.syncOnOpen else { return }
+        await performAutomaticSyncIfNeeded()
+    }
+
+    private func performAutomaticSyncIfNeeded() async {
+        guard isCollectionOpen, syncModel.isAuthenticated, !syncModel.isSyncing else {
+            return
+        }
+        await syncModel.sync()
+    }
+
+    private static func preferredLanguages() -> [String] {
+        let storedLanguage = UserDefaults.standard.string(forKey: "language")?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        var languages: [String] = []
+        if let storedLanguage, !storedLanguage.isEmpty {
+            languages.append(storedLanguage)
+        }
+
+        for locale in Locale.preferredLanguages where !languages.contains(locale) {
+            languages.append(locale)
+        }
+
+        return languages.isEmpty ? ["en"] : languages
     }
 }
