@@ -1,5 +1,23 @@
 import Foundation
 
+private struct RemoteTopicTreeRequest: Encodable {
+    let rootPath: String?
+
+    enum CodingKeys: String, CodingKey {
+        case rootPath = "root_path"
+    }
+}
+
+private struct RemoteCoverageRequest: Encodable {
+    let topicPath: String
+    let includeSubtree: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case topicPath = "topic_path"
+        case includeSubtree = "include_subtree"
+    }
+}
+
 /// Remote HTTP implementation of AtlasServiceProtocol for iOS clients.
 /// Connects to an atlas sync server running on the user's desktop or cloud.
 actor RemoteAtlasService: AtlasServiceProtocol {
@@ -9,15 +27,15 @@ actor RemoteAtlasService: AtlasServiceProtocol {
 
     init(baseURL: URL, apiKey: String? = nil) {
         self.baseURL = baseURL
-        self.session = URLSession(configuration: .default)
+        session = URLSession(configuration: .default)
         self.apiKey = apiKey
     }
 
     // MARK: - Generic request
 
-    private func request<Req: Encodable, Resp: Decodable>(
+    private func request<Resp: Decodable>(
         method: String,
-        body: Req
+        body: some Encodable
     ) async throws -> Resp {
         var urlRequest = URLRequest(url: baseURL.appendingPathComponent("api/\(method)"))
         urlRequest.httpMethod = "POST"
@@ -29,7 +47,7 @@ actor RemoteAtlasService: AtlasServiceProtocol {
 
         let (data, response) = try await session.data(for: urlRequest)
         guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode) else {
+              (200 ... 299).contains(httpResponse.statusCode) else {
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
             throw AtlasRemoteError.httpError(
                 statusCode: statusCode,
@@ -58,23 +76,14 @@ actor RemoteAtlasService: AtlasServiceProtocol {
     }
 
     func getTaxonomyTree(rootPath: String? = nil) async throws -> [TaxonomyNode] {
-        struct Input: Encodable {
-            let rootPath: String?
-            enum CodingKeys: String, CodingKey { case rootPath = "root_path" }
-        }
-        return try await request(method: "get_taxonomy_tree", body: Input(rootPath: rootPath))
+        try await request(method: "get_taxonomy_tree", body: RemoteTopicTreeRequest(rootPath: rootPath))
     }
 
     func getCoverage(topicPath: String, includeSubtree: Bool = false) async throws -> TopicCoverage? {
-        struct Input: Encodable {
-            let topicPath: String
-            let includeSubtree: Bool
-            enum CodingKeys: String, CodingKey {
-                case topicPath = "topic_path"
-                case includeSubtree = "include_subtree"
-            }
-        }
-        return try await request(method: "get_coverage", body: Input(topicPath: topicPath, includeSubtree: includeSubtree))
+        try await request(
+            method: "get_coverage",
+            body: RemoteCoverageRequest(topicPath: topicPath, includeSubtree: includeSubtree)
+        )
     }
 
     func getGaps(topicPath: String, minCoverage: Int = 0) async throws -> [TopicGap] {
@@ -123,10 +132,10 @@ enum AtlasRemoteError: Error, LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .httpError(let code, let body):
-            return "Atlas server error (\(code)): \(body)"
-        case .connectionFailed(let error):
-            return "Cannot connect to Atlas server: \(error.localizedDescription)"
+            case let .httpError(code, body):
+                "Atlas server error (\(code)): \(body)"
+            case let .connectionFailed(error):
+                "Cannot connect to Atlas server: \(error.localizedDescription)"
         }
     }
 }

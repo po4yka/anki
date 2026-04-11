@@ -184,6 +184,8 @@ struct SearchView: View {
         }
     }
 
+    // Rendering the table and all batch actions together keeps the selection bindings local to the table.
+    // swiftlint:disable function_body_length
     @ViewBuilder
     private func resultsTable(model: SearchModel) -> some View {
         let selection = Binding<Set<Int64>>(
@@ -253,6 +255,7 @@ struct SearchView: View {
             }
         }
     }
+    // swiftlint:enable function_body_length
 }
 
 private struct EditNoteItem: Identifiable {

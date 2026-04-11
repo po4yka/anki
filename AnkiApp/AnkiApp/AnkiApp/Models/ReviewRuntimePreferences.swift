@@ -1,6 +1,6 @@
 import Foundation
 
-struct ReviewRuntimePreferences: Sendable, Equatable {
+struct ReviewRuntimePreferences: Equatable {
     var showRemainingDueCounts = false
     var showIntervalsOnButtons = false
     var hideAudioPlayButtons = false

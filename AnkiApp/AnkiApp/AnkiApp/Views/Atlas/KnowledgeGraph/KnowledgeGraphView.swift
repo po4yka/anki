@@ -63,7 +63,9 @@ private struct KnowledgeGraphContentView: View {
                         ContentUnavailableView(
                             "No Graph Built Yet",
                             systemImage: "square.stack.3d.up",
-                            description: Text("Build the knowledge graph to discover related notes and topic neighborhoods.")
+                            description: Text(
+                                "Build the knowledge graph to discover related notes and topic neighborhoods."
+                            )
                         )
                     } else if model.selectedTopicId == nil {
                         ContentUnavailableView(
@@ -226,7 +228,7 @@ private struct TopicNeighborhoodDetails: View {
     private func sectionTitle(for edgeType: KnowledgeGraphEdgeType) -> String {
         edgeType.rawValue
             .split(separator: "_")
-            .map { $0.capitalized }
+            .map(\.capitalized)
             .joined(separator: " ")
     }
 }

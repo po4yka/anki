@@ -78,8 +78,8 @@ private struct GeneratorContentView: View {
                                 "\(savedCount) card\(savedCount == 1 ? "" : "s") added to \(deckName).",
                                 systemImage: "checkmark.circle.fill"
                             )
-                                .foregroundStyle(.green)
-                                .font(.callout)
+                            .foregroundStyle(.green)
+                            .font(.callout)
                         }
                         if let errorMsg = model.error {
                             Label(errorMsg, systemImage: "exclamationmark.triangle")

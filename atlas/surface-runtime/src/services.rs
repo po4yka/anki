@@ -146,6 +146,14 @@ mod tests {
         );
 
         assert!(!services.direct_execution_enabled());
-        assert_eq!(services.knowledge_graph.status().await.unwrap().concept_edge_count, 0);
+        assert_eq!(
+            services
+                .knowledge_graph
+                .status()
+                .await
+                .unwrap()
+                .concept_edge_count,
+            0
+        );
     }
 }

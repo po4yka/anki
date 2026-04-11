@@ -1,5 +1,23 @@
 import Foundation
 
+private struct AtlasTopicTreeRequest: Encodable {
+    let rootPath: String?
+
+    enum CodingKeys: String, CodingKey {
+        case rootPath = "root_path"
+    }
+}
+
+private struct AtlasCoverageRequest: Encodable {
+    let topicPath: String
+    let includeSubtree: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case topicPath = "topic_path"
+        case includeSubtree = "include_subtree"
+    }
+}
+
 struct AtlasConfig: Codable {
     var postgresUrl: String?
     var embeddingProvider: String?
@@ -101,16 +119,14 @@ actor AtlasService: AtlasServiceProtocol {
     }
 
     func getTaxonomyTree(rootPath: String? = nil) async throws -> [TaxonomyNode] {
-        struct Input: Encodable { let rootPath: String?; enum CodingKeys: String, CodingKey { case rootPath = "root_path" } }
-        return try command(method: "get_taxonomy_tree", request: Input(rootPath: rootPath))
+        try command(method: "get_taxonomy_tree", request: AtlasTopicTreeRequest(rootPath: rootPath))
     }
 
     func getCoverage(topicPath: String, includeSubtree: Bool = false) async throws -> TopicCoverage? {
-        struct Input: Encodable {
-            let topicPath: String; let includeSubtree: Bool
-            enum CodingKeys: String, CodingKey { case topicPath = "topic_path"; case includeSubtree = "include_subtree" }
-        }
-        return try command(method: "get_coverage", request: Input(topicPath: topicPath, includeSubtree: includeSubtree))
+        try command(
+            method: "get_coverage",
+            request: AtlasCoverageRequest(topicPath: topicPath, includeSubtree: includeSubtree)
+        )
     }
 
     func getGaps(topicPath: String, minCoverage: Int = 0) async throws -> [TopicGap] {

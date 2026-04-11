@@ -41,28 +41,32 @@ fi
 section "Swift"
 
 if [ -d "AnkiApp/" ]; then
-    FORCE_UNWRAP=$(grep -rn '!' AnkiApp/ --include='*.swift' | grep -c 'as!' 2>/dev/null || echo "0")
-    if [ "$FORCE_UNWRAP" -gt 0 ]; then
+    FORCE_UNWRAP=$(grep -rn '!' AnkiApp/ --include='*.swift' 2>/dev/null | grep -c 'as!' || true)
+    FORCE_UNWRAP=$(printf "%s" "$FORCE_UNWRAP" | tr -d '[:space:]')
+        if [ "$FORCE_UNWRAP" -gt 0 ]; then
         warn "Found $FORCE_UNWRAP force-unwrap (as!) in AnkiApp/"
     else
         pass "No force-unwrap (as!) in AnkiApp/"
     fi
 
-    OBS_OBJ=$(grep -rcl 'ObservableObject' AnkiApp/ --include='*.swift' 2>/dev/null | wc -l | tr -d ' ')
+    OBS_OBJ=$(grep -RIl 'ObservableObject' AnkiApp/ --include='*.swift' 2>/dev/null || true)
+    OBS_OBJ=$(printf "%s\n" "$OBS_OBJ" | sed '/^$/d' | wc -l | tr -d ' ')
     if [ "$OBS_OBJ" -gt 0 ]; then
         warn "Found $OBS_OBJ files using ObservableObject (prefer @Observable)"
     else
         pass "No legacy ObservableObject usage"
     fi
 
-    COMBINE=$(grep -rcl 'import Combine' AnkiApp/ --include='*.swift' 2>/dev/null | wc -l | tr -d ' ')
+    COMBINE=$(grep -RIl 'import Combine' AnkiApp/ --include='*.swift' 2>/dev/null || true)
+    COMBINE=$(printf "%s\n" "$COMBINE" | sed '/^$/d' | wc -l | tr -d ' ')
     if [ "$COMBINE" -gt 0 ]; then
         warn "Found $COMBINE files importing Combine (prefer async/await)"
     else
         pass "No Combine imports"
     fi
 
-    XCTEST=$(grep -rcl 'import XCTest' AnkiApp/ --include='*.swift' 2>/dev/null | wc -l | tr -d ' ')
+    XCTEST=$(grep -RIl 'import XCTest' AnkiApp/ --include='*.swift' 2>/dev/null | grep -v '/AnkiAppUITests/' || true)
+    XCTEST=$(printf "%s\n" "$XCTEST" | sed '/^$/d' | wc -l | tr -d ' ')
     if [ "$XCTEST" -gt 0 ]; then
         warn "Found $XCTEST files using XCTest (prefer Swift Testing)"
     else
@@ -78,8 +82,10 @@ section "SwiftLint"
 if command -v swiftlint >/dev/null 2>&1; then
     if [ -d "AnkiApp/" ]; then
         SWIFTLINT_OUT=$(swiftlint lint --config .swiftlint.yml --quiet 2>&1 || true)
-        SWIFTLINT_ERRORS=$(echo "$SWIFTLINT_OUT" | grep -c ': error:' 2>/dev/null || echo "0")
-        SWIFTLINT_WARNS=$(echo "$SWIFTLINT_OUT" | grep -c ': warning:' 2>/dev/null || echo "0")
+        SWIFTLINT_ERRORS=$(printf "%s\n" "$SWIFTLINT_OUT" | grep -c ': error:' 2>/dev/null || true)
+        SWIFTLINT_ERRORS=$(printf "%s" "$SWIFTLINT_ERRORS" | tr -d '[:space:]')
+        SWIFTLINT_WARNS=$(printf "%s\n" "$SWIFTLINT_OUT" | grep -c ': warning:' 2>/dev/null || true)
+        SWIFTLINT_WARNS=$(printf "%s" "$SWIFTLINT_WARNS" | tr -d '[:space:]')
         if [ "$SWIFTLINT_ERRORS" -gt 0 ]; then
             fail "swiftlint found $SWIFTLINT_ERRORS error(s) and $SWIFTLINT_WARNS warning(s)"
             echo "$SWIFTLINT_OUT" | grep ': error:' | head -20
@@ -102,7 +108,8 @@ section "SwiftFormat"
 if command -v swiftformat >/dev/null 2>&1; then
     if [ -d "AnkiApp/" ]; then
         SWIFTFORMAT_OUT=$(swiftformat --config .swiftformat --lint AnkiApp/AnkiApp/AnkiApp --exclude AnkiApp/AnkiApp/AnkiApp/Proto 2>&1 || true)
-        SWIFTFORMAT_ISSUES=$(echo "$SWIFTFORMAT_OUT" | grep -c 'would have been formatted' 2>/dev/null || echo "0")
+        SWIFTFORMAT_ISSUES=$(printf "%s\n" "$SWIFTFORMAT_OUT" | grep -c 'would have been formatted' 2>/dev/null || true)
+        SWIFTFORMAT_ISSUES=$(printf "%s" "$SWIFTFORMAT_ISSUES" | tr -d '[:space:]')
         if [ "$SWIFTFORMAT_ISSUES" -gt 0 ]; then
             fail "swiftformat found $SWIFTFORMAT_ISSUES file(s) with formatting issues"
             echo "$SWIFTFORMAT_OUT" | grep 'would have been formatted' | head -20
@@ -146,7 +153,7 @@ if [ -d "proto/anki/" ]; then
 
     # Check if ServiceConstants enums exist in bridge
     if [ -d "bridge/src/" ]; then
-        BRIDGE_ENUMS=$(grep -c 'enum.*Service' bridge/src/*.rs 2>/dev/null || echo "0")
+        BRIDGE_ENUMS=$( { grep -h 'enum.*Service' bridge/src/*.rs 2>/dev/null || true; } | wc -l | tr -d ' ' )
         echo "  INFO: $BRIDGE_ENUMS service enum(s) in bridge/"
         if [ "$PROTO_SERVICES" -gt 0 ] && [ "$BRIDGE_ENUMS" -eq 0 ]; then
             warn "Proto defines $PROTO_SERVICES services but no ServiceConstants enum found in bridge/"

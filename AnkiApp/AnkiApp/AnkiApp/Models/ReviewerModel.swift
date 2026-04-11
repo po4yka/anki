@@ -1,6 +1,8 @@
 import Foundation
 import Observation
 
+// swiftlint:disable file_length
+
 enum TypeAnswerKind: Equatable {
     case field(combining: Bool)
     case cloze
@@ -12,10 +14,10 @@ struct TypeAnswerSpec: Equatable {
 
     var combining: Bool {
         switch kind {
-        case .field(let combining):
-            return combining
-        case .cloze:
-            return true
+            case let .field(combining):
+                combining
+            case .cloze:
+                true
         }
     }
 
@@ -165,10 +167,10 @@ final class ReviewerModel {
             ?? ""
 
         switch spec.kind {
-        case .field:
-            return replacementText
-        case .cloze:
-            return extractClozeText(from: replacementText, ordinal: templateOrdinal)
+            case .field:
+                return replacementText
+            case .cloze:
+                return extractClozeText(from: replacementText, ordinal: templateOrdinal)
         }
     }
 
@@ -177,7 +179,7 @@ final class ReviewerModel {
         guard let regex = try? NSRegularExpression(pattern: pattern, options: [.dotMatchesLineSeparators]) else {
             return text
         }
-        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        let range = NSRange(text.startIndex ..< text.endIndex, in: text)
         let matches = regex.matches(in: text, options: [], range: range)
         let answers = matches.compactMap { match -> String? in
             guard match.numberOfRanges >= 3,
@@ -329,11 +331,10 @@ final class ReviewerModel {
         do {
             let now = Int64(Date().timeIntervalSince1970 * 1000)
             let elapsedMilliseconds = elapsedSeconds * 1000
-            let cappedMilliseconds: Int
-            if timeLimitSecs > 0 {
-                cappedMilliseconds = min(elapsedMilliseconds, Int(timeLimitSecs) * 1000)
+            let cappedMilliseconds: Int = if timeLimitSecs > 0 {
+                min(elapsedMilliseconds, Int(timeLimitSecs) * 1000)
             } else {
-                cappedMilliseconds = elapsedMilliseconds
+                elapsedMilliseconds
             }
             _ = try await service.answerCard(
                 cardId: cardId,
@@ -433,12 +434,12 @@ final class ReviewerModel {
 
     private func formattedInterval(for state: Anki_Scheduler_SchedulingState) -> String? {
         switch state.kind {
-            case .normal(let normal):
-                return formattedInterval(for: normal)
-            case .filtered(let filtered):
-                return formattedInterval(for: filtered)
+            case let .normal(normal):
+                formattedInterval(for: normal)
+            case let .filtered(filtered):
+                formattedInterval(for: filtered)
             case .none:
-                return nil
+                nil
         }
     }
 
@@ -446,11 +447,11 @@ final class ReviewerModel {
         switch normal.kind {
             case .new:
                 return nil
-            case .learning(let learning):
+            case let .learning(learning):
                 return formattedSeconds(learning.scheduledSecs)
-            case .review(let review):
+            case let .review(review):
                 return formattedDays(review.scheduledDays)
-            case .relearning(let relearning):
+            case let .relearning(relearning):
                 if relearning.hasLearning {
                     return formattedSeconds(relearning.learning.scheduledSecs)
                 }
@@ -465,12 +466,12 @@ final class ReviewerModel {
 
     private func formattedInterval(for filtered: Anki_Scheduler_SchedulingState.Filtered) -> String? {
         switch filtered.kind {
-            case .preview(let preview):
-                return formattedSeconds(preview.scheduledSecs)
-            case .rescheduling(let rescheduling):
-                return formattedInterval(for: rescheduling.originalState)
+            case let .preview(preview):
+                formattedSeconds(preview.scheduledSecs)
+            case let .rescheduling(rescheduling):
+                formattedInterval(for: rescheduling.originalState)
             case .none:
-                return nil
+                nil
         }
     }
 
@@ -482,10 +483,10 @@ final class ReviewerModel {
         if seconds < 3600 {
             return "\(Int((Double(seconds) / 60).rounded()))m"
         }
-        if seconds < 86_400 {
+        if seconds < 86400 {
             return "\(Int((Double(seconds) / 3600).rounded()))h"
         }
-        return "\(Int((Double(seconds) / 86_400).rounded()))d"
+        return "\(Int((Double(seconds) / 86400).rounded()))d"
     }
 
     private func formattedDays(_ days: UInt32) -> String {
@@ -506,10 +507,12 @@ final class ReviewerModel {
 private extension Anki_CardRendering_RenderedTemplateNode {
     var replacementIfPresent: Anki_CardRendering_RenderedTemplateReplacement? {
         switch value {
-        case .replacement(let replacement):
-            return replacement
-        default:
-            return nil
+            case let .replacement(replacement):
+                replacement
+            default:
+                nil
         }
     }
 }
+
+// swiftlint:enable file_length

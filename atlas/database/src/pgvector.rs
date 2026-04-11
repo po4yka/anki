@@ -92,56 +92,56 @@ impl PgVectorRepository {
         let mut conditions = Vec::new();
         let mut bindings = FilterBindings::default();
 
-        if let Some(ref deck_names) = filters.deck_names {
-            if !deck_names.is_empty() {
-                conditions.push(
-                    "EXISTS (SELECT 1 FROM cards c JOIN decks d ON d.deck_id = c.deck_id \
-                     WHERE c.note_id = nc.note_id AND d.name = ANY($deck_names))"
-                        .to_string(),
-                );
-                bindings.deck_names = Some(deck_names.clone());
-            }
+        if let Some(ref deck_names) = filters.deck_names
+            && !deck_names.is_empty()
+        {
+            conditions.push(
+                "EXISTS (SELECT 1 FROM cards c JOIN decks d ON d.deck_id = c.deck_id \
+                 WHERE c.note_id = nc.note_id AND d.name = ANY($deck_names))"
+                    .to_string(),
+            );
+            bindings.deck_names = Some(deck_names.clone());
         }
 
-        if let Some(ref deck_names_exclude) = filters.deck_names_exclude {
-            if !deck_names_exclude.is_empty() {
-                conditions.push(
-                    "NOT EXISTS (SELECT 1 FROM cards c JOIN decks d ON d.deck_id = c.deck_id \
-                     WHERE c.note_id = nc.note_id AND d.name = ANY($deck_names_exclude))"
-                        .to_string(),
-                );
-                bindings.deck_names_exclude = Some(deck_names_exclude.clone());
-            }
+        if let Some(ref deck_names_exclude) = filters.deck_names_exclude
+            && !deck_names_exclude.is_empty()
+        {
+            conditions.push(
+                "NOT EXISTS (SELECT 1 FROM cards c JOIN decks d ON d.deck_id = c.deck_id \
+                 WHERE c.note_id = nc.note_id AND d.name = ANY($deck_names_exclude))"
+                    .to_string(),
+            );
+            bindings.deck_names_exclude = Some(deck_names_exclude.clone());
         }
 
-        if let Some(ref tags) = filters.tags {
-            if !tags.is_empty() {
-                conditions.push(
-                    "EXISTS (SELECT 1 FROM notes n WHERE n.note_id = nc.note_id AND n.tags && $tags)"
-                        .to_string(),
-                );
-                bindings.tags = Some(tags.clone());
-            }
+        if let Some(ref tags) = filters.tags
+            && !tags.is_empty()
+        {
+            conditions.push(
+                "EXISTS (SELECT 1 FROM notes n WHERE n.note_id = nc.note_id AND n.tags && $tags)"
+                    .to_string(),
+            );
+            bindings.tags = Some(tags.clone());
         }
 
-        if let Some(ref tags_exclude) = filters.tags_exclude {
-            if !tags_exclude.is_empty() {
-                conditions.push(
-                    "NOT EXISTS (SELECT 1 FROM notes n WHERE n.note_id = nc.note_id AND n.tags && $tags_exclude)"
-                        .to_string(),
-                );
-                bindings.tags_exclude = Some(tags_exclude.clone());
-            }
+        if let Some(ref tags_exclude) = filters.tags_exclude
+            && !tags_exclude.is_empty()
+        {
+            conditions.push(
+                "NOT EXISTS (SELECT 1 FROM notes n WHERE n.note_id = nc.note_id AND n.tags && $tags_exclude)"
+                    .to_string(),
+            );
+            bindings.tags_exclude = Some(tags_exclude.clone());
         }
 
-        if let Some(ref model_ids) = filters.model_ids {
-            if !model_ids.is_empty() {
-                conditions.push(
-                    "EXISTS (SELECT 1 FROM notes n WHERE n.note_id = nc.note_id AND n.model_id = ANY($model_ids))"
-                        .to_string(),
-                );
-                bindings.model_ids = Some(model_ids.clone());
-            }
+        if let Some(ref model_ids) = filters.model_ids
+            && !model_ids.is_empty()
+        {
+            conditions.push(
+                "EXISTS (SELECT 1 FROM notes n WHERE n.note_id = nc.note_id AND n.model_id = ANY($model_ids))"
+                    .to_string(),
+            );
+            bindings.model_ids = Some(model_ids.clone());
         }
 
         if filters.mature_only {

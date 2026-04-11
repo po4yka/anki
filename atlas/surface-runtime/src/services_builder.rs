@@ -266,9 +266,8 @@ pub async fn build_surface_services_from_bridge_config(
     };
 
     let embedding: SharedEmbeddingProvider = Arc::from(
-        create_embedding_provider(&embedding_config).map_err(|e| {
-            SurfaceError::Configuration(format!("create embedding provider: {e}"))
-        })?,
+        create_embedding_provider(&embedding_config)
+            .map_err(|e| SurfaceError::Configuration(format!("create embedding provider: {e}")))?,
     );
 
     let vector_store = Arc::new(PgVectorRepository::new(db.clone()));

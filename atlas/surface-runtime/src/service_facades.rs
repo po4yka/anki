@@ -413,24 +413,23 @@ impl KnowledgeGraphFacadeImpl {
             .map_err(map_knowledge_graph_error)
     }
 
-    async fn rebuild_topic_specialization_edges(
-        &self,
-    ) -> std::result::Result<usize, SurfaceError> {
+    async fn rebuild_topic_specialization_edges(&self) -> std::result::Result<usize, SurfaceError> {
         #[derive(sqlx::FromRow)]
         struct TopicPathRow {
             topic_id: i32,
             path: String,
         }
 
-        let rows: Vec<TopicPathRow> = sqlx::query_as(
-            "SELECT topic_id, path FROM topics ORDER BY path",
-        )
-        .fetch_all(&self.pool)
-        .await
-        .map_err(SurfaceError::Database)?;
+        let rows: Vec<TopicPathRow> =
+            sqlx::query_as("SELECT topic_id, path FROM topics ORDER BY path")
+                .fetch_all(&self.pool)
+                .await
+                .map_err(SurfaceError::Database)?;
 
-        let path_to_id: HashMap<String, i32> =
-            rows.iter().map(|row| (row.path.clone(), row.topic_id)).collect();
+        let path_to_id: HashMap<String, i32> = rows
+            .iter()
+            .map(|row| (row.path.clone(), row.topic_id))
+            .collect();
 
         let edges: Vec<TopicEdge> = rows
             .into_iter()
@@ -457,9 +456,7 @@ impl KnowledgeGraphFacadeImpl {
             .map_err(map_knowledge_graph_error)
     }
 
-    async fn rebuild_topic_cooccurrence_edges(
-        &self,
-    ) -> std::result::Result<usize, SurfaceError> {
+    async fn rebuild_topic_cooccurrence_edges(&self) -> std::result::Result<usize, SurfaceError> {
         #[derive(sqlx::FromRow)]
         struct TopicPairRow {
             topic_a: i32,
@@ -755,19 +752,13 @@ impl KnowledgeGraphFacade for KnowledgeGraphFacadeImpl {
         &self,
         request: &NoteLinksRequest,
     ) -> std::result::Result<NoteLinksResponse, SurfaceError> {
-        let edges = query::see_also(
-            self.repo.as_ref(),
-            request.note_id.0,
-            request.limit,
-        )
-        .await
-        .map_err(map_knowledge_graph_error)?;
+        let edges = query::see_also(self.repo.as_ref(), request.note_id.0, request.limit)
+            .await
+            .map_err(map_knowledge_graph_error)?;
 
         Ok(NoteLinksResponse {
             focus_note_id: request.note_id,
-            related_notes: self
-                .hydrate_note_links(request.note_id.0, &edges)
-                .await?,
+            related_notes: self.hydrate_note_links(request.note_id.0, &edges).await?,
         })
     }
 

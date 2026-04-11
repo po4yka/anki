@@ -9,16 +9,19 @@ use crate::prelude::*;
 use crate::storage::SqliteStorage;
 
 /// Fetch a note by ID, returning an error if not found.
+#[allow(dead_code)]
 pub(crate) fn get_note_or_error(storage: &SqliteStorage, id: NoteId) -> Result<Note> {
     storage.get_note(id)?.or_not_found(id)
 }
 
 /// Check if a note is orphaned (has no cards).
+#[allow(dead_code)]
 pub(crate) fn is_orphaned(storage: &SqliteStorage, nid: NoteId) -> Result<bool> {
     storage.note_is_orphaned(nid)
 }
 
 /// Get the first field of a note as a summary string (truncated to max_len chars).
+#[cfg_attr(not(test), allow(dead_code))]
 pub(crate) fn note_summary(note: &Note, max_len: usize) -> String {
     let field = note.fields().first().map(|f| f.as_str()).unwrap_or("");
     if field.len() <= max_len {

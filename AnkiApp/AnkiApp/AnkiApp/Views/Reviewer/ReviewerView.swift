@@ -60,10 +60,9 @@ struct ReviewerView: View {
                             CardInfoSidebar(
                                 stats: stats,
                                 noteId: model.queuedCards?.cards.first?.card.noteID,
-                                onOpenNote: { editingNoteId = $0 }
-                            ) {
-                                showCardInfo = false
-                            }
+                                onOpenNote: { editingNoteId = $0 },
+                                onClose: { showCardInfo = false }
+                            )
                             .frame(width: 260)
                         }
                     }
@@ -178,7 +177,7 @@ struct ReviewerView: View {
             .buttonStyle(.borderless)
             .help("Edit Note")
 
-            if !appState.reviewPreferences.hideAudioPlayButtons && !model.currentAvTags.isEmpty {
+            if !appState.reviewPreferences.hideAudioPlayButtons, !model.currentAvTags.isEmpty {
                 Button {
                     replayAudio()
                 } label: {

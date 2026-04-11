@@ -375,11 +375,12 @@ fn embedded_migrations_match_python_source() {
     // byte-identical to packages/common/migrations/. We verify by checking
     // the embedded content contains expected markers.
     let migrations = database::migrations::MIGRATIONS;
-    assert_eq!(migrations.len(), 4);
+    assert_eq!(migrations.len(), 5);
     assert_eq!(migrations[0].0, "001_initial_schema");
     assert_eq!(migrations[1].0, "002_pg_trgm_lexical_search");
     assert_eq!(migrations[2].0, "003_knowledge_graph");
     assert_eq!(migrations[3].0, "004_pgvector_note_chunks");
+    assert_eq!(migrations[4].0, "005_knowledge_graph_topic_cooccurrence");
 
     // Verify key content from migration 1
     assert!(
@@ -419,5 +420,13 @@ fn embedded_migrations_match_python_source() {
             .1
             .contains("CREATE TABLE IF NOT EXISTS note_chunks"),
         "004 should contain note_chunks table"
+    );
+
+    // Verify key content from migration 5
+    assert!(
+        migrations[4]
+            .1
+            .contains("ALTER TYPE edge_source ADD VALUE IF NOT EXISTS 'topic_cooccurrence'"),
+        "005 should add topic_cooccurrence edge source"
     );
 }

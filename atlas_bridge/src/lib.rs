@@ -241,7 +241,10 @@ fn build_noop_services(postgres_url: Option<&str>) -> Result<SurfaceServices, St
 /// Returns `None` if required fields (postgres_url, embedding_provider, model) are missing.
 fn try_bridge_config(config: &AtlasConfig) -> Option<BridgeServicesConfig> {
     let postgres_url = config.postgres_url.as_ref().filter(|s| !s.is_empty())?;
-    let provider_str = config.embedding_provider.as_ref().filter(|s| !s.is_empty())?;
+    let provider_str = config
+        .embedding_provider
+        .as_ref()
+        .filter(|s| !s.is_empty())?;
     let provider: common::config::EmbeddingProviderKind = provider_str.parse().ok()?;
     let model = config
         .embedding_model
@@ -298,7 +301,9 @@ pub extern "C" fn atlas_init(config_data: *const u8, config_len: usize) -> *mut 
                     s
                 }
                 Err(e) => {
-                    tracing::warn!("atlas bridge: failed to build real services ({e}), using noop facades");
+                    tracing::warn!(
+                        "atlas bridge: failed to build real services ({e}), using noop facades"
+                    );
                     match build_noop_services(config.postgres_url.as_deref()) {
                         Ok(s) => s,
                         Err(_) => return std::ptr::null_mut(),

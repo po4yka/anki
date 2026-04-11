@@ -26,7 +26,7 @@ final class AppState {
 
     init(service: any AnkiServiceProtocol, atlasService: (any AtlasServiceProtocol)? = nil) {
         self.service = service
-        self.syncModel = SyncModel(service: service)
+        syncModel = SyncModel(service: service)
         self.atlasService = atlasService
     }
 
@@ -147,7 +147,7 @@ final class AppState {
                 try? await Task.sleep(for: .seconds(Double(intervalMinutes * 60)))
                 guard let self else { return }
                 guard !Task.isCancelled else { return }
-                await self.performAutomaticSyncIfNeeded()
+                await performAutomaticSyncIfNeeded()
             }
         }
     }

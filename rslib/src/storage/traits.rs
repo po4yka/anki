@@ -13,17 +13,20 @@ use crate::prelude::*;
 use crate::storage::SqliteStorage;
 
 /// Read-only storage operations for cards.
+#[allow(dead_code)]
 pub(crate) trait CardStorageRead {
     fn get_card(&self, id: CardId) -> Result<Option<Card>>;
     fn get_all_card_ids(&self) -> Result<HashSet<CardId>>;
 }
 
 /// Read-only storage operations for notes.
+#[allow(dead_code)]
 pub(crate) trait NoteStorageRead {
     fn get_note(&self, id: NoteId) -> Result<Option<Note>>;
 }
 
 /// Read-only storage operations for decks.
+#[allow(dead_code)]
 pub(crate) trait DeckStorageRead {
     fn get_deck(&self, id: DeckId) -> Result<Option<Deck>>;
     fn get_all_deck_names(&self) -> Result<Vec<(DeckId, String)>>;

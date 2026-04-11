@@ -55,7 +55,10 @@ struct SeeAlsoNotesView: View {
                                 if let deckName = link.deckNames.first, !deckName.isEmpty {
                                     MetadataBadge(text: deckName, color: .blue)
                                 }
-                                MetadataBadge(text: link.edgeSource.rawValue.replacingOccurrences(of: "_", with: " "), color: .green)
+                                MetadataBadge(
+                                    text: link.edgeSource.rawValue.replacingOccurrences(of: "_", with: " "),
+                                    color: .green
+                                )
                                 if let tag = link.tags.first, !tag.isEmpty {
                                     MetadataBadge(text: "#\(tag)", color: .orange)
                                 }

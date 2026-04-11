@@ -144,7 +144,7 @@ struct NoteEditorView: View {
             guard let data = try? Data(contentsOf: url) else { return }
             let filename = url.lastPathComponent
             if let actualName = await model.attachImage(desiredName: filename, data: data) {
-                let html: String = "<img src=\"\(actualName)\">"
+                let html = "<img src=\"\(actualName)\">"
                 coordinator?.insertHTML(html)
             }
         }

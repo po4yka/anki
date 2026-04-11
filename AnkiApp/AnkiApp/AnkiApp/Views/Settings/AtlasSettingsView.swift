@@ -94,20 +94,20 @@ struct AtlasSettingsView: View {
 
     private func applyProviderDefaults(_ newProvider: String) {
         switch newProvider {
-        case "google":
-            model = "gemini-embedding-2-preview"
-            dimension = 768
-        case "openai":
-            model = "text-embedding-3-small"
-            dimension = 1536
-        case "fastembed":
-            model = "BAAI/bge-small-en-v1.5"
-            dimension = 384
-        case "mock":
-            model = "mock"
-            dimension = 384
-        default:
-            break
+            case "google":
+                model = "gemini-embedding-2-preview"
+                dimension = 768
+            case "openai":
+                model = "text-embedding-3-small"
+                dimension = 1536
+            case "fastembed":
+                model = "BAAI/bge-small-en-v1.5"
+                dimension = 384
+            case "mock":
+                model = "mock"
+                dimension = 384
+            default:
+                break
         }
     }
 }

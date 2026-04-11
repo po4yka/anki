@@ -56,7 +56,10 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/kg_status", post(handle_kg_status))
         .route("/api/kg_refresh", post(handle_kg_refresh))
         .route("/api/kg_note_links", post(handle_kg_note_links))
-        .route("/api/kg_topic_neighborhood", post(handle_kg_topic_neighborhood))
+        .route(
+            "/api/kg_topic_neighborhood",
+            post(handle_kg_topic_neighborhood),
+        )
         .route("/api/generate_preview", post(handle_generate_preview))
         .route("/api/obsidian_scan", post(handle_obsidian_scan))
         .route("/health", get(handle_health))

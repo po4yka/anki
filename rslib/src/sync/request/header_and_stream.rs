@@ -146,10 +146,10 @@ impl Header for SyncHeader {
     }
 
     fn encode<E: Extend<HeaderValue>>(&self, values: &mut E) {
-        if let Ok(json) = serde_json::to_string(self) {
-            if let Ok(value) = HeaderValue::from_str(&json) {
-                values.extend(std::iter::once(value));
-            }
+        if let Ok(json) = serde_json::to_string(self)
+            && let Ok(value) = HeaderValue::from_str(&json)
+        {
+            values.extend(std::iter::once(value));
         }
     }
 }

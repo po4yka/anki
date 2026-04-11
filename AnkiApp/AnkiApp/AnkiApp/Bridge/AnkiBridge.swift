@@ -11,14 +11,14 @@ enum AnkiError: Error {
 extension AnkiError: LocalizedError {
     var errorDescription: String? {
         switch self {
-        case .initFailed:
-            return "Failed to initialize the Anki backend."
-        case .backend(let error):
-            return error.message
-        case .decodingFailed(let error):
-            return "Failed to decode backend response: \(error.localizedDescription)"
-        case .message(let message):
-            return message
+            case .initFailed:
+                "Failed to initialize the Anki backend."
+            case let .backend(error):
+                error.message
+            case let .decodingFailed(error):
+                "Failed to decode backend response: \(error.localizedDescription)"
+            case let .message(message):
+                message
         }
     }
 }

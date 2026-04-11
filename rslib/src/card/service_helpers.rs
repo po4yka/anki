@@ -10,16 +10,19 @@ use crate::prelude::*;
 use crate::storage::SqliteStorage;
 
 /// Fetch a card by ID, returning an error if not found.
+#[allow(dead_code)]
 pub(crate) fn get_card_or_error(storage: &SqliteStorage, id: CardId) -> Result<Card> {
     storage.get_card(id)?.or_not_found(id)
 }
 
 /// Fetch all cards belonging to a note.
+#[allow(dead_code)]
 pub(crate) fn cards_of_note(storage: &SqliteStorage, nid: NoteId) -> Result<Vec<Card>> {
     storage.all_cards_of_note(nid)
 }
 
 /// Check if a card's ease factor is valid (>= 1300 for review cards, or 0 for new).
+#[cfg_attr(not(test), allow(dead_code))]
 pub(crate) fn validate_ease_factor(card: &Card) -> bool {
     card.ease_factor == 0 || card.ease_factor >= 1300
 }

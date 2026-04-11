@@ -13,8 +13,8 @@ struct BrowserRowItem: Identifiable {
 
     init(id: Int64, row: Anki_Search_BrowserRow) {
         self.id = id
-        self.cells = row.cells.map(\.text)
-        self.color = row.color
+        cells = row.cells.map(\.text)
+        color = row.color
     }
 
     func cell(at index: Int) -> String {
@@ -24,6 +24,7 @@ struct BrowserRowItem: Identifiable {
 
 @Observable
 @MainActor
+// swiftlint:disable:next type_body_length
 final class SearchModel {
     var query: String = ""
     var resultIds: [Int64] = []
@@ -197,12 +198,12 @@ final class SearchModel {
         guard !selectedResultIds.isEmpty else { return }
         do {
             switch searchMode {
-            case .cards:
-                let ids = Array(selectedResultIds)
-                _ = try await service.removeNotes(noteIds: [], cardIds: ids)
-            case .notes:
-                let ids = Array(selectedResultIds)
-                _ = try await service.removeNotes(noteIds: ids, cardIds: [])
+                case .cards:
+                    let ids = Array(selectedResultIds)
+                    _ = try await service.removeNotes(noteIds: [], cardIds: ids)
+                case .notes:
+                    let ids = Array(selectedResultIds)
+                    _ = try await service.removeNotes(noteIds: ids, cardIds: [])
             }
             selectedResultIds.removeAll()
             await search()
@@ -293,41 +294,41 @@ final class SearchModel {
 
     func noteID(for resultID: Int64) async -> Int64? {
         switch searchMode {
-        case .notes:
-            return resultID
-        case .cards:
-            do {
-                return try await service.getCard(id: resultID).noteID
-            } catch {
-                return nil
-            }
+            case .notes:
+                return resultID
+            case .cards:
+                do {
+                    return try await service.getCard(id: resultID).noteID
+                } catch {
+                    return nil
+                }
         }
     }
 
     private func selectedNoteIDs() async throws -> [Int64] {
         switch searchMode {
-        case .notes:
-            return Array(selectedResultIds)
-        case .cards:
-            var noteIDs = Set<Int64>()
-            for cardID in selectedResultIds {
-                let card = try await service.getCard(id: cardID)
-                noteIDs.insert(card.noteID)
-            }
-            return Array(noteIDs)
+            case .notes:
+                return Array(selectedResultIds)
+            case .cards:
+                var noteIDs = Set<Int64>()
+                for cardID in selectedResultIds {
+                    let card = try await service.getCard(id: cardID)
+                    noteIDs.insert(card.noteID)
+                }
+                return Array(noteIDs)
         }
     }
 
     private func selectedCardIDs() async throws -> [Int64] {
         switch searchMode {
-        case .cards:
-            return Array(selectedResultIds)
-        case .notes:
-            var cardIDs: [Int64] = []
-            for noteID in selectedResultIds {
-                cardIDs.append(contentsOf: try await service.cardsOfNote(noteId: noteID))
-            }
-            return cardIDs
+            case .cards:
+                return Array(selectedResultIds)
+            case .notes:
+                var cardIDs: [Int64] = []
+                for noteID in selectedResultIds {
+                    try await cardIDs.append(contentsOf: service.cardsOfNote(noteId: noteID))
+                }
+                return cardIDs
         }
     }
 }

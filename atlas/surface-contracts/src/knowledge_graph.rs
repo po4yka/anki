@@ -35,7 +35,7 @@ pub struct KnowledgeGraphStatus {
     pub warnings: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RefreshKnowledgeGraphRequest {
     #[serde(default = "default_true")]
     pub rebuild_concept_edges: bool,
@@ -43,6 +43,16 @@ pub struct RefreshKnowledgeGraphRequest {
     pub rebuild_topic_edges: bool,
     #[serde(default = "default_note_similarity_limit")]
     pub note_similarity_limit: usize,
+}
+
+impl Default for RefreshKnowledgeGraphRequest {
+    fn default() -> Self {
+        Self {
+            rebuild_concept_edges: default_true(),
+            rebuild_topic_edges: default_true(),
+            note_similarity_limit: default_note_similarity_limit(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
@@ -57,11 +67,20 @@ pub struct RefreshKnowledgeGraphResponse {
     pub warnings: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct NoteLinksRequest {
     pub note_id: NoteId,
     #[serde(default = "default_note_links_limit")]
     pub limit: usize,
+}
+
+impl Default for NoteLinksRequest {
+    fn default() -> Self {
+        Self {
+            note_id: NoteId(0),
+            limit: default_note_links_limit(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
@@ -84,13 +103,23 @@ pub struct NoteLinksResponse {
     pub related_notes: Vec<NoteLink>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct TopicNeighborhoodRequest {
     pub topic_id: TopicId,
     #[serde(default = "default_topic_max_hops")]
     pub max_hops: usize,
     #[serde(default = "default_limit_per_hop")]
     pub limit_per_hop: usize,
+}
+
+impl Default for TopicNeighborhoodRequest {
+    fn default() -> Self {
+        Self {
+            topic_id: TopicId(0),
+            max_hops: default_topic_max_hops(),
+            limit_per_hop: default_limit_per_hop(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
