@@ -16,6 +16,12 @@ fail()    { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 # --- Rust checks ---
 section "Rust"
 
+# Legacy baseline for production unwrap/expect usage in rslib/src after
+# excluding dedicated test files and #[cfg(test)] modules. The audit should
+# flag regressions instead of re-warn on the same known debt every run.
+LEGACY_RSLIB_UNWRAP_BASELINE=363
+LEGACY_RSLIB_EXPECT_BASELINE=15
+
 if cargo fmt --all -- --check >/dev/null 2>&1; then
     pass "cargo fmt clean"
 else
@@ -28,11 +34,55 @@ else
     fail "cargo clippy found warnings"
 fi
 
-# Check for unwrap/expect in rslib/src (excluding tests)
-UNWRAP_COUNT=$(grep -rn '\.unwrap()' rslib/src/ --include='*.rs' | grep -v '#\[cfg(test)\]' | grep -v '#\[test\]' | grep -v 'mod tests' | grep -cv '_test\.rs' 2>/dev/null || echo "0")
-EXPECT_COUNT=$(grep -rn '\.expect(' rslib/src/ --include='*.rs' | grep -v '#\[cfg(test)\]' | grep -v '#\[test\]' | grep -v 'mod tests' | grep -cv '_test\.rs' 2>/dev/null || echo "0")
+# Check for unwrap/expect in rslib/src while excluding dedicated test files
+# and whole #[cfg(test)] modules embedded in source files.
+read -r UNWRAP_COUNT EXPECT_COUNT <<EOF
+$(python3 - <<'PY'
+from pathlib import Path
+import re
+
+root = Path("rslib/src")
+unwrap_count = 0
+expect_count = 0
+
+for path in root.rglob("*.rs"):
+    rel = path.relative_to(root).as_posix()
+    if "/tests/" in rel or rel.endswith("/tests.rs") or rel == "tests.rs" or rel.endswith("_test.rs"):
+        continue
+
+    lines = path.read_text().splitlines()
+    filtered = []
+    i = 0
+    while i < len(lines):
+        stripped = lines[i].strip()
+        if stripped.startswith("#[cfg(test)]"):
+            j = i + 1
+            while j < len(lines) and lines[j].strip() == "":
+                j += 1
+            if j < len(lines) and re.search(r"\bmod\b", lines[j]):
+                brace_depth = lines[j].count("{") - lines[j].count("}")
+                i = j + 1
+                while i < len(lines) and brace_depth > 0:
+                    brace_depth += lines[i].count("{") - lines[i].count("}")
+                    i += 1
+                continue
+        filtered.append(lines[i])
+        i += 1
+
+    text = "\n".join(filtered)
+    unwrap_count += len(re.findall(r"\.unwrap\s*\(", text))
+    expect_count += len(re.findall(r"\.expect\s*\(", text))
+
+print(f"{unwrap_count} {expect_count}")
+PY
+)
+EOF
 if [ "$UNWRAP_COUNT" -gt 0 ] || [ "$EXPECT_COUNT" -gt 0 ]; then
-    warn "Found $UNWRAP_COUNT unwrap() and $EXPECT_COUNT expect() calls in rslib/src/ (excluding test files)"
+    if [ "$UNWRAP_COUNT" -le "$LEGACY_RSLIB_UNWRAP_BASELINE" ] && [ "$EXPECT_COUNT" -le "$LEGACY_RSLIB_EXPECT_BASELINE" ]; then
+        pass "rslib unwrap/expect usage stayed within the legacy baseline ($UNWRAP_COUNT unwrap, $EXPECT_COUNT expect)"
+    else
+        warn "Found $UNWRAP_COUNT unwrap() and $EXPECT_COUNT expect() calls in rslib/src/ library code (legacy baseline: $LEGACY_RSLIB_UNWRAP_BASELINE unwrap, $LEGACY_RSLIB_EXPECT_BASELINE expect)"
+    fi
 else
     pass "No unwrap/expect in rslib/src/ library code"
 fi
@@ -151,15 +201,14 @@ if [ -d "proto/anki/" ]; then
     PROTO_SERVICES=$(grep -rch '^service ' proto/anki/ --include='*.proto' 2>/dev/null | paste -sd+ - | bc 2>/dev/null || echo "0")
     echo "  INFO: $PROTO_SERVICES protobuf services defined"
 
-    # Check if ServiceConstants enums exist in bridge
-    if [ -d "bridge/src/" ]; then
-        BRIDGE_ENUMS=$( { grep -h 'enum.*Service' bridge/src/*.rs 2>/dev/null || true; } | wc -l | tr -d ' ' )
-        echo "  INFO: $BRIDGE_ENUMS service enum(s) in bridge/"
-        if [ "$PROTO_SERVICES" -gt 0 ] && [ "$BRIDGE_ENUMS" -eq 0 ]; then
-            warn "Proto defines $PROTO_SERVICES services but no ServiceConstants enum found in bridge/"
-        else
-            pass "Proto services have corresponding bridge enums"
-        fi
+    # The current Apple bridge keeps service/method IDs in Swift, not Rust.
+    SERVICE_CONSTANTS_FILES=$(find AnkiApp -name 'ServiceConstants.swift' -print 2>/dev/null || true)
+    SERVICE_CONSTANTS_COUNT=$(printf "%s\n" "$SERVICE_CONSTANTS_FILES" | sed '/^$/d' | wc -l | tr -d ' ')
+    echo "  INFO: $SERVICE_CONSTANTS_COUNT ServiceConstants.swift file(s) found"
+    if [ "$PROTO_SERVICES" -gt 0 ] && [ "$SERVICE_CONSTANTS_COUNT" -eq 0 ]; then
+        warn "Proto defines $PROTO_SERVICES services but no ServiceConstants.swift was found in the Apple bridge"
+    else
+        pass "Proto services have corresponding Swift service constants"
     fi
 else
     warn "proto/anki/ directory not found -- skipping proto checks"
