@@ -1,6 +1,6 @@
-import Foundation
 import AppleBridgeCore
 import AppleSharedUI
+import Foundation
 
 struct ReviewRuntimePreferences: Equatable {
     var showRemainingDueCounts = false

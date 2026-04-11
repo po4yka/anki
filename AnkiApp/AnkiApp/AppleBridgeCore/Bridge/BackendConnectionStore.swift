@@ -358,11 +358,10 @@ public final class BackendConnectionStore {
     private func reevaluateAvailability() async {
         let previousExecutionMode = executionMode
         let previousReachability = canServeBackend
-        let remoteCapabilities: BackendCapabilities?
-        if let capabilities {
-            remoteCapabilities = capabilities
+        let remoteCapabilities: BackendCapabilities? = if let capabilities {
+            capabilities
         } else {
-            remoteCapabilities = await sessionProvider.currentCapabilities()
+            await sessionProvider.currentCapabilities()
         }
         capabilities = remoteCapabilities
 
@@ -378,21 +377,21 @@ public final class BackendConnectionStore {
             case .remote:
                 runtimeStatusMessage =
                     decision.message
-                    ?? runtimeStatusMessage
-                    ?? "Remote backend ready."
+                        ?? runtimeStatusMessage
+                        ?? "Remote backend ready."
             case .local:
                 runtimeStatusMessage =
                     localRuntimeStatus.detailMessage
-                    ?? decision.message
-                    ?? runtimeStatusMessage
-                    ?? "Local iOS backend ready."
+                        ?? decision.message
+                        ?? runtimeStatusMessage
+                        ?? "Local iOS backend ready."
             case .unavailable:
                 runtimeStatusMessage =
                     lastErrorMessage
-                    ?? decision.message
-                    ?? localRuntimeStatus.detailMessage
-                    ?? runtimeStatusMessage
-                    ?? "No backend is currently available."
+                        ?? decision.message
+                        ?? localRuntimeStatus.detailMessage
+                        ?? runtimeStatusMessage
+                        ?? "No backend is currently available."
         }
 
         if previousExecutionMode != executionMode || previousReachability != canServeBackend {
@@ -400,4 +399,5 @@ public final class BackendConnectionStore {
         }
     }
 }
+
 // swiftlint:enable type_body_length

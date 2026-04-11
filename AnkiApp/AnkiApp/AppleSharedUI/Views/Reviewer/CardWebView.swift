@@ -3,57 +3,57 @@ import SwiftUI
 import WebKit
 
 #if os(macOS)
-public struct CardWebView: NSViewRepresentable {
-    public let html: String
-    public let css: String
-    public let baseURL: URL?
-    public var onPlayAudio: ((String) -> Void)?
+    public struct CardWebView: NSViewRepresentable {
+        public let html: String
+        public let css: String
+        public let baseURL: URL?
+        public var onPlayAudio: ((String) -> Void)?
 
-    public init(html: String, css: String, baseURL: URL?, onPlayAudio: ((String) -> Void)? = nil) {
-        self.html = html
-        self.css = css
-        self.baseURL = baseURL
-        self.onPlayAudio = onPlayAudio
-    }
+        public init(html: String, css: String, baseURL: URL?, onPlayAudio: ((String) -> Void)? = nil) {
+            self.html = html
+            self.css = css
+            self.baseURL = baseURL
+            self.onPlayAudio = onPlayAudio
+        }
 
-    public func makeCoordinator() -> Coordinator {
-        Coordinator(onPlayAudio: onPlayAudio)
-    }
+        public func makeCoordinator() -> Coordinator {
+            Coordinator(onPlayAudio: onPlayAudio)
+        }
 
-    public func makeNSView(context: Context) -> WKWebView {
-        makeWebView(context: context)
-    }
+        public func makeNSView(context: Context) -> WKWebView {
+            makeWebView(context: context)
+        }
 
-    public func updateNSView(_ webView: WKWebView, context: Context) {
-        updateWebView(webView, context: context)
+        public func updateNSView(_ webView: WKWebView, context: Context) {
+            updateWebView(webView, context: context)
+        }
     }
-}
 #else
-public struct CardWebView: UIViewRepresentable {
-    public let html: String
-    public let css: String
-    public let baseURL: URL?
-    public var onPlayAudio: ((String) -> Void)?
+    public struct CardWebView: UIViewRepresentable {
+        public let html: String
+        public let css: String
+        public let baseURL: URL?
+        public var onPlayAudio: ((String) -> Void)?
 
-    public init(html: String, css: String, baseURL: URL?, onPlayAudio: ((String) -> Void)? = nil) {
-        self.html = html
-        self.css = css
-        self.baseURL = baseURL
-        self.onPlayAudio = onPlayAudio
-    }
+        public init(html: String, css: String, baseURL: URL?, onPlayAudio: ((String) -> Void)? = nil) {
+            self.html = html
+            self.css = css
+            self.baseURL = baseURL
+            self.onPlayAudio = onPlayAudio
+        }
 
-    public func makeCoordinator() -> Coordinator {
-        Coordinator(onPlayAudio: onPlayAudio)
-    }
+        public func makeCoordinator() -> Coordinator {
+            Coordinator(onPlayAudio: onPlayAudio)
+        }
 
-    public func makeUIView(context: Context) -> WKWebView {
-        makeWebView(context: context)
-    }
+        public func makeUIView(context: Context) -> WKWebView {
+            makeWebView(context: context)
+        }
 
-    public func updateUIView(_ webView: WKWebView, context: Context) {
-        updateWebView(webView, context: context)
+        public func updateUIView(_ webView: WKWebView, context: Context) {
+            updateWebView(webView, context: context)
+        }
     }
-}
 #endif
 
 private extension CardWebView {
@@ -63,13 +63,13 @@ private extension CardWebView {
         let contentController = config.userContentController
         contentController.add(context.coordinator, name: "ankiPlay")
         let webView = WKWebView(frame: .zero, configuration: config)
-#if os(macOS)
-        webView.setValue(false, forKey: "drawsBackground")
-#else
-        webView.isOpaque = false
-        webView.backgroundColor = .clear
-        webView.scrollView.backgroundColor = .clear
-#endif
+        #if os(macOS)
+            webView.setValue(false, forKey: "drawsBackground")
+        #else
+            webView.isOpaque = false
+            webView.backgroundColor = .clear
+            webView.scrollView.backgroundColor = .clear
+        #endif
         return webView
     }
 
@@ -87,8 +87,8 @@ private extension CardWebView {
     }
 }
 
-extension CardWebView {
-    public final class Coordinator: NSObject, WKScriptMessageHandler {
+public extension CardWebView {
+    final class Coordinator: NSObject, WKScriptMessageHandler {
         var onPlayAudio: ((String) -> Void)?
         var isLoaded = false
         var lastCSS = ""

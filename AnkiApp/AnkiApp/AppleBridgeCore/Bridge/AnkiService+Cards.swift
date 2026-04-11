@@ -3,8 +3,8 @@
 
 import Foundation
 
-extension AnkiService {
-    public func getCard(id: Int64) async throws -> Anki_Cards_Card {
+public extension AnkiService {
+    func getCard(id: Int64) async throws -> Anki_Cards_Card {
         var req = Anki_Cards_CardId()
         req.cid = id
         return try backend.command(
@@ -14,7 +14,7 @@ extension AnkiService {
         )
     }
 
-    public func setFlag(cardIds: [Int64], flag: UInt32) async throws -> Anki_Collection_OpChangesWithCount {
+    func setFlag(cardIds: [Int64], flag: UInt32) async throws -> Anki_Collection_OpChangesWithCount {
         var req = Anki_Cards_SetFlagRequest()
         req.cardIds = cardIds
         req.flag = flag

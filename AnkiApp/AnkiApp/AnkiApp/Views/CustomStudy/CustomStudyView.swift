@@ -1,6 +1,6 @@
-import SwiftUI
 import AppleBridgeCore
 import AppleSharedUI
+import SwiftUI
 
 struct CustomStudyView: View {
     @Environment(\.dismiss) private var dismiss
@@ -154,9 +154,9 @@ struct CustomStudyView: View {
                 }
             }
         ))
-#if os(macOS)
+        #if os(macOS)
         .toggleStyle(.checkbox)
-#endif
+        #endif
         .labelsHidden()
     }
 }

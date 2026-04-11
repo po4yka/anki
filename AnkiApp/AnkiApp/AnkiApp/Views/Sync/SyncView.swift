@@ -1,6 +1,6 @@
-import SwiftUI
 import AppleBridgeCore
 import AppleSharedUI
+import SwiftUI
 
 struct SyncView: View {
     @Environment(AppState.self) private var appState
@@ -163,7 +163,7 @@ struct SyncView: View {
         }
     }
 
-    private func syncButton(model: SyncModel) -> some View {
+    private func syncButton(model _: SyncModel) -> some View {
         Button("Sync Now") {
             Task { await appState.syncNow() }
         }

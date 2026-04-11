@@ -1,6 +1,6 @@
-import SwiftUI
 import AppleBridgeCore
 import AppleSharedUI
+import SwiftUI
 
 struct WeakNotesView: View {
     @Bindable var model: AnalyticsModel

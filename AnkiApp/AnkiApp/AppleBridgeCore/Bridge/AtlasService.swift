@@ -159,7 +159,8 @@ public actor AtlasService: AtlasServiceProtocol {
         try command(method: "kg_status", request: EmptyRequest())
     }
 
-    public func refreshKnowledgeGraph(_ request: RefreshKnowledgeGraphRequest) async throws -> RefreshKnowledgeGraphResponse {
+    public func refreshKnowledgeGraph(_ request: RefreshKnowledgeGraphRequest) async throws
+        -> RefreshKnowledgeGraphResponse {
         try command(method: "kg_refresh", request: request)
     }
 

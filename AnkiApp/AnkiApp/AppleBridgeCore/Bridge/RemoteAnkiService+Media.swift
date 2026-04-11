@@ -1,7 +1,7 @@
 import Foundation
 
-extension RemoteAnkiService {
-    public func addMediaFile(desiredName: String, data: Data) async throws -> String {
+public extension RemoteAnkiService {
+    func addMediaFile(desiredName: String, data: Data) async throws -> String {
         var req = Anki_Media_AddMediaFileRequest()
         req.desiredName = desiredName
         req.data = data
@@ -13,7 +13,7 @@ extension RemoteAnkiService {
         return response.val
     }
 
-    public func checkMedia() async throws -> Anki_Media_CheckMediaResponse {
+    func checkMedia() async throws -> Anki_Media_CheckMediaResponse {
         try await command(
             service: ServiceIndex.media,
             method: MediaMethod.checkMedia,
@@ -21,7 +21,7 @@ extension RemoteAnkiService {
         )
     }
 
-    public func trashMediaFiles(filenames: [String]) async throws {
+    func trashMediaFiles(filenames: [String]) async throws {
         var req = Anki_Media_TrashMediaFilesRequest()
         req.fnames = filenames
         let _: Anki_Generic_Empty = try await command(
@@ -31,7 +31,7 @@ extension RemoteAnkiService {
         )
     }
 
-    public func emptyTrash() async throws {
+    func emptyTrash() async throws {
         let _: Anki_Generic_Empty = try await command(
             service: ServiceIndex.media,
             method: MediaMethod.emptyTrash,
@@ -39,7 +39,7 @@ extension RemoteAnkiService {
         )
     }
 
-    public func restoreTrash() async throws {
+    func restoreTrash() async throws {
         let _: Anki_Generic_Empty = try await command(
             service: ServiceIndex.media,
             method: MediaMethod.restoreTrash,

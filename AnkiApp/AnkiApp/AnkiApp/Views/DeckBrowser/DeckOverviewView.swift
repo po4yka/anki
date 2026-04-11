@@ -1,6 +1,6 @@
-import SwiftUI
 import AppleBridgeCore
 import AppleSharedUI
+import SwiftUI
 
 struct DeckOverviewView: View {
     let node: Anki_Decks_DeckTreeNode

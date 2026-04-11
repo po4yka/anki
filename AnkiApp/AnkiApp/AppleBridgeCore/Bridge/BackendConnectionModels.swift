@@ -47,7 +47,8 @@ public struct LocalRuntimeStatus: Codable, Equatable, Sendable {
         )
     }
 
-    public static func ready(atlasAvailability: LocalAtlasAvailability, atlasMessage: String? = nil) -> LocalRuntimeStatus {
+    public static func ready(atlasAvailability: LocalAtlasAvailability,
+                             atlasMessage: String? = nil) -> LocalRuntimeStatus {
         LocalRuntimeStatus(
             bridgeAvailable: true,
             ankiAvailable: true,

@@ -1,6 +1,6 @@
-import SwiftUI
 import AppleBridgeCore
 import AppleSharedUI
+import SwiftUI
 
 struct AtlasSettingsView: View {
     @Environment(AppState.self) private var appState
@@ -23,9 +23,9 @@ struct AtlasSettingsView: View {
 
     private var primaryActionTitle: String {
         #if os(iOS)
-        appState.connectionStore?.selectedExecutionMode == .local ? "Save & Start Atlas" : "Save Atlas Settings"
+            appState.connectionStore?.selectedExecutionMode == .local ? "Save & Start Atlas" : "Save Atlas Settings"
         #else
-        "Save & Start Atlas"
+            "Save & Start Atlas"
         #endif
     }
 

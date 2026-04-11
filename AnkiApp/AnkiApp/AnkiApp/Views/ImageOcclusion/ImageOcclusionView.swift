@@ -1,7 +1,7 @@
-import SwiftUI
-import UniformTypeIdentifiers
 import AppleBridgeCore
 import AppleSharedUI
+import SwiftUI
+import UniformTypeIdentifiers
 
 struct ImageOcclusionView: View {
     @Environment(AppState.self) private var appState
@@ -47,21 +47,21 @@ struct ImageOcclusionView: View {
             Divider()
 
             if let image = model.image {
-#if os(macOS)
-                HSplitView {
-                    canvasView(model: model, image: image)
-                        .frame(minWidth: 400)
-                    IOSidePanel(model: model)
-                        .frame(width: 260)
-                }
-#else
-                VStack(spacing: 0) {
-                    canvasView(model: model, image: image)
-                        .frame(minHeight: 320)
-                    Divider()
-                    IOSidePanel(model: model)
-                }
-#endif
+                #if os(macOS)
+                    HSplitView {
+                        canvasView(model: model, image: image)
+                            .frame(minWidth: 400)
+                        IOSidePanel(model: model)
+                            .frame(width: 260)
+                    }
+                #else
+                    VStack(spacing: 0) {
+                        canvasView(model: model, image: image)
+                            .frame(minHeight: 320)
+                        Divider()
+                        IOSidePanel(model: model)
+                    }
+                #endif
             } else {
                 IOEmptyState(openImagePicker: {
                     showingImagePicker = true

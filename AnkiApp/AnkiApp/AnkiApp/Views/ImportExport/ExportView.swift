@@ -1,7 +1,7 @@
-import SwiftUI
-import UniformTypeIdentifiers
 import AppleBridgeCore
 import AppleSharedUI
+import SwiftUI
+import UniformTypeIdentifiers
 
 struct ExportView: View {
     @Environment(AppState.self) private var appState
@@ -113,11 +113,11 @@ struct ExportView: View {
             }
 
             #if os(iOS)
-            if let exportedFileURL {
-                ShareLink(item: exportedFileURL) {
-                    Label("Share Exported Package", systemImage: "square.and.arrow.up")
+                if let exportedFileURL {
+                    ShareLink(item: exportedFileURL) {
+                        Label("Share Exported Package", systemImage: "square.and.arrow.up")
+                    }
                 }
-            }
             #endif
 
             if let error = model.errorMessage {
@@ -129,26 +129,26 @@ struct ExportView: View {
 
     private func selectAndExport(_ model: ExportModel) {
         #if os(macOS)
-        let panel = NSSavePanel()
-        // swiftlint:disable:next force_unwrapping
-        panel.allowedContentTypes = [.init(filenameExtension: "apkg")!]
-        panel.nameFieldStringValue = "collection.apkg"
-        panel.message = "Choose where to save the exported package"
+            let panel = NSSavePanel()
+            // swiftlint:disable:next force_unwrapping
+            panel.allowedContentTypes = [.init(filenameExtension: "apkg")!]
+            panel.nameFieldStringValue = "collection.apkg"
+            panel.message = "Choose where to save the exported package"
 
-        guard panel.runModal() == .OK, let url = panel.url else { return }
+            guard panel.runModal() == .OK, let url = panel.url else { return }
 
-        Task {
-            await model.exportPackage(outPath: url.path)
-        }
-        #else
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("collection.apkg")
-        exportedFileURL = nil
-        Task {
-            await model.exportPackage(outPath: tempURL.path)
-            if model.errorMessage == nil {
-                exportedFileURL = tempURL
+            Task {
+                await model.exportPackage(outPath: url.path)
             }
-        }
+        #else
+            let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("collection.apkg")
+            exportedFileURL = nil
+            Task {
+                await model.exportPackage(outPath: tempURL.path)
+                if model.errorMessage == nil {
+                    exportedFileURL = tempURL
+                }
+            }
         #endif
     }
 }

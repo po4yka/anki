@@ -46,7 +46,7 @@ public class AnkiBackend {
         method: UInt32,
         input: some SwiftProtobuf.Message
     ) throws -> Output {
-        let response = try sendSync(service: service, method: method, payload: try input.serializedData())
+        let response = try sendSync(service: service, method: method, payload: input.serializedData())
         if response.isBackendError {
             let backendError = try Anki_Backend_BackendError(serializedBytes: response.payload)
             throw AnkiError.backend(backendError)

@@ -1,6 +1,6 @@
-import SwiftUI
 import AppleBridgeCore
 import AppleSharedUI
+import SwiftUI
 
 struct CardPreviewView: View {
     let card: PreviewCard
@@ -25,11 +25,11 @@ struct CardPreviewView: View {
     }
 
     private var cardBackgroundColor: Color {
-#if os(macOS)
-        Color(nsColor: .controlBackgroundColor)
-#else
-        Color(uiColor: .secondarySystemBackground)
-#endif
+        #if os(macOS)
+            Color(nsColor: .controlBackgroundColor)
+        #else
+            Color(uiColor: .secondarySystemBackground)
+        #endif
     }
 }
 

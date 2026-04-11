@@ -3,8 +3,8 @@
 
 import Foundation
 
-extension AnkiService {
-    public func setBrowserTableNotesMode(_ enabled: Bool) async throws {
+public extension AnkiService {
+    func setBrowserTableNotesMode(_ enabled: Bool) async throws {
         var req = Anki_Config_SetConfigBoolRequest()
         req.key = .browserTableShowNotesMode
         req.value = enabled
@@ -16,7 +16,7 @@ extension AnkiService {
         )
     }
 
-    public func getPreferences() async throws -> Anki_Config_Preferences {
+    func getPreferences() async throws -> Anki_Config_Preferences {
         let req = Anki_Generic_Empty()
         return try backend.command(
             service: ServiceIndex.config,
@@ -25,7 +25,7 @@ extension AnkiService {
         )
     }
 
-    public func setPreferences(prefs: Anki_Config_Preferences) async throws {
+    func setPreferences(prefs: Anki_Config_Preferences) async throws {
         let _: Anki_Generic_Empty = try backend.command(
             service: ServiceIndex.config,
             method: ConfigMethod.setPreferences,

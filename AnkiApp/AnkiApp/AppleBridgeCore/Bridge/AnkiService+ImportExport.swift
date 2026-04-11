@@ -3,8 +3,8 @@
 
 import Foundation
 
-extension AnkiService {
-    public func importAnkiPackage(path: String,
+public extension AnkiService {
+    func importAnkiPackage(path: String,
                            options: Anki_ImportExport_ImportAnkiPackageOptions) async throws
         -> Anki_ImportExport_ImportResponse {
         var req = Anki_ImportExport_ImportAnkiPackageRequest()
@@ -17,7 +17,7 @@ extension AnkiService {
         )
     }
 
-    public func exportAnkiPackage(
+    func exportAnkiPackage(
         outPath: String,
         options: Anki_ImportExport_ExportAnkiPackageOptions,
         limit: Anki_ImportExport_ExportLimit
@@ -34,7 +34,7 @@ extension AnkiService {
         return response.val
     }
 
-    public func getCsvMetadata(
+    func getCsvMetadata(
         path: String,
         delimiter: Anki_ImportExport_CsvMetadata.Delimiter?,
         notetypeId: Int64?,
@@ -54,7 +54,7 @@ extension AnkiService {
         )
     }
 
-    public func importCsv(path: String,
+    func importCsv(path: String,
                    metadata: Anki_ImportExport_CsvMetadata) async throws -> Anki_ImportExport_ImportResponse {
         var req = Anki_ImportExport_ImportCsvRequest()
         req.path = path

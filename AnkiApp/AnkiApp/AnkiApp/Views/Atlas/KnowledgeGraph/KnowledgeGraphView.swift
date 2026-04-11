@@ -1,6 +1,6 @@
-import SwiftUI
 import AppleBridgeCore
 import AppleSharedUI
+import SwiftUI
 
 private extension TaxonomyNode {
     var childrenOrNil: [TaxonomyNode]? {
@@ -36,65 +36,8 @@ private struct KnowledgeGraphContentView: View {
 
     var body: some View {
         Group {
-#if os(macOS)
-            HSplitView {
-                List(model.taxonomyTree, children: \.childrenOrNil) { node in
-                    KnowledgeGraphTaxonomyRow(
-                        node: node,
-                        isSelected: model.selectedTopicId == node.topicId
-                    )
-                    .onTapGesture {
-                        Task { await model.selectTopic(node) }
-                    }
-                }
-                .frame(minWidth: 240)
-
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        headerCard
-
-                        if model.error != nil, !model.isAtlasConfigured {
-                            AtlasUnavailableView(
-                                featureName: "Knowledge Graph",
-                                systemImage: "point.3.connected.trianglepath.dotted"
-                            )
-                        } else if model.isLoading {
-                            ProgressView("Loading knowledge graph...")
-                                .frame(maxWidth: .infinity, minHeight: 280)
-                        } else if !model.hasBuiltGraph {
-                            ContentUnavailableView(
-                                "No Graph Built Yet",
-                                systemImage: "square.stack.3d.up",
-                                description: Text(
-                                    "Build the knowledge graph to discover related notes and topic neighborhoods."
-                                )
-                            )
-                        } else if model.selectedTopicId == nil {
-                            ContentUnavailableView(
-                                "Select a Topic",
-                                systemImage: "list.bullet.indent",
-                                description: Text("Choose a topic from the taxonomy tree to inspect its neighborhood.")
-                            )
-                        } else if model.isLoadingNeighborhood {
-                            ProgressView("Loading topic neighborhood...")
-                                .frame(maxWidth: .infinity, minHeight: 280)
-                        } else if let neighborhood = model.neighborhood {
-                            TopicNeighborhoodDetails(model: model, neighborhood: neighborhood)
-                        } else {
-                            ContentUnavailableView(
-                                "No Topic Data",
-                                systemImage: "point.3.connected.trianglepath.dotted",
-                                description: Text("The selected topic does not have any graph data yet.")
-                            )
-                        }
-                    }
-                    .padding()
-                }
-                .frame(minWidth: 420)
-            }
-#else
-            ScrollView {
-                VStack(spacing: 0) {
+            #if os(macOS)
+                HSplitView {
                     List(model.taxonomyTree, children: \.childrenOrNil) { node in
                         KnowledgeGraphTaxonomyRow(
                             node: node,
@@ -104,52 +47,113 @@ private struct KnowledgeGraphContentView: View {
                             Task { await model.selectTopic(node) }
                         }
                     }
+                    .frame(minWidth: 240)
 
-                    Divider()
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 16) {
+                            headerCard
 
-                    VStack(alignment: .leading, spacing: 16) {
-                        headerCard
-
-                        if model.error != nil, !model.isAtlasConfigured {
-                            AtlasUnavailableView(
-                                featureName: "Knowledge Graph",
-                                systemImage: "point.3.connected.trianglepath.dotted"
-                            )
-                        } else if model.isLoading {
-                            ProgressView("Loading knowledge graph...")
-                                .frame(maxWidth: .infinity, minHeight: 280)
-                        } else if !model.hasBuiltGraph {
-                            ContentUnavailableView(
-                                "No Graph Built Yet",
-                                systemImage: "square.stack.3d.up",
-                                description: Text(
-                                    "Build the knowledge graph to discover related notes and topic neighborhoods."
+                            if model.error != nil, !model.isAtlasConfigured {
+                                AtlasUnavailableView(
+                                    featureName: "Knowledge Graph",
+                                    systemImage: "point.3.connected.trianglepath.dotted"
                                 )
-                            )
-                        } else if model.selectedTopicId == nil {
-                            ContentUnavailableView(
-                                "Select a Topic",
-                                systemImage: "list.bullet.indent",
-                                description: Text("Choose a topic from the taxonomy tree to inspect its neighborhood.")
-                            )
-                        } else if model.isLoadingNeighborhood {
-                            ProgressView("Loading topic neighborhood...")
-                                .frame(maxWidth: .infinity, minHeight: 280)
-                        } else if let neighborhood = model.neighborhood {
-                            TopicNeighborhoodDetails(model: model, neighborhood: neighborhood)
-                        } else {
-                            ContentUnavailableView(
-                                "No Topic Data",
-                                systemImage: "point.3.connected.trianglepath.dotted",
-                                description: Text("The selected topic does not have any graph data yet.")
-                            )
+                            } else if model.isLoading {
+                                ProgressView("Loading knowledge graph...")
+                                    .frame(maxWidth: .infinity, minHeight: 280)
+                            } else if !model.hasBuiltGraph {
+                                ContentUnavailableView(
+                                    "No Graph Built Yet",
+                                    systemImage: "square.stack.3d.up",
+                                    description: Text(
+                                        "Build the knowledge graph to discover related notes and topic neighborhoods."
+                                    )
+                                )
+                            } else if model.selectedTopicId == nil {
+                                ContentUnavailableView(
+                                    "Select a Topic",
+                                    systemImage: "list.bullet.indent",
+                                    description: Text(
+                                        "Choose a topic from the taxonomy tree to inspect its neighborhood."
+                                    )
+                                )
+                            } else if model.isLoadingNeighborhood {
+                                ProgressView("Loading topic neighborhood...")
+                                    .frame(maxWidth: .infinity, minHeight: 280)
+                            } else if let neighborhood = model.neighborhood {
+                                TopicNeighborhoodDetails(model: model, neighborhood: neighborhood)
+                            } else {
+                                ContentUnavailableView(
+                                    "No Topic Data",
+                                    systemImage: "point.3.connected.trianglepath.dotted",
+                                    description: Text("The selected topic does not have any graph data yet.")
+                                )
+                            }
                         }
+                        .padding()
                     }
-                    .padding()
+                    .frame(minWidth: 420)
                 }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-#endif
+            #else
+                ScrollView {
+                    VStack(spacing: 0) {
+                        List(model.taxonomyTree, children: \.childrenOrNil) { node in
+                            KnowledgeGraphTaxonomyRow(
+                                node: node,
+                                isSelected: model.selectedTopicId == node.topicId
+                            )
+                            .onTapGesture {
+                                Task { await model.selectTopic(node) }
+                            }
+                        }
+
+                        Divider()
+
+                        VStack(alignment: .leading, spacing: 16) {
+                            headerCard
+
+                            if model.error != nil, !model.isAtlasConfigured {
+                                AtlasUnavailableView(
+                                    featureName: "Knowledge Graph",
+                                    systemImage: "point.3.connected.trianglepath.dotted"
+                                )
+                            } else if model.isLoading {
+                                ProgressView("Loading knowledge graph...")
+                                    .frame(maxWidth: .infinity, minHeight: 280)
+                            } else if !model.hasBuiltGraph {
+                                ContentUnavailableView(
+                                    "No Graph Built Yet",
+                                    systemImage: "square.stack.3d.up",
+                                    description: Text(
+                                        "Build the knowledge graph to discover related notes and topic neighborhoods."
+                                    )
+                                )
+                            } else if model.selectedTopicId == nil {
+                                ContentUnavailableView(
+                                    "Select a Topic",
+                                    systemImage: "list.bullet.indent",
+                                    description: Text(
+                                        "Choose a topic from the taxonomy tree to inspect its neighborhood."
+                                    )
+                                )
+                            } else if model.isLoadingNeighborhood {
+                                ProgressView("Loading topic neighborhood...")
+                                    .frame(maxWidth: .infinity, minHeight: 280)
+                            } else if let neighborhood = model.neighborhood {
+                                TopicNeighborhoodDetails(model: model, neighborhood: neighborhood)
+                            } else {
+                                ContentUnavailableView(
+                                    "No Topic Data",
+                                    systemImage: "point.3.connected.trianglepath.dotted",
+                                    description: Text("The selected topic does not have any graph data yet.")
+                                )
+                            }
+                        }
+                        .padding()
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            #endif
         }
         .navigationTitle("Knowledge Graph")
         .toolbar {

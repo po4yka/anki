@@ -1,6 +1,6 @@
-import SwiftUI
 import AppleBridgeCore
 import AppleSharedUI
+import SwiftUI
 
 struct NotetypeListView: View {
     @Environment(AppState.self) private var appState
@@ -27,21 +27,21 @@ struct NotetypeListView: View {
 
     private func contentView(model: NotetypeModel) -> some View {
         Group {
-#if os(macOS)
-            HSplitView {
-                listPane(model: model)
-                    .frame(minWidth: 220, idealWidth: 280)
-                editorPane(model: model)
-                    .frame(minWidth: 400)
-            }
-#else
-            VStack(spacing: 0) {
-                listPane(model: model)
-                Divider()
-                editorPane(model: model)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-#endif
+            #if os(macOS)
+                HSplitView {
+                    listPane(model: model)
+                        .frame(minWidth: 220, idealWidth: 280)
+                    editorPane(model: model)
+                        .frame(minWidth: 400)
+                }
+            #else
+                VStack(spacing: 0) {
+                    listPane(model: model)
+                    Divider()
+                    editorPane(model: model)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            #endif
         }
         .alert("New Note Type", isPresented: $showNewNotetype) {
             TextField("Name", text: $newNotetypeName)

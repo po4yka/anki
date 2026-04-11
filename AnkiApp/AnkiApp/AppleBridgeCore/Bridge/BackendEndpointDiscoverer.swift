@@ -205,7 +205,7 @@ private final class BonjourCompanionDiscoverySession: NSObject, NetServiceBrowse
     }
 
     func netServiceBrowser(
-        _ browser: NetServiceBrowser,
+        _: NetServiceBrowser,
         didFind service: NetService,
         moreComing _: Bool
     ) {
@@ -235,7 +235,7 @@ private final class BonjourCompanionDiscoverySession: NSObject, NetServiceBrowse
             sender.hostName?.trimmingCharacters(in: CharacterSet(charactersIn: ".")),
             accountDisplayName
         ]
-        .compactMap { $0 }
+        .compactMap(\.self)
         let detail = detailParts.isEmpty
             ? "Discovered over Bonjour on the local network."
             : detailParts.joined(separator: " · ")

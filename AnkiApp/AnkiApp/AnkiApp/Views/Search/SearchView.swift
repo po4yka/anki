@@ -1,5 +1,6 @@
 import AppleBridgeCore
 import AppleSharedUI
+
 // swiftlint:disable file_length
 import SwiftUI
 
@@ -93,97 +94,97 @@ struct SearchView: View {
     @ViewBuilder
     private func searchContent(model: SearchModel) -> some View {
         #if os(macOS)
-        MacSearchContent(
-            model: model,
-            editingNoteId: $editingNoteId,
-            showingSetDueDate: $showingSetDueDate,
-            showingAddTags: $showingAddTags,
-            showingColumnPicker: $showingColumnPicker,
-            dueDateInput: $dueDateInput,
-            tagInput: $tagInput,
-            showingSaveSearch: $showingSaveSearch,
-            saveSearchName: $saveSearchName,
-            renamingSearchID: $renamingSearchId,
-            renameSearchText: $renameSearchText,
-            resultsTable: { resultsTable(model: model) }
-        )
+            MacSearchContent(
+                model: model,
+                editingNoteId: $editingNoteId,
+                showingSetDueDate: $showingSetDueDate,
+                showingAddTags: $showingAddTags,
+                showingColumnPicker: $showingColumnPicker,
+                dueDateInput: $dueDateInput,
+                tagInput: $tagInput,
+                showingSaveSearch: $showingSaveSearch,
+                saveSearchName: $saveSearchName,
+                renamingSearchID: $renamingSearchId,
+                renameSearchText: $renameSearchText,
+                resultsTable: { resultsTable(model: model) }
+            )
         #else
-        IOSSearchContent(model: model, editingNoteId: $editingNoteId)
+            IOSSearchContent(model: model, editingNoteId: $editingNoteId)
         #endif
     }
 
     #if os(macOS)
-    // Rendering the table and all batch actions together keeps the selection bindings local to the table.
-    // swiftlint:disable function_body_length
-    private func resultsTable(model: SearchModel) -> some View {
-        let selection = Binding<Set<Int64>>(
-            get: { model.selectedResultIds },
-            set: { model.selectedResultIds = $0 }
-        )
-        return Table(model.results, selection: selection) {
-            TableColumn("Question") { (row: BrowserRowItem) in
-                Text(row.cell(at: 0)).lineLimit(1)
+        // Rendering the table and all batch actions together keeps the selection bindings local to the table.
+        // swiftlint:disable function_body_length
+        private func resultsTable(model: SearchModel) -> some View {
+            let selection = Binding<Set<Int64>>(
+                get: { model.selectedResultIds },
+                set: { model.selectedResultIds = $0 }
+            )
+            return Table(model.results, selection: selection) {
+                TableColumn("Question") { (row: BrowserRowItem) in
+                    Text(row.cell(at: 0)).lineLimit(1)
+                }
+                .width(min: 200)
+                TableColumn("Deck") { (row: BrowserRowItem) in
+                    Text(row.cell(at: 1)).foregroundStyle(.secondary)
+                }
+                .width(min: 100)
+                TableColumn("Due") { (row: BrowserRowItem) in
+                    Text(row.cell(at: 2)).foregroundStyle(.secondary)
+                }
+                .width(min: 80)
             }
-            .width(min: 200)
-            TableColumn("Deck") { (row: BrowserRowItem) in
-                Text(row.cell(at: 1)).foregroundStyle(.secondary)
-            }
-            .width(min: 100)
-            TableColumn("Due") { (row: BrowserRowItem) in
-                Text(row.cell(at: 2)).foregroundStyle(.secondary)
-            }
-            .width(min: 80)
-        }
-        .contextMenu(forSelectionType: Int64.self) { ids in
-            if !ids.isEmpty {
-                Button("Edit Note") {
-                    if let resultID = ids.first {
-                        Task {
-                            if let noteId = await model.noteID(for: resultID) {
-                                editingNoteId = noteId
+            .contextMenu(forSelectionType: Int64.self) { ids in
+                if !ids.isEmpty {
+                    Button("Edit Note") {
+                        if let resultID = ids.first {
+                            Task {
+                                if let noteId = await model.noteID(for: resultID) {
+                                    editingNoteId = noteId
+                                }
                             }
                         }
                     }
+                    Divider()
+                    Button("Set Due Date...") {
+                        dueDateInput = ""
+                        showingSetDueDate = true
+                    }
+                    Button("Add Tags...") {
+                        tagInput = ""
+                        showingAddTags = true
+                    }
+                    Button("Remove Tags...") {
+                        tagInput = ""
+                        showingRemoveTags = true
+                    }
+                    Divider()
+                    Button("Suspend") { Task { await model.suspendSelected() } }
+                    Button("Bury") { Task { await model.burySelected() } }
+                    Button("Forget") { Task { await model.forgetSelected() } }
+                    Divider()
+                    Button("Find and Replace...") {
+                        findText = ""
+                        replaceText = ""
+                        showingFindReplace = true
+                    }
+                    Divider()
+                    Button("Delete", role: .destructive) {
+                        Task { await model.deleteSelected() }
+                    }
                 }
-                Divider()
-                Button("Set Due Date...") {
-                    dueDateInput = ""
-                    showingSetDueDate = true
-                }
-                Button("Add Tags...") {
-                    tagInput = ""
-                    showingAddTags = true
-                }
-                Button("Remove Tags...") {
-                    tagInput = ""
-                    showingRemoveTags = true
-                }
-                Divider()
-                Button("Suspend") { Task { await model.suspendSelected() } }
-                Button("Bury") { Task { await model.burySelected() } }
-                Button("Forget") { Task { await model.forgetSelected() } }
-                Divider()
-                Button("Find and Replace...") {
-                    findText = ""
-                    replaceText = ""
-                    showingFindReplace = true
-                }
-                Divider()
-                Button("Delete", role: .destructive) {
-                    Task { await model.deleteSelected() }
-                }
-            }
-        } primaryAction: { ids in
-            if let resultID = ids.first {
-                Task {
-                    if let noteId = await model.noteID(for: resultID) {
-                        editingNoteId = noteId
+            } primaryAction: { ids in
+                if let resultID = ids.first {
+                    Task {
+                        if let noteId = await model.noteID(for: resultID) {
+                            editingNoteId = noteId
+                        }
                     }
                 }
             }
         }
-    }
-    // swiftlint:enable function_body_length
+        // swiftlint:enable function_body_length
     #endif
 }
 
@@ -213,40 +214,129 @@ private struct SearchModePicker: View {
 }
 
 #if os(macOS)
-private struct MacSearchContent<ResultsTable: View>: View {
-    let model: SearchModel
-    @Binding var editingNoteId: Int64?
-    @Binding var showingSetDueDate: Bool
-    @Binding var showingAddTags: Bool
-    @Binding var showingColumnPicker: Bool
-    @Binding var dueDateInput: String
-    @Binding var tagInput: String
-    @Binding var showingSaveSearch: Bool
-    @Binding var saveSearchName: String
-    @Binding var renamingSearchID: UUID?
-    @Binding var renameSearchText: String
-    @ViewBuilder let resultsTable: () -> ResultsTable
+    private struct MacSearchContent<ResultsTable: View>: View {
+        let model: SearchModel
+        @Binding var editingNoteId: Int64?
+        @Binding var showingSetDueDate: Bool
+        @Binding var showingAddTags: Bool
+        @Binding var showingColumnPicker: Bool
+        @Binding var dueDateInput: String
+        @Binding var tagInput: String
+        @Binding var showingSaveSearch: Bool
+        @Binding var saveSearchName: String
+        @Binding var renamingSearchID: UUID?
+        @Binding var renameSearchText: String
+        @ViewBuilder let resultsTable: () -> ResultsTable
 
-    var body: some View {
-        HSplitView {
-            SavedSearchesSidebar(
-                model: model,
-                showingSaveSearch: $showingSaveSearch,
-                saveSearchName: $saveSearchName,
-                renamingSearchId: $renamingSearchID,
-                renameSearchText: $renameSearchText
-            )
-            .frame(minWidth: 160, maxWidth: 220)
+        var body: some View {
+            HSplitView {
+                SavedSearchesSidebar(
+                    model: model,
+                    showingSaveSearch: $showingSaveSearch,
+                    saveSearchName: $saveSearchName,
+                    renamingSearchId: $renamingSearchID,
+                    renameSearchText: $renameSearchText
+                )
+                .frame(minWidth: 160, maxWidth: 220)
 
-            VStack(spacing: 0) {
+                VStack(spacing: 0) {
+                    SearchBar(model: model)
+                        .padding()
+
+                    Divider()
+                    header
+                    Divider()
+
+                    if model.resultIds.isEmpty, !model.isSearching {
+                        ContentUnavailableView(
+                            "Search Notes",
+                            systemImage: "magnifyingglass",
+                            description: Text("Enter a query above and press Return to search.")
+                        )
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        resultsTable()
+                    }
+                }
+            }
+            .navigationTitle("Browse")
+            .toolbar { toolbarContent }
+        }
+
+        private var header: some View {
+            HStack {
+                SearchModePicker(model: model)
+                    .frame(width: 200)
+
+                Spacer()
+
+                Text("\(model.resultIds.count) results")
+                    .foregroundStyle(.secondary)
+                    .font(.caption)
+
+                if !model.selectedResultIds.isEmpty {
+                    Text("\(model.selectedResultIds.count) selected")
+                        .foregroundStyle(.blue)
+                        .font(.caption)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 6)
+        }
+
+        @ToolbarContentBuilder
+        private var toolbarContent: some ToolbarContent {
+            ToolbarItemGroup {
+                Button {
+                    showingColumnPicker = true
+                } label: {
+                    Label("Columns", systemImage: "gearshape")
+                }
+                .popover(isPresented: $showingColumnPicker) {
+                    ColumnPickerView(model: model)
+                }
+
+                Button {
+                    dueDateInput = ""
+                    showingSetDueDate = true
+                } label: {
+                    Label("Set Due Date", systemImage: "calendar")
+                }
+                .disabled(model.selectedResultIds.isEmpty)
+
+                Button {
+                    tagInput = ""
+                    showingAddTags = true
+                } label: {
+                    Label("Add Tags", systemImage: "tag")
+                }
+                .disabled(model.selectedResultIds.isEmpty)
+
+                Button(role: .destructive) {
+                    Task { await model.deleteSelected() }
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+                .disabled(model.selectedResultIds.isEmpty)
+            }
+        }
+    }
+#else
+    private struct IOSSearchContent: View {
+        let model: SearchModel
+        @Binding var editingNoteId: Int64?
+
+        var body: some View {
+            VStack(spacing: 12) {
                 SearchBar(model: model)
-                    .padding()
 
-                Divider()
-                header
-                Divider()
+                SearchModePicker(model: model)
+                    .pickerStyle(.segmented)
 
-                if model.resultIds.isEmpty, !model.isSearching {
+                if model.isSearching {
+                    ProgressView("Searching...")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if model.results.isEmpty {
                     ContentUnavailableView(
                         "Search Notes",
                         systemImage: "magnifyingglass",
@@ -254,113 +344,24 @@ private struct MacSearchContent<ResultsTable: View>: View {
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    resultsTable()
-                }
-            }
-        }
-        .navigationTitle("Browse")
-        .toolbar { toolbarContent }
-    }
-
-    private var header: some View {
-        HStack {
-            SearchModePicker(model: model)
-                .frame(width: 200)
-
-            Spacer()
-
-            Text("\(model.resultIds.count) results")
-                .foregroundStyle(.secondary)
-                .font(.caption)
-
-            if !model.selectedResultIds.isEmpty {
-                Text("\(model.selectedResultIds.count) selected")
-                    .foregroundStyle(.blue)
-                    .font(.caption)
-            }
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 6)
-    }
-
-    @ToolbarContentBuilder
-    private var toolbarContent: some ToolbarContent {
-        ToolbarItemGroup {
-            Button {
-                showingColumnPicker = true
-            } label: {
-                Label("Columns", systemImage: "gearshape")
-            }
-            .popover(isPresented: $showingColumnPicker) {
-                ColumnPickerView(model: model)
-            }
-
-            Button {
-                dueDateInput = ""
-                showingSetDueDate = true
-            } label: {
-                Label("Set Due Date", systemImage: "calendar")
-            }
-            .disabled(model.selectedResultIds.isEmpty)
-
-            Button {
-                tagInput = ""
-                showingAddTags = true
-            } label: {
-                Label("Add Tags", systemImage: "tag")
-            }
-            .disabled(model.selectedResultIds.isEmpty)
-
-            Button(role: .destructive) {
-                Task { await model.deleteSelected() }
-            } label: {
-                Label("Delete", systemImage: "trash")
-            }
-            .disabled(model.selectedResultIds.isEmpty)
-        }
-    }
-}
-#else
-private struct IOSSearchContent: View {
-    let model: SearchModel
-    @Binding var editingNoteId: Int64?
-
-    var body: some View {
-        VStack(spacing: 12) {
-            SearchBar(model: model)
-
-            SearchModePicker(model: model)
-                .pickerStyle(.segmented)
-
-            if model.isSearching {
-                ProgressView("Searching...")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if model.results.isEmpty {
-                ContentUnavailableView(
-                    "Search Notes",
-                    systemImage: "magnifyingglass",
-                    description: Text("Enter a query above and press Return to search.")
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                List(model.results) { row in
-                    Button {
-                        Task {
-                            if let noteId = await model.noteID(for: row.id) {
-                                editingNoteId = noteId
+                    List(model.results) { row in
+                        Button {
+                            Task {
+                                if let noteId = await model.noteID(for: row.id) {
+                                    editingNoteId = noteId
+                                }
                             }
+                        } label: {
+                            SearchResultRow(row: model.rows[row.id] ?? Anki_Search_BrowserRow())
                         }
-                    } label: {
-                        SearchResultRow(row: model.rows[row.id] ?? Anki_Search_BrowserRow())
                     }
+                    .listStyle(.plain)
                 }
-                .listStyle(.plain)
             }
+            .padding()
+            .navigationTitle("Browse")
         }
-        .padding()
-        .navigationTitle("Browse")
     }
-}
 #endif
 
 private struct SearchBar: View {
@@ -399,9 +400,9 @@ private struct SearchBar: View {
 
     private var searchBarBackground: Color {
         #if os(macOS)
-        Color(nsColor: .textBackgroundColor)
+            Color(nsColor: .textBackgroundColor)
         #else
-        Color(uiColor: .secondarySystemBackground)
+            Color(uiColor: .secondarySystemBackground)
         #endif
     }
 }

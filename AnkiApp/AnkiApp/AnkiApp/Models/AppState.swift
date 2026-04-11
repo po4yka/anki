@@ -1,12 +1,13 @@
+import AppleBridgeCore
+import AppleSharedUI
+
 // swiftlint:disable file_length
 import Foundation
 import Observation
-import AppleBridgeCore
-import AppleSharedUI
 #if os(macOS)
-import AppKit
+    import AppKit
 #elseif os(iOS)
-import UIKit
+    import UIKit
 #endif
 
 enum AppSheet: String, Identifiable {
@@ -229,31 +230,31 @@ final class AppState {
 
     convenience init() {
         #if os(iOS)
-        let preferredLanguages = Self.preferredLanguages()
-        let sessionProvider = RemoteSessionProvider(preferredLanguages: preferredLanguages)
-        let connectionStore = BackendConnectionStore(
-            sessionProvider: sessionProvider,
-            localRuntimeProbe: { await Self.probeLocalRuntime(langs: preferredLanguages) }
-        )
-        self.init(
-            service: UnavailableAnkiService(),
-            atlasService: nil,
-            atlasServiceFactory: nil,
-            connectionStore: connectionStore,
-            remoteSessionProvider: sessionProvider,
-            preferredLanguages: preferredLanguages
-        )
-        connectionStore.onAvailabilityChange = { [weak self] in
-            await self?.handleExecutionModeChangeIfNeeded()
-        }
+            let preferredLanguages = Self.preferredLanguages()
+            let sessionProvider = RemoteSessionProvider(preferredLanguages: preferredLanguages)
+            let connectionStore = BackendConnectionStore(
+                sessionProvider: sessionProvider,
+                localRuntimeProbe: { await Self.probeLocalRuntime(langs: preferredLanguages) }
+            )
+            self.init(
+                service: UnavailableAnkiService(),
+                atlasService: nil,
+                atlasServiceFactory: nil,
+                connectionStore: connectionStore,
+                remoteSessionProvider: sessionProvider,
+                preferredLanguages: preferredLanguages
+            )
+            connectionStore.onAvailabilityChange = { [weak self] in
+                await self?.handleExecutionModeChangeIfNeeded()
+            }
         #else
-        let service = Self.makeService()
-        self.init(
-            service: service,
-            atlasService: SessionStore.makeAtlasService(),
-            atlasServiceFactory: { SessionStore.makeAtlasService() },
-            preferredLanguages: Self.preferredLanguages()
-        )
+            let service = Self.makeService()
+            self.init(
+                service: service,
+                atlasService: SessionStore.makeAtlasService(),
+                atlasServiceFactory: { SessionStore.makeAtlasService() },
+                preferredLanguages: Self.preferredLanguages()
+            )
         #endif
     }
 
@@ -292,9 +293,9 @@ final class AppState {
 
     var hasBackendService: Bool {
         #if os(iOS)
-        connectionStore?.canServeBackend ?? false
+            connectionStore?.canServeBackend ?? false
         #else
-        !(session.service is UnavailableAnkiService)
+            !(session.service is UnavailableAnkiService)
         #endif
     }
 
@@ -304,20 +305,20 @@ final class AppState {
 
     var backendStatusTitle: String {
         #if os(iOS)
-        if hasBackendService {
-            switch backendExecutionMode {
-                case .local:
-                    return "Local Backend Ready"
-                case .remote:
-                    return "Remote Backend Connected"
-                case .unavailable:
-                    return "Backend Ready"
+            if hasBackendService {
+                switch backendExecutionMode {
+                    case .local:
+                        return "Local Backend Ready"
+                    case .remote:
+                        return "Remote Backend Connected"
+                    case .unavailable:
+                        return "Backend Ready"
+                }
             }
-        }
-        switch connectionStore?.selectedExecutionMode ?? .remote {
-            case .local:
+            switch connectionStore?.selectedExecutionMode ?? .remote {
+                case .local:
                 return "Local Backend Unavailable"
-            case .remote:
+                case .remote:
                 switch connectionStore?.connectionState ?? .disconnected {
                     case .connecting:
                         return "Connecting to Backend"
@@ -328,39 +329,39 @@ final class AppState {
                     case .connected:
                         return "Remote Backend Unavailable"
                 }
-            case .unavailable:
+                case .unavailable:
                 return "Backend Selection Required"
-        }
+            }
         #else
-        return hasBackendService ? "Backend Ready" : "Backend Integration Required"
+            return hasBackendService ? "Backend Ready" : "Backend Integration Required"
         #endif
     }
 
     var backendStatusMessage: String {
         if hasBackendService {
             #if os(iOS)
-            switch backendExecutionMode {
-                case .local:
+                switch backendExecutionMode {
+                    case .local:
                     return atlasSetupStatus.summary
-                case .remote:
+                    case .remote:
                     return "This iOS build is connected to a remote Anki backend. Open Preferences to select a collection path on the companion or cloud host."
-                case .unavailable:
+                    case .unavailable:
                     return "Backend ready."
-            }
+                }
             #else
-            return "This app target has access to the Anki backend."
+                return "This app target has access to the Anki backend."
             #endif
         }
 
         #if os(iOS)
-        if connectionStore?.selectedExecutionMode == .local {
-            return atlasSetupStatus.summary
-        }
-        return connectionStore?.lastErrorMessage
-            ?? connectionStore?.runtimeStatusMessage
-            ?? "Enter a backend URL, pair with the companion or cloud deployment, and then switch back to Remote mode."
+            if connectionStore?.selectedExecutionMode == .local {
+                return atlasSetupStatus.summary
+            }
+            return connectionStore?.lastErrorMessage
+                ?? connectionStore?.runtimeStatusMessage
+                ?? "Enter a backend URL, pair with the companion or cloud deployment, and then switch back to Remote mode."
         #else
-        return Self.unavailableBackendMessage
+            return Self.unavailableBackendMessage
         #endif
     }
 
@@ -379,21 +380,21 @@ final class AppState {
 
     var isAtlasAvailable: Bool {
         #if os(iOS)
-        if backendExecutionMode == .local {
-            session.isAtlasAvailable
-        } else {
-            connectionStore?.supportsAtlas ?? false
-        }
+            if backendExecutionMode == .local {
+                session.isAtlasAvailable
+            } else {
+                connectionStore?.supportsAtlas ?? false
+            }
         #else
-        session.isAtlasAvailable
+            session.isAtlasAvailable
         #endif
     }
 
     var backendExecutionMode: BackendExecutionMode {
         #if os(iOS)
-        connectionStore?.executionMode ?? .unavailable
+            connectionStore?.executionMode ?? .unavailable
         #else
-        .local
+            .local
         #endif
     }
 
@@ -404,24 +405,24 @@ final class AppState {
 
     var atlasSetupStatus: AtlasSetupStatus {
         #if os(iOS)
-        switch connectionStore?.selectedExecutionMode ?? .remote {
-            case .local:
+            switch connectionStore?.selectedExecutionMode ?? .remote {
+                case .local:
                 return localAtlasSetupStatus()
-            case .remote:
+                case .remote:
                 return remoteAtlasSetupStatus()
-            case .unavailable:
+                case .unavailable:
                 return remoteAtlasSetupStatus()
-        }
+            }
         #else
-        return localAtlasSetupStatus()
+            return localAtlasSetupStatus()
         #endif
     }
 
     var canEditNotes: Bool {
         #if os(iOS)
-        hasBackendService
+            hasBackendService
         #else
-        true
+            true
         #endif
     }
 
@@ -480,7 +481,7 @@ final class AppState {
     func retryAtlasSetup() async {
         await session.reinitializeAtlas()
         #if os(iOS)
-        await refreshLocalRuntimeStatus()
+            await refreshLocalRuntimeStatus()
         #endif
     }
 
@@ -488,36 +489,36 @@ final class AppState {
         await session.closeCollection()
         navigation.presentedSheet = nil
         #if os(iOS)
-        await resolvePendingExecutionModeIfNeeded()
+            await resolvePendingExecutionModeIfNeeded()
         #endif
     }
 
     func restoreBackendState() async {
         #if os(iOS)
-        await connectionStore?.restore()
-        await handleExecutionModeChangeIfNeeded(force: true)
+            await connectionStore?.restore()
+            await handleExecutionModeChangeIfNeeded(force: true)
         #endif
     }
 
     func selectExecutionMode(_ mode: BackendExecutionMode) async {
         #if os(iOS)
-        pendingExecutionMode = nil
-        if isCollectionOpen {
-            await closeCollection()
-        }
-        await connectionStore?.selectExecutionMode(mode)
-        await handleExecutionModeChangeIfNeeded(force: true)
+            pendingExecutionMode = nil
+            if isCollectionOpen {
+                await closeCollection()
+            }
+            await connectionStore?.selectExecutionMode(mode)
+            await handleExecutionModeChangeIfNeeded(force: true)
         #endif
     }
 
     func signOutRemoteBackend() async {
         #if os(iOS)
-        pendingExecutionMode = nil
-        if isCollectionOpen, connectionStore?.selectedExecutionMode == .remote {
-            await closeCollection()
-        }
-        await connectionStore?.signOut()
-        await handleExecutionModeChangeIfNeeded(force: true)
+            pendingExecutionMode = nil
+            if isCollectionOpen, connectionStore?.selectedExecutionMode == .remote {
+                await closeCollection()
+            }
+            await connectionStore?.signOut()
+            await handleExecutionModeChangeIfNeeded(force: true)
         #endif
     }
 
@@ -550,7 +551,7 @@ final class AppState {
     func dismissPresentedSheet() {
         navigation.presentedSheet = nil
         #if os(iOS)
-        Task { await resolvePendingExecutionModeIfNeeded() }
+            Task { await resolvePendingExecutionModeIfNeeded() }
         #endif
     }
 
@@ -564,8 +565,8 @@ final class AppState {
 
     func resolvePendingExecutionModeIfNeeded() async {
         #if os(iOS)
-        guard let pendingExecutionMode else { return }
-        await handleExecutionModeChangeIfNeeded(force: true, preferredTargetMode: pendingExecutionMode)
+            guard let pendingExecutionMode else { return }
+            await handleExecutionModeChangeIfNeeded(force: true, preferredTargetMode: pendingExecutionMode)
         #endif
     }
 
@@ -580,48 +581,48 @@ final class AppState {
     }
 
     #if os(iOS)
-    func saveBackendEndpoint() async {
-        await connectionStore?.saveEndpoint()
-        await handleExecutionModeChangeIfNeeded(force: true)
-    }
+        func saveBackendEndpoint() async {
+            await connectionStore?.saveEndpoint()
+            await handleExecutionModeChangeIfNeeded(force: true)
+        }
 
-    func verifyBackendConnection() async {
-        await connectionStore?.verifyConnection()
-        await handleExecutionModeChangeIfNeeded(force: true)
-    }
+        func verifyBackendConnection() async {
+            await connectionStore?.verifyConnection()
+            await handleExecutionModeChangeIfNeeded(force: true)
+        }
 
-    func requestBackendPairingCode() async {
-        await connectionStore?.requestPairingCode()
-        await handleExecutionModeChangeIfNeeded(force: true)
-    }
+        func requestBackendPairingCode() async {
+            await connectionStore?.requestPairingCode()
+            await handleExecutionModeChangeIfNeeded(force: true)
+        }
 
-    func discoverCompanionBackend() async {
-        await connectionStore?.discoverCompanion()
-        await handleExecutionModeChangeIfNeeded(force: true)
-    }
+        func discoverCompanionBackend() async {
+            await connectionStore?.discoverCompanion()
+            await handleExecutionModeChangeIfNeeded(force: true)
+        }
 
-    func refreshLocalRuntimeStatus() async {
-        await connectionStore?.refreshLocalRuntimeStatus()
-        await handleExecutionModeChangeIfNeeded(force: true)
-    }
+        func refreshLocalRuntimeStatus() async {
+            await connectionStore?.refreshLocalRuntimeStatus()
+            await handleExecutionModeChangeIfNeeded(force: true)
+        }
 
-    func connectRemoteBackend() async {
-        await connectionStore?.connect()
-        await handleExecutionModeChangeIfNeeded(force: true)
-    }
+        func connectRemoteBackend() async {
+            await connectionStore?.connect()
+            await handleExecutionModeChangeIfNeeded(force: true)
+        }
 
-    func refreshBackendStatus() async {
-        await connectionStore?.refreshStatus()
-        await handleExecutionModeChangeIfNeeded(force: true)
-    }
+        func refreshBackendStatus() async {
+            await connectionStore?.refreshStatus()
+            await handleExecutionModeChangeIfNeeded(force: true)
+        }
     #endif
 
     func showPreferences(tab: PreferencesTab = .general) {
         navigation.selectedPreferencesTab = tab
         #if os(macOS)
-        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
         #else
-        navigation.isShowingPreferencesSheet = true
+            navigation.isShowingPreferencesSheet = true
         #endif
     }
 
@@ -631,9 +632,9 @@ final class AppState {
 
     func openExternalURL(_ url: URL) {
         #if os(macOS)
-        NSWorkspace.shared.open(url)
+            NSWorkspace.shared.open(url)
         #elseif os(iOS)
-        UIApplication.shared.open(url)
+            UIApplication.shared.open(url)
         #endif
     }
 
@@ -680,7 +681,8 @@ final class AppState {
                 kind: .needsConfiguration,
                 title: "Finish Local Atlas Setup",
                 summary: atlasMessage
-                    ?? "Local Atlas needs PostgreSQL and embedding settings before smart search, analytics, and graph tools can start.",
+                    ??
+                    "Local Atlas needs PostgreSQL and embedding settings before smart search, analytics, and graph tools can start.",
                 guidance: "Open the Atlas tab in Preferences, fill the missing items below, then restart Atlas.",
                 checklist: checklist,
                 showsRetryAction: false
@@ -693,7 +695,8 @@ final class AppState {
             summary: atlasMessage
                 ?? "Atlas settings are present, but the local runtime could not be created.",
             guidance: detailMessage
-                ?? "Check the PostgreSQL URL, provider credentials, and network access, then retry the local Atlas startup.",
+                ??
+                "Check the PostgreSQL URL, provider credentials, and network access, then retry the local Atlas startup.",
             checklist: checklist,
             showsRetryAction: true
         )
@@ -733,223 +736,225 @@ final class AppState {
     }
 
     #if os(iOS)
-    private func refreshServiceBindings(closeCollectionIfNeeded: Bool) async {
-        if closeCollectionIfNeeded, isCollectionOpen {
-            await closeCollection()
-        }
+        private func refreshServiceBindings(closeCollectionIfNeeded: Bool) async {
+            if closeCollectionIfNeeded, isCollectionOpen {
+                await closeCollection()
+            }
 
-        let bindings = resolveIOSServices()
-        session.updateServices(
-            service: bindings.service,
-            atlasService: bindings.atlasService,
-            atlasServiceFactory: bindings.atlasServiceFactory
-        )
-        appliedExecutionMode = Self.serviceExecutionMode(for: bindings.service)
-        await refreshReviewPreferences()
-    }
-
-    private struct IOSServiceBindings {
-        let service: any AnkiServiceProtocol
-        let atlasService: (any AtlasServiceProtocol)?
-        let atlasServiceFactory: (() -> (any AtlasServiceProtocol)?)?
-    }
-
-    // swiftlint:disable function_body_length
-    private func resolveIOSServices() -> IOSServiceBindings {
-        guard let connectionStore else {
-            return IOSServiceBindings(
-                service: UnavailableAnkiService(),
-                atlasService: nil,
-                atlasServiceFactory: nil
+            let bindings = resolveIOSServices()
+            session.updateServices(
+                service: bindings.service,
+                atlasService: bindings.atlasService,
+                atlasServiceFactory: bindings.atlasServiceFactory
             )
+            appliedExecutionMode = Self.serviceExecutionMode(for: bindings.service)
+            await refreshReviewPreferences()
         }
 
-        switch connectionStore.executionMode {
-            case .remote:
-                guard connectionStore.remoteBackendReady, let remoteSessionProvider else {
-                    return IOSServiceBindings(
-                        service: UnavailableAnkiService(),
-                        atlasService: nil,
-                        atlasServiceFactory: nil
-                    )
-                }
-                let atlasFactory = {
-                    RemoteAtlasService(sessionProvider: remoteSessionProvider) as any AtlasServiceProtocol
-                }
-                return IOSServiceBindings(
-                    service: RemoteAnkiService(sessionProvider: remoteSessionProvider),
-                    atlasService: atlasFactory(),
-                    atlasServiceFactory: atlasFactory
-                )
-            case .local:
-                guard connectionStore.localBackendReady else {
-                    return IOSServiceBindings(
-                        service: UnavailableAnkiService(),
-                        atlasService: nil,
-                        atlasServiceFactory: nil
-                    )
-                }
-                let localService: any AnkiServiceProtocol
-                if let service = try? AnkiService(langs: preferredLanguages) {
-                    localService = service
-                } else {
-                    localService = UnavailableAnkiService()
-                }
-                let atlasFactory = { SessionStore.makeAtlasService() }
-                return IOSServiceBindings(
-                    service: localService,
-                    atlasService: atlasFactory(),
-                    atlasServiceFactory: atlasFactory
-                )
-            case .unavailable:
+        private struct IOSServiceBindings {
+            let service: any AnkiServiceProtocol
+            let atlasService: (any AtlasServiceProtocol)?
+            let atlasServiceFactory: (() -> (any AtlasServiceProtocol)?)?
+        }
+
+        // swiftlint:disable function_body_length
+        private func resolveIOSServices() -> IOSServiceBindings {
+            guard let connectionStore else {
                 return IOSServiceBindings(
                     service: UnavailableAnkiService(),
                     atlasService: nil,
                     atlasServiceFactory: nil
                 )
-        }
-    }
-    // swiftlint:enable function_body_length
-
-    private static func probeLocalRuntime(langs: [String]) async -> LocalRuntimeStatus {
-        do {
-            _ = try AnkiService(langs: langs)
-        } catch {
-            return .unavailable(message: "Local iOS backend could not start: \(error.localizedDescription)")
-        }
-
-        let atlasConfig = AtlasConfig.fromStoredSettings()
-        let hasAtlasConfig =
-            [atlasConfig.postgresUrl, atlasConfig.embeddingProvider, atlasConfig.embeddingModel]
-            .allSatisfy { value in
-                guard let value else { return false }
-                return !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             }
 
-        if hasAtlasConfig {
-            if let atlasService = SessionStore.makeAtlasService() {
-                _ = atlasService
-                return .ready(atlasAvailability: .available)
+            switch connectionStore.executionMode {
+                case .remote:
+                    guard connectionStore.remoteBackendReady, let remoteSessionProvider else {
+                        return IOSServiceBindings(
+                            service: UnavailableAnkiService(),
+                            atlasService: nil,
+                            atlasServiceFactory: nil
+                        )
+                    }
+                    let atlasFactory = {
+                        RemoteAtlasService(sessionProvider: remoteSessionProvider) as any AtlasServiceProtocol
+                    }
+                    return IOSServiceBindings(
+                        service: RemoteAnkiService(sessionProvider: remoteSessionProvider),
+                        atlasService: atlasFactory(),
+                        atlasServiceFactory: atlasFactory
+                    )
+                case .local:
+                    guard connectionStore.localBackendReady else {
+                        return IOSServiceBindings(
+                            service: UnavailableAnkiService(),
+                            atlasService: nil,
+                            atlasServiceFactory: nil
+                        )
+                    }
+                    let localService: any AnkiServiceProtocol = if let service =
+                        try? AnkiService(langs: preferredLanguages) {
+                        service
+                    } else {
+                        UnavailableAnkiService()
+                    }
+                    let atlasFactory = { SessionStore.makeAtlasService() }
+                    return IOSServiceBindings(
+                        service: localService,
+                        atlasService: atlasFactory(),
+                        atlasServiceFactory: atlasFactory
+                    )
+                case .unavailable:
+                    return IOSServiceBindings(
+                        service: UnavailableAnkiService(),
+                        atlasService: nil,
+                        atlasServiceFactory: nil
+                    )
             }
+        }
+
+        // swiftlint:enable function_body_length
+
+        private static func probeLocalRuntime(langs: [String]) async -> LocalRuntimeStatus {
+            do {
+                _ = try AnkiService(langs: langs)
+            } catch {
+                return .unavailable(message: "Local iOS backend could not start: \(error.localizedDescription)")
+            }
+
+            let atlasConfig = AtlasConfig.fromStoredSettings()
+            let hasAtlasConfig =
+                [atlasConfig.postgresUrl, atlasConfig.embeddingProvider, atlasConfig.embeddingModel]
+                    .allSatisfy { value in
+                        guard let value else { return false }
+                        return !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    }
+
+            if hasAtlasConfig {
+                if let atlasService = SessionStore.makeAtlasService() {
+                    _ = atlasService
+                    return .ready(atlasAvailability: .available)
+                }
+                return .ready(
+                    atlasAvailability: .unavailable,
+                    atlasMessage: "Atlas settings are present, but the local Atlas runtime could not be created."
+                )
+            }
+
             return .ready(
-                atlasAvailability: .unavailable,
-                atlasMessage: "Atlas settings are present, but the local Atlas runtime could not be created."
+                atlasAvailability: .configurationMissing,
+                atlasMessage: "Atlas is available in local mode after you provide PostgreSQL and embedding settings."
             )
         }
 
-        return .ready(
-            atlasAvailability: .configurationMissing,
-            atlasMessage: "Atlas is available in local mode after you provide PostgreSQL and embedding settings."
-        )
-    }
+        // swiftlint:disable cyclomatic_complexity
+        private func handleExecutionModeChangeIfNeeded(
+            force: Bool = false,
+            preferredTargetMode: BackendExecutionMode? = nil
+        ) async {
+            guard let connectionStore else { return }
 
-    // swiftlint:disable cyclomatic_complexity
-    private func handleExecutionModeChangeIfNeeded(
-        force: Bool = false,
-        preferredTargetMode: BackendExecutionMode? = nil
-    ) async {
-        guard let connectionStore else { return }
+            let targetMode = preferredTargetMode ?? connectionStore.executionMode
+            guard force || targetMode != appliedExecutionMode else { return }
+            guard !isApplyingExecutionModeChange else { return }
 
-        let targetMode = preferredTargetMode ?? connectionStore.executionMode
-        guard force || targetMode != appliedExecutionMode else { return }
-        guard !isApplyingExecutionModeChange else { return }
-
-        if shouldDeferExecutionModeChange(to: targetMode) {
-            pendingExecutionMode = targetMode
-            connectionStore.runtimeStatusMessage = deferredExecutionModeMessage(for: targetMode)
-            return
-        }
-
-        isApplyingExecutionModeChange = true
-        defer { isApplyingExecutionModeChange = false }
-
-        let wasCollectionOpen = isCollectionOpen
-        let reopenPath = wasCollectionOpen ? collectionPathForExecutionMode(targetMode) : nil
-
-        if wasCollectionOpen,
-           targetMode != .unavailable,
-           syncModel.isAuthenticated,
-           !syncModel.isSyncing {
-            await syncModel.sync()
-            if case .fullSyncRequired = syncModel.state {
+            if shouldDeferExecutionModeChange(to: targetMode) {
                 pendingExecutionMode = targetMode
-                connectionStore.runtimeStatusMessage =
-                    "Automatic failover paused until the required AnkiWeb full sync is completed."
+                connectionStore.runtimeStatusMessage = deferredExecutionModeMessage(for: targetMode)
                 return
             }
-            if case .error = syncModel.state {
-                pendingExecutionMode = targetMode
-                connectionStore.runtimeStatusMessage =
-                    "Automatic failover paused until the current sync error is resolved."
-                return
+
+            isApplyingExecutionModeChange = true
+            defer { isApplyingExecutionModeChange = false }
+
+            let wasCollectionOpen = isCollectionOpen
+            let reopenPath = wasCollectionOpen ? collectionPathForExecutionMode(targetMode) : nil
+
+            if wasCollectionOpen,
+               targetMode != .unavailable,
+               syncModel.isAuthenticated,
+               !syncModel.isSyncing {
+                await syncModel.sync()
+                if case .fullSyncRequired = syncModel.state {
+                    pendingExecutionMode = targetMode
+                    connectionStore.runtimeStatusMessage =
+                        "Automatic failover paused until the required AnkiWeb full sync is completed."
+                    return
+                }
+                if case .error = syncModel.state {
+                    pendingExecutionMode = targetMode
+                    connectionStore.runtimeStatusMessage =
+                        "Automatic failover paused until the current sync error is resolved."
+                    return
+                }
             }
-        }
 
-        pendingExecutionMode = nil
-        navigation.presentedSheet = nil
+            pendingExecutionMode = nil
+            navigation.presentedSheet = nil
 
-        if wasCollectionOpen {
-            await session.closeCollection()
-        }
+            if wasCollectionOpen {
+                await session.closeCollection()
+            }
 
-        await refreshServiceBindings(closeCollectionIfNeeded: false)
+            await refreshServiceBindings(closeCollectionIfNeeded: false)
 
-        if let reopenPath, targetMode != .unavailable {
-            await openCollection(path: reopenPath)
-            if !session.isCollectionOpen {
+            if let reopenPath, targetMode != .unavailable {
+                await openCollection(path: reopenPath)
+                if !session.isCollectionOpen {
+                    connectionStore.runtimeStatusMessage = missingCollectionReopenMessage(for: targetMode)
+                }
+            } else if wasCollectionOpen, targetMode != .unavailable {
                 connectionStore.runtimeStatusMessage = missingCollectionReopenMessage(for: targetMode)
             }
-        } else if wasCollectionOpen, targetMode != .unavailable {
-            connectionStore.runtimeStatusMessage = missingCollectionReopenMessage(for: targetMode)
         }
-    }
-    // swiftlint:enable cyclomatic_complexity
 
-    private func shouldDeferExecutionModeChange(to targetMode: BackendExecutionMode) -> Bool {
-        guard targetMode != appliedExecutionMode else { return false }
-        guard isCollectionOpen else { return false }
-        if syncModel.isSyncing {
-            return true
-        }
-        return navigation.presentedSheet == .reviewer
-    }
+        // swiftlint:enable cyclomatic_complexity
 
-    private func deferredExecutionModeMessage(for targetMode: BackendExecutionMode) -> String {
-        if syncModel.isSyncing {
-            return "Automatic failover to \(targetMode == .local ? "Local" : "Remote") is waiting for the current sync to finish."
+        private func shouldDeferExecutionModeChange(to targetMode: BackendExecutionMode) -> Bool {
+            guard targetMode != appliedExecutionMode else { return false }
+            guard isCollectionOpen else { return false }
+            if syncModel.isSyncing {
+                return true
+            }
+            return navigation.presentedSheet == .reviewer
         }
-        if navigation.presentedSheet == .reviewer {
-            return "Automatic failover to \(targetMode == .local ? "Local" : "Remote") is waiting for the active review session to end."
-        }
-        return "Automatic failover is pending."
-    }
 
-    private func collectionPathForExecutionMode(_ mode: BackendExecutionMode) -> String? {
-        switch mode {
-            case .local:
-                return ProfileManager().activeProfile?.path
-            case .remote:
-                let storedPath = UserDefaults.standard.string(forKey: "collectionPath")?
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                if let storedPath, !storedPath.isEmpty {
-                    return storedPath
-                }
-                return nil
-            case .unavailable:
-                return nil
+        private func deferredExecutionModeMessage(for targetMode: BackendExecutionMode) -> String {
+            if syncModel.isSyncing {
+                return "Automatic failover to \(targetMode == .local ? "Local" : "Remote") is waiting for the current sync to finish."
+            }
+            if navigation.presentedSheet == .reviewer {
+                return "Automatic failover to \(targetMode == .local ? "Local" : "Remote") is waiting for the active review session to end."
+            }
+            return "Automatic failover is pending."
         }
-    }
 
-    private func missingCollectionReopenMessage(for mode: BackendExecutionMode) -> String {
-        switch mode {
-            case .local:
-                return "Automatic failover switched to Local mode. Import or select a sandboxed local profile to reopen the collection."
-            case .remote:
-                return "Automatic failover switched to Remote mode. Select a remote collection path in Preferences to reopen the collection."
-            case .unavailable:
-                return "No backend is currently available."
+        private func collectionPathForExecutionMode(_ mode: BackendExecutionMode) -> String? {
+            switch mode {
+                case .local:
+                    return ProfileManager().activeProfile?.path
+                case .remote:
+                    let storedPath = UserDefaults.standard.string(forKey: "collectionPath")?
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                    if let storedPath, !storedPath.isEmpty {
+                        return storedPath
+                    }
+                    return nil
+                case .unavailable:
+                    return nil
+            }
         }
-    }
+
+        private func missingCollectionReopenMessage(for mode: BackendExecutionMode) -> String {
+            switch mode {
+                case .local:
+                    "Automatic failover switched to Local mode. Import or select a sandboxed local profile to reopen the collection."
+                case .remote:
+                    "Automatic failover switched to Remote mode. Select a remote collection path in Preferences to reopen the collection."
+                case .unavailable:
+                    "No backend is currently available."
+            }
+        }
     #endif
 
     private static func preferredLanguages() -> [String] {
@@ -968,17 +973,18 @@ final class AppState {
         return languages.isEmpty ? ["en"] : languages
     }
 }
+
 // swiftlint:enable type_body_length
 
 #if !os(iOS)
-extension AppState {
-    func saveBackendEndpoint() async {}
-    func verifyBackendConnection() async {}
-    func requestBackendPairingCode() async {}
-    func discoverCompanionBackend() async {}
-    func refreshLocalRuntimeStatus() async {}
-    func connectRemoteBackend() async {}
-    func refreshBackendStatus() async {}
-}
+    extension AppState {
+        func saveBackendEndpoint() async {}
+        func verifyBackendConnection() async {}
+        func requestBackendPairingCode() async {}
+        func discoverCompanionBackend() async {}
+        func refreshLocalRuntimeStatus() async {}
+        func connectRemoteBackend() async {}
+        func refreshBackendStatus() async {}
+    }
 #endif
 // swiftlint:enable file_length

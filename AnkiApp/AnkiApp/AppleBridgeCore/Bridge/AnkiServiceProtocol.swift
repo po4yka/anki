@@ -120,42 +120,42 @@ public protocol AnkiServiceProtocol: Sendable {
     func getCardStats(cardId: Int64) async throws -> Anki_Stats_CardStatsResponse
 }
 
-extension AnkiServiceProtocol {
+public extension AnkiServiceProtocol {
     private func unavailableError() -> AnkiError {
         .message("The Anki backend is unavailable.")
     }
 
-    public func openCollection(path _: String, mediaFolder _: String, mediaDb _: String) async throws {
+    func openCollection(path _: String, mediaFolder _: String, mediaDb _: String) async throws {
         throw unavailableError()
     }
 
-    public func closeCollection(downgrade _: Bool) async throws {
+    func closeCollection(downgrade _: Bool) async throws {
         throw unavailableError()
     }
 
-    public func newNote(notetypeId _: Int64) async throws -> Anki_Notes_Note {
+    func newNote(notetypeId _: Int64) async throws -> Anki_Notes_Note {
         throw unavailableError()
     }
 
-    public func defaultsForAdding(homeDeckOfCurrentReviewCard _: Int64) async throws -> Anki_Notes_DeckAndNotetype {
+    func defaultsForAdding(homeDeckOfCurrentReviewCard _: Int64) async throws -> Anki_Notes_DeckAndNotetype {
         throw unavailableError()
     }
 
-    public func getDeckTree(now _: Int64) async throws -> Anki_Decks_DeckTreeNode {
+    func getDeckTree(now _: Int64) async throws -> Anki_Decks_DeckTreeNode {
         throw unavailableError()
     }
 
-    public func setCurrentDeck(deckId _: Int64) async throws {
+    func setCurrentDeck(deckId _: Int64) async throws {
         throw unavailableError()
     }
 
-    public func getQueuedCards(fetchLimit _: UInt32) async throws -> Anki_Scheduler_QueuedCards {
+    func getQueuedCards(fetchLimit _: UInt32) async throws -> Anki_Scheduler_QueuedCards {
         throw unavailableError()
     }
 
     // Stable bridge signature; wrapping this in a parameter object would not simplify the call sites.
     // swiftlint:disable:next function_parameter_count
-    public func answerCard(
+    func answerCard(
         cardId _: Int64,
         rating _: Anki_Scheduler_CardAnswer.Rating,
         currentState _: Anki_Scheduler_SchedulingState,
@@ -166,43 +166,43 @@ extension AnkiServiceProtocol {
         throw unavailableError()
     }
 
-    public func renderExistingCard(cardId _: Int64) async throws
+    func renderExistingCard(cardId _: Int64) async throws
         -> Anki_CardRendering_RenderCardResponse {
         throw unavailableError()
     }
 
-    public func getNote(id _: Int64) async throws -> Anki_Notes_Note {
+    func getNote(id _: Int64) async throws -> Anki_Notes_Note {
         throw unavailableError()
     }
 
-    public func addNote(note _: Anki_Notes_Note,
+    func addNote(note _: Anki_Notes_Note,
                  deckId _: Int64) async throws -> Anki_Notes_AddNoteResponse {
         throw unavailableError()
     }
 
-    public func searchCards(search _: String, order _: Anki_Search_SortOrder) async throws -> Anki_Search_SearchResponse {
+    func searchCards(search _: String, order _: Anki_Search_SortOrder) async throws -> Anki_Search_SearchResponse {
         throw unavailableError()
     }
 
-    public func searchNotes(search _: String, order _: Anki_Search_SortOrder) async throws -> Anki_Search_SearchResponse {
+    func searchNotes(search _: String, order _: Anki_Search_SortOrder) async throws -> Anki_Search_SearchResponse {
         throw unavailableError()
     }
 
-    public func allBrowserColumns() async throws -> Anki_Search_BrowserColumns {
+    func allBrowserColumns() async throws -> Anki_Search_BrowserColumns {
         throw unavailableError()
     }
 
-    public func browserRowForId(id _: Int64) async throws -> Anki_Search_BrowserRow {
+    func browserRowForId(id _: Int64) async throws -> Anki_Search_BrowserRow {
         throw unavailableError()
     }
 
-    public func removeNotes(noteIds _: [Int64], cardIds _: [Int64]) async throws -> Anki_Collection_OpChangesWithCount {
+    func removeNotes(noteIds _: [Int64], cardIds _: [Int64]) async throws -> Anki_Collection_OpChangesWithCount {
         throw unavailableError()
     }
 
     // Stable bridge signature; wrapping this in a parameter object would not simplify the call sites.
     // swiftlint:disable:next function_parameter_count
-    public func findAndReplace(
+    func findAndReplace(
         nids _: [Int64],
         search _: String,
         replacement _: String,
@@ -213,16 +213,16 @@ extension AnkiServiceProtocol {
         throw unavailableError()
     }
 
-    public func setActiveBrowserColumns(columns _: [String]) async throws {
+    func setActiveBrowserColumns(columns _: [String]) async throws {
         throw unavailableError()
     }
 
-    public func setDueDate(cardIds _: [Int64],
+    func setDueDate(cardIds _: [Int64],
                     days _: String) async throws -> Anki_Collection_OpChanges {
         throw unavailableError()
     }
 
-    public func scheduleCardsAsNew(
+    func scheduleCardsAsNew(
         cardIds _: [Int64],
         log _: Bool,
         restorePosition _: Bool,
@@ -231,124 +231,124 @@ extension AnkiServiceProtocol {
         throw unavailableError()
     }
 
-    public func addNoteTags(noteIds _: [Int64], tags _: String) async throws -> Anki_Collection_OpChangesWithCount {
+    func addNoteTags(noteIds _: [Int64], tags _: String) async throws -> Anki_Collection_OpChangesWithCount {
         throw unavailableError()
     }
 
-    public func removeNoteTags(noteIds _: [Int64], tags _: String) async throws -> Anki_Collection_OpChangesWithCount {
+    func removeNoteTags(noteIds _: [Int64], tags _: String) async throws -> Anki_Collection_OpChangesWithCount {
         throw unavailableError()
     }
 
-    public func getGraphs(search _: String,
+    func getGraphs(search _: String,
                    days _: UInt32) async throws -> Anki_Stats_GraphsResponse {
         throw unavailableError()
     }
 
-    public func getNotetypeNames() async throws -> Anki_Notetypes_NotetypeNames {
+    func getNotetypeNames() async throws -> Anki_Notetypes_NotetypeNames {
         throw unavailableError()
     }
 
-    public func getNotetype(id _: Int64) async throws -> Anki_Notetypes_Notetype {
+    func getNotetype(id _: Int64) async throws -> Anki_Notetypes_Notetype {
         throw unavailableError()
     }
 
-    public func allTags() async throws -> Anki_Generic_StringList {
+    func allTags() async throws -> Anki_Generic_StringList {
         throw unavailableError()
     }
 
-    public func getCard(id _: Int64) async throws -> Anki_Cards_Card {
+    func getCard(id _: Int64) async throws -> Anki_Cards_Card {
         throw unavailableError()
     }
 
-    public func updateNotes(notes _: [Anki_Notes_Note]) async throws -> Anki_Collection_OpChanges {
+    func updateNotes(notes _: [Anki_Notes_Note]) async throws -> Anki_Collection_OpChanges {
         throw unavailableError()
     }
 
-    public func getUndoStatus() async throws -> Anki_Collection_UndoStatus {
+    func getUndoStatus() async throws -> Anki_Collection_UndoStatus {
         throw unavailableError()
     }
 
-    public func undo() async throws -> Anki_Collection_OpChangesAfterUndo {
+    func undo() async throws -> Anki_Collection_OpChangesAfterUndo {
         throw unavailableError()
     }
 
-    public func redo() async throws -> Anki_Collection_OpChangesAfterUndo {
+    func redo() async throws -> Anki_Collection_OpChangesAfterUndo {
         throw unavailableError()
     }
 
-    public func extractAvTags(text _: String, questionSide _: Bool) async throws -> Anki_CardRendering_ExtractAvTagsResponse {
+    func extractAvTags(text _: String, questionSide _: Bool) async throws -> Anki_CardRendering_ExtractAvTagsResponse {
         throw unavailableError()
     }
 
-    public func clozeNumbersInNote(note _: Anki_Notes_Note) async throws -> Anki_Notes_ClozeNumbersInNoteResponse {
+    func clozeNumbersInNote(note _: Anki_Notes_Note) async throws -> Anki_Notes_ClozeNumbersInNoteResponse {
         throw unavailableError()
     }
 
-    public func noteFieldsCheck(note _: Anki_Notes_Note) async throws -> Anki_Notes_NoteFieldsCheckResponse {
+    func noteFieldsCheck(note _: Anki_Notes_Note) async throws -> Anki_Notes_NoteFieldsCheckResponse {
         throw unavailableError()
     }
 
-    public func syncLogin(username _: String,
+    func syncLogin(username _: String,
                    password _: String) async throws -> Anki_Sync_SyncAuth {
         throw unavailableError()
     }
 
-    public func syncStatus(auth _: Anki_Sync_SyncAuth) async throws -> Anki_Sync_SyncStatusResponse {
+    func syncStatus(auth _: Anki_Sync_SyncAuth) async throws -> Anki_Sync_SyncStatusResponse {
         throw unavailableError()
     }
 
-    public func syncCollection(auth _: Anki_Sync_SyncAuth,
+    func syncCollection(auth _: Anki_Sync_SyncAuth,
                         syncMedia _: Bool) async throws -> Anki_Sync_SyncCollectionResponse {
         throw unavailableError()
     }
 
-    public func fullUploadOrDownload(auth _: Anki_Sync_SyncAuth, upload _: Bool, serverUsn _: Int32?) async throws {
+    func fullUploadOrDownload(auth _: Anki_Sync_SyncAuth, upload _: Bool, serverUsn _: Int32?) async throws {
         throw unavailableError()
     }
 
-    public func syncMedia(auth _: Anki_Sync_SyncAuth) async throws {
+    func syncMedia(auth _: Anki_Sync_SyncAuth) async throws {
         throw unavailableError()
     }
 
-    public func newDeck() async throws -> Anki_Decks_Deck {
+    func newDeck() async throws -> Anki_Decks_Deck {
         throw unavailableError()
     }
 
-    public func addDeck(deck _: Anki_Decks_Deck) async throws -> Anki_Collection_OpChangesWithId {
+    func addDeck(deck _: Anki_Decks_Deck) async throws -> Anki_Collection_OpChangesWithId {
         throw unavailableError()
     }
 
-    public func getDeck(id _: Int64) async throws -> Anki_Decks_Deck {
+    func getDeck(id _: Int64) async throws -> Anki_Decks_Deck {
         throw unavailableError()
     }
 
-    public func updateDeck(deck _: Anki_Decks_Deck) async throws -> Anki_Collection_OpChanges {
+    func updateDeck(deck _: Anki_Decks_Deck) async throws -> Anki_Collection_OpChanges {
         throw unavailableError()
     }
 
-    public func removeDecks(ids _: [Int64]) async throws -> Anki_Collection_OpChangesWithCount {
+    func removeDecks(ids _: [Int64]) async throws -> Anki_Collection_OpChangesWithCount {
         throw unavailableError()
     }
 
-    public func renameDeck(deckId _: Int64,
+    func renameDeck(deckId _: Int64,
                     newName _: String) async throws -> Anki_Collection_OpChanges {
         throw unavailableError()
     }
 
-    public func getDeckConfigsForUpdate(deckId _: Int64) async throws -> Anki_DeckConfig_DeckConfigsForUpdate {
+    func getDeckConfigsForUpdate(deckId _: Int64) async throws -> Anki_DeckConfig_DeckConfigsForUpdate {
         throw unavailableError()
     }
 
-    public func updateDeckConfigs(request _: Anki_DeckConfig_UpdateDeckConfigsRequest) async throws
+    func updateDeckConfigs(request _: Anki_DeckConfig_UpdateDeckConfigsRequest) async throws
         -> Anki_Collection_OpChanges {
         throw unavailableError()
     }
 
-    public func addMediaFile(desiredName _: String, data _: Data) async throws -> String {
+    func addMediaFile(desiredName _: String, data _: Data) async throws -> String {
         throw unavailableError()
     }
 
-    public func buryOrSuspendCards(
+    func buryOrSuspendCards(
         cardIds _: [Int64],
         noteIds _: [Int64],
         mode _: Anki_Scheduler_BuryOrSuspendCardsRequest.Mode
@@ -356,16 +356,16 @@ extension AnkiServiceProtocol {
         throw unavailableError()
     }
 
-    public func setFlag(cardIds _: [Int64], flag _: UInt32) async throws -> Anki_Collection_OpChangesWithCount {
+    func setFlag(cardIds _: [Int64], flag _: UInt32) async throws -> Anki_Collection_OpChangesWithCount {
         throw unavailableError()
     }
 
-    public func importAnkiPackage(path _: String, options _: Anki_ImportExport_ImportAnkiPackageOptions) async throws
+    func importAnkiPackage(path _: String, options _: Anki_ImportExport_ImportAnkiPackageOptions) async throws
         -> Anki_ImportExport_ImportResponse {
         throw unavailableError()
     }
 
-    public func exportAnkiPackage(
+    func exportAnkiPackage(
         outPath _: String,
         options _: Anki_ImportExport_ExportAnkiPackageOptions,
         limit _: Anki_ImportExport_ExportLimit
@@ -373,7 +373,7 @@ extension AnkiServiceProtocol {
         throw unavailableError()
     }
 
-    public func getCsvMetadata(
+    func getCsvMetadata(
         path _: String,
         delimiter _: Anki_ImportExport_CsvMetadata.Delimiter?,
         notetypeId _: Int64?,
@@ -383,106 +383,106 @@ extension AnkiServiceProtocol {
         throw unavailableError()
     }
 
-    public func importCsv(path _: String, metadata _: Anki_ImportExport_CsvMetadata) async throws
+    func importCsv(path _: String, metadata _: Anki_ImportExport_CsvMetadata) async throws
         -> Anki_ImportExport_ImportResponse {
         throw unavailableError()
     }
 
-    public func checkMedia() async throws -> Anki_Media_CheckMediaResponse {
+    func checkMedia() async throws -> Anki_Media_CheckMediaResponse {
         throw unavailableError()
     }
 
-    public func trashMediaFiles(filenames _: [String]) async throws {
+    func trashMediaFiles(filenames _: [String]) async throws {
         throw unavailableError()
     }
 
-    public func emptyTrash() async throws {
+    func emptyTrash() async throws {
         throw unavailableError()
     }
 
-    public func restoreTrash() async throws {
+    func restoreTrash() async throws {
         throw unavailableError()
     }
 
-    public func cardsOfNote(noteId _: Int64) async throws -> [Int64] {
+    func cardsOfNote(noteId _: Int64) async throws -> [Int64] {
         throw unavailableError()
     }
 
-    public func addNotetype(notetype _: Anki_Notetypes_Notetype) async throws -> Anki_Collection_OpChangesWithId {
+    func addNotetype(notetype _: Anki_Notetypes_Notetype) async throws -> Anki_Collection_OpChangesWithId {
         throw unavailableError()
     }
 
-    public func updateNotetype(notetype _: Anki_Notetypes_Notetype) async throws -> Anki_Collection_OpChanges {
+    func updateNotetype(notetype _: Anki_Notetypes_Notetype) async throws -> Anki_Collection_OpChanges {
         throw unavailableError()
     }
 
-    public func removeNotetype(id _: Int64) async throws -> Anki_Collection_OpChanges {
+    func removeNotetype(id _: Int64) async throws -> Anki_Collection_OpChanges {
         throw unavailableError()
     }
 
-    public func getNotetypeNamesAndCounts() async throws -> Anki_Notetypes_NotetypeUseCounts {
+    func getNotetypeNamesAndCounts() async throws -> Anki_Notetypes_NotetypeUseCounts {
         throw unavailableError()
     }
 
-    public func getImageForOcclusion(path _: String) async throws -> Anki_ImageOcclusion_GetImageForOcclusionResponse {
+    func getImageForOcclusion(path _: String) async throws -> Anki_ImageOcclusion_GetImageForOcclusionResponse {
         throw unavailableError()
     }
 
-    public func getImageOcclusionNote(noteId _: Int64) async throws -> Anki_ImageOcclusion_GetImageOcclusionNoteResponse {
+    func getImageOcclusionNote(noteId _: Int64) async throws -> Anki_ImageOcclusion_GetImageOcclusionNoteResponse {
         throw unavailableError()
     }
 
-    public func addImageOcclusionNote(request _: Anki_ImageOcclusion_AddImageOcclusionNoteRequest) async throws
+    func addImageOcclusionNote(request _: Anki_ImageOcclusion_AddImageOcclusionNoteRequest) async throws
         -> Anki_Collection_OpChanges {
         throw unavailableError()
     }
 
-    public func updateImageOcclusionNote(request _: Anki_ImageOcclusion_UpdateImageOcclusionNoteRequest) async throws
+    func updateImageOcclusionNote(request _: Anki_ImageOcclusion_UpdateImageOcclusionNoteRequest) async throws
         -> Anki_Collection_OpChanges {
         throw unavailableError()
     }
 
-    public func customStudy(request _: Anki_Scheduler_CustomStudyRequest) async throws -> Anki_Collection_OpChanges {
+    func customStudy(request _: Anki_Scheduler_CustomStudyRequest) async throws -> Anki_Collection_OpChanges {
         throw unavailableError()
     }
 
-    public func customStudyDefaults(deckId _: Int64) async throws -> Anki_Scheduler_CustomStudyDefaultsResponse {
+    func customStudyDefaults(deckId _: Int64) async throws -> Anki_Scheduler_CustomStudyDefaultsResponse {
         throw unavailableError()
     }
 
-    public func emptyFilteredDeck(deckId _: Int64) async throws -> Anki_Collection_OpChanges {
+    func emptyFilteredDeck(deckId _: Int64) async throws -> Anki_Collection_OpChanges {
         throw unavailableError()
     }
 
-    public func rebuildFilteredDeck(deckId _: Int64) async throws -> Anki_Collection_OpChangesWithCount {
+    func rebuildFilteredDeck(deckId _: Int64) async throws -> Anki_Collection_OpChangesWithCount {
         throw unavailableError()
     }
 
-    public func createBackup(backupFolder _: String, force _: Bool, waitForCompletion _: Bool) async throws -> Bool {
+    func createBackup(backupFolder _: String, force _: Bool, waitForCompletion _: Bool) async throws -> Bool {
         throw unavailableError()
     }
 
-    public func awaitBackupCompletion() async throws -> Bool {
+    func awaitBackupCompletion() async throws -> Bool {
         throw unavailableError()
     }
 
-    public func setBrowserTableNotesMode(_: Bool) async throws {
+    func setBrowserTableNotesMode(_: Bool) async throws {
         throw unavailableError()
     }
 
-    public func getPreferences() async throws -> Anki_Config_Preferences {
+    func getPreferences() async throws -> Anki_Config_Preferences {
         throw unavailableError()
     }
 
-    public func setPreferences(prefs _: Anki_Config_Preferences) async throws {
+    func setPreferences(prefs _: Anki_Config_Preferences) async throws {
         throw unavailableError()
     }
 
-    public func compareAnswer(expected _: String, provided _: String, combining _: Bool) async throws -> String {
+    func compareAnswer(expected _: String, provided _: String, combining _: Bool) async throws -> String {
         throw unavailableError()
     }
 
-    public func getCardStats(cardId _: Int64) async throws -> Anki_Stats_CardStatsResponse {
+    func getCardStats(cardId _: Int64) async throws -> Anki_Stats_CardStatsResponse {
         throw unavailableError()
     }
 }

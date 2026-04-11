@@ -3,8 +3,8 @@
 
 import Foundation
 
-extension AnkiService {
-    public func getNotetypeNames() async throws -> Anki_Notetypes_NotetypeNames {
+public extension AnkiService {
+    func getNotetypeNames() async throws -> Anki_Notetypes_NotetypeNames {
         let req = Anki_Generic_Empty()
         return try backend.command(
             service: ServiceIndex.notetypes,
@@ -13,7 +13,7 @@ extension AnkiService {
         )
     }
 
-    public func getNotetype(id: Int64) async throws -> Anki_Notetypes_Notetype {
+    func getNotetype(id: Int64) async throws -> Anki_Notetypes_Notetype {
         var req = Anki_Notetypes_NotetypeId()
         req.ntid = id
         return try backend.command(
@@ -23,7 +23,7 @@ extension AnkiService {
         )
     }
 
-    public func addNotetype(notetype: Anki_Notetypes_Notetype) async throws -> Anki_Collection_OpChangesWithId {
+    func addNotetype(notetype: Anki_Notetypes_Notetype) async throws -> Anki_Collection_OpChangesWithId {
         try backend.command(
             service: ServiceIndex.notetypes,
             method: NotetypesMethod.addNotetype,
@@ -31,7 +31,7 @@ extension AnkiService {
         )
     }
 
-    public func updateNotetype(notetype: Anki_Notetypes_Notetype) async throws -> Anki_Collection_OpChanges {
+    func updateNotetype(notetype: Anki_Notetypes_Notetype) async throws -> Anki_Collection_OpChanges {
         try backend.command(
             service: ServiceIndex.notetypes,
             method: NotetypesMethod.updateNotetype,
@@ -39,7 +39,7 @@ extension AnkiService {
         )
     }
 
-    public func removeNotetype(id: Int64) async throws -> Anki_Collection_OpChanges {
+    func removeNotetype(id: Int64) async throws -> Anki_Collection_OpChanges {
         var req = Anki_Notetypes_NotetypeId()
         req.ntid = id
         return try backend.command(
@@ -49,7 +49,7 @@ extension AnkiService {
         )
     }
 
-    public func getNotetypeNamesAndCounts() async throws -> Anki_Notetypes_NotetypeUseCounts {
+    func getNotetypeNamesAndCounts() async throws -> Anki_Notetypes_NotetypeUseCounts {
         let req = Anki_Generic_Empty()
         return try backend.command(
             service: ServiceIndex.notetypes,

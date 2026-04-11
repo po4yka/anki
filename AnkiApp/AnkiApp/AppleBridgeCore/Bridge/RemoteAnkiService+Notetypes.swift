@@ -1,7 +1,7 @@
 import Foundation
 
-extension RemoteAnkiService {
-    public func getNotetypeNames() async throws -> Anki_Notetypes_NotetypeNames {
+public extension RemoteAnkiService {
+    func getNotetypeNames() async throws -> Anki_Notetypes_NotetypeNames {
         try await command(
             service: ServiceIndex.notetypes,
             method: NotetypesMethod.getNotetypeNames,
@@ -9,7 +9,7 @@ extension RemoteAnkiService {
         )
     }
 
-    public func getNotetype(id: Int64) async throws -> Anki_Notetypes_Notetype {
+    func getNotetype(id: Int64) async throws -> Anki_Notetypes_Notetype {
         var req = Anki_Notetypes_NotetypeId()
         req.ntid = id
         return try await command(
@@ -19,7 +19,7 @@ extension RemoteAnkiService {
         )
     }
 
-    public func addNotetype(notetype: Anki_Notetypes_Notetype) async throws -> Anki_Collection_OpChangesWithId {
+    func addNotetype(notetype: Anki_Notetypes_Notetype) async throws -> Anki_Collection_OpChangesWithId {
         try await command(
             service: ServiceIndex.notetypes,
             method: NotetypesMethod.addNotetype,
@@ -27,7 +27,7 @@ extension RemoteAnkiService {
         )
     }
 
-    public func updateNotetype(notetype: Anki_Notetypes_Notetype) async throws -> Anki_Collection_OpChanges {
+    func updateNotetype(notetype: Anki_Notetypes_Notetype) async throws -> Anki_Collection_OpChanges {
         try await command(
             service: ServiceIndex.notetypes,
             method: NotetypesMethod.updateNotetype,
@@ -35,7 +35,7 @@ extension RemoteAnkiService {
         )
     }
 
-    public func removeNotetype(id: Int64) async throws -> Anki_Collection_OpChanges {
+    func removeNotetype(id: Int64) async throws -> Anki_Collection_OpChanges {
         var req = Anki_Notetypes_NotetypeId()
         req.ntid = id
         return try await command(
@@ -45,7 +45,7 @@ extension RemoteAnkiService {
         )
     }
 
-    public func getNotetypeNamesAndCounts() async throws -> Anki_Notetypes_NotetypeUseCounts {
+    func getNotetypeNamesAndCounts() async throws -> Anki_Notetypes_NotetypeUseCounts {
         try await command(
             service: ServiceIndex.notetypes,
             method: NotetypesMethod.getNotetypeNamesAndCounts,

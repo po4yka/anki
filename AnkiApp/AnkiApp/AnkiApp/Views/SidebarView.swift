@@ -1,6 +1,6 @@
-import SwiftUI
 import AppleBridgeCore
 import AppleSharedUI
+import SwiftUI
 
 enum SidebarItem: String, CaseIterable, Identifiable {
     case decks = "Decks"
@@ -65,39 +65,39 @@ struct SidebarView: View {
     var body: some View {
         @Bindable var appState = appState
         List {
-#if os(macOS)
-            Section("Anki") {
-                ForEach(ankiItems) { item in
-                    Label(item.rawValue, systemImage: item.systemImage)
-                        .tag(item)
-                }
-            }
-            Section("Atlas") {
-                ForEach(atlasItems) { item in
-                    Label(item.rawValue, systemImage: item.systemImage)
-                        .tag(item)
-                }
-            }
-#else
-            Section("Anki") {
-                ForEach(ankiItems) { item in
-                    Button {
-                        appState.selectedSidebarItem = item
-                    } label: {
+            #if os(macOS)
+                Section("Anki") {
+                    ForEach(ankiItems) { item in
                         Label(item.rawValue, systemImage: item.systemImage)
+                            .tag(item)
                     }
                 }
-            }
-            Section("Atlas") {
-                ForEach(atlasItems) { item in
-                    Button {
-                        appState.selectedSidebarItem = item
-                    } label: {
+                Section("Atlas") {
+                    ForEach(atlasItems) { item in
                         Label(item.rawValue, systemImage: item.systemImage)
+                            .tag(item)
                     }
                 }
-            }
-#endif
+            #else
+                Section("Anki") {
+                    ForEach(ankiItems) { item in
+                        Button {
+                            appState.selectedSidebarItem = item
+                        } label: {
+                            Label(item.rawValue, systemImage: item.systemImage)
+                        }
+                    }
+                }
+                Section("Atlas") {
+                    ForEach(atlasItems) { item in
+                        Button {
+                            appState.selectedSidebarItem = item
+                        } label: {
+                            Label(item.rawValue, systemImage: item.systemImage)
+                        }
+                    }
+                }
+            #endif
         }
         .navigationTitle("Anki")
         .listStyle(.sidebar)

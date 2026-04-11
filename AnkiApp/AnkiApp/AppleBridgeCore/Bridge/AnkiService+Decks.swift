@@ -3,8 +3,8 @@
 
 import Foundation
 
-extension AnkiService {
-    public func getDeckTree(now: Int64) async throws -> Anki_Decks_DeckTreeNode {
+public extension AnkiService {
+    func getDeckTree(now: Int64) async throws -> Anki_Decks_DeckTreeNode {
         var req = Anki_Decks_DeckTreeRequest()
         req.now = now
         return try backend.command(
@@ -14,7 +14,7 @@ extension AnkiService {
         )
     }
 
-    public func newDeck() async throws -> Anki_Decks_Deck {
+    func newDeck() async throws -> Anki_Decks_Deck {
         let req = Anki_Generic_Empty()
         return try backend.command(
             service: ServiceIndex.decks,
@@ -23,7 +23,7 @@ extension AnkiService {
         )
     }
 
-    public func addDeck(deck: Anki_Decks_Deck) async throws -> Anki_Collection_OpChangesWithId {
+    func addDeck(deck: Anki_Decks_Deck) async throws -> Anki_Collection_OpChangesWithId {
         try backend.command(
             service: ServiceIndex.decks,
             method: DecksMethod.addDeck,
@@ -31,7 +31,7 @@ extension AnkiService {
         )
     }
 
-    public func getDeck(id: Int64) async throws -> Anki_Decks_Deck {
+    func getDeck(id: Int64) async throws -> Anki_Decks_Deck {
         var req = Anki_Decks_DeckId()
         req.did = id
         return try backend.command(
@@ -41,7 +41,7 @@ extension AnkiService {
         )
     }
 
-    public func updateDeck(deck: Anki_Decks_Deck) async throws -> Anki_Collection_OpChanges {
+    func updateDeck(deck: Anki_Decks_Deck) async throws -> Anki_Collection_OpChanges {
         try backend.command(
             service: ServiceIndex.decks,
             method: DecksMethod.updateDeck,
@@ -49,7 +49,7 @@ extension AnkiService {
         )
     }
 
-    public func removeDecks(ids: [Int64]) async throws -> Anki_Collection_OpChangesWithCount {
+    func removeDecks(ids: [Int64]) async throws -> Anki_Collection_OpChangesWithCount {
         var req = Anki_Decks_DeckIds()
         req.dids = ids
         return try backend.command(
@@ -59,7 +59,7 @@ extension AnkiService {
         )
     }
 
-    public func renameDeck(deckId: Int64, newName: String) async throws -> Anki_Collection_OpChanges {
+    func renameDeck(deckId: Int64, newName: String) async throws -> Anki_Collection_OpChanges {
         var req = Anki_Decks_RenameDeckRequest()
         req.deckID = deckId
         req.newName = newName
@@ -70,7 +70,7 @@ extension AnkiService {
         )
     }
 
-    public func setCurrentDeck(deckId: Int64) async throws {
+    func setCurrentDeck(deckId: Int64) async throws {
         var req = Anki_Decks_DeckId()
         req.did = deckId
         let _: Anki_Collection_OpChanges = try backend.command(
@@ -80,7 +80,7 @@ extension AnkiService {
         )
     }
 
-    public func getDeckConfigsForUpdate(deckId: Int64) async throws -> Anki_DeckConfig_DeckConfigsForUpdate {
+    func getDeckConfigsForUpdate(deckId: Int64) async throws -> Anki_DeckConfig_DeckConfigsForUpdate {
         var req = Anki_Decks_DeckId()
         req.did = deckId
         return try backend.command(
@@ -90,7 +90,7 @@ extension AnkiService {
         )
     }
 
-    public func updateDeckConfigs(request: Anki_DeckConfig_UpdateDeckConfigsRequest) async throws
+    func updateDeckConfigs(request: Anki_DeckConfig_UpdateDeckConfigsRequest) async throws
         -> Anki_Collection_OpChanges {
         try backend.command(
             service: ServiceIndex.deckConfig,

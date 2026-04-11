@@ -3,8 +3,8 @@
 
 import Foundation
 
-extension AnkiService {
-    public func renderExistingCard(cardId: Int64) async throws -> Anki_CardRendering_RenderCardResponse {
+public extension AnkiService {
+    func renderExistingCard(cardId: Int64) async throws -> Anki_CardRendering_RenderCardResponse {
         var req = Anki_CardRendering_RenderExistingCardRequest()
         req.cardID = cardId
         return try backend.command(
@@ -14,7 +14,7 @@ extension AnkiService {
         )
     }
 
-    public func extractAvTags(text: String, questionSide: Bool) async throws -> Anki_CardRendering_ExtractAvTagsResponse {
+    func extractAvTags(text: String, questionSide: Bool) async throws -> Anki_CardRendering_ExtractAvTagsResponse {
         var req = Anki_CardRendering_ExtractAvTagsRequest()
         req.text = text
         req.questionSide = questionSide
@@ -25,7 +25,7 @@ extension AnkiService {
         )
     }
 
-    public func compareAnswer(expected: String, provided: String, combining: Bool) async throws -> String {
+    func compareAnswer(expected: String, provided: String, combining: Bool) async throws -> String {
         var req = Anki_CardRendering_CompareAnswerRequest()
         req.expected = expected
         req.provided = provided

@@ -1,6 +1,6 @@
-import SwiftUI
 import AppleBridgeCore
 import AppleSharedUI
+import SwiftUI
 
 struct DetailRouter: View {
     @Environment(AppState.self) private var appState

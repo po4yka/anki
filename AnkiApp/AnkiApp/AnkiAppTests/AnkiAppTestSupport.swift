@@ -1,23 +1,23 @@
 @testable import AppleBridgeCore
 import Testing
 
-struct CompareAnswerCall: Equatable, Sendable {
+struct CompareAnswerCall: Equatable {
     let expected: String
     let provided: String
     let combining: Bool
 }
 
-struct RemoveNotesCall: Equatable, Sendable {
+struct RemoveNotesCall: Equatable {
     let noteIds: [Int64]
     let cardIds: [Int64]
 }
 
-struct SetDueDateCall: Equatable, Sendable {
+struct SetDueDateCall: Equatable {
     let cardIds: [Int64]
     let days: String
 }
 
-struct AddNoteTagsCall: Equatable, Sendable {
+struct AddNoteTagsCall: Equatable {
     let noteIds: [Int64]
     let tags: String
 }
@@ -49,11 +49,11 @@ actor TestAnkiService: AnkiServiceProtocol {
         self.cardsOfNoteResponses = cardsOfNoteResponses
     }
 
-    func getQueuedCards(fetchLimit: UInt32) async throws -> Anki_Scheduler_QueuedCards {
+    func getQueuedCards(fetchLimit _: UInt32) async throws -> Anki_Scheduler_QueuedCards {
         queuedCardsResponse
     }
 
-    func renderExistingCard(cardId: Int64) async throws -> Anki_CardRendering_RenderCardResponse {
+    func renderExistingCard(cardId _: Int64) async throws -> Anki_CardRendering_RenderCardResponse {
         renderExistingCardResponse
     }
 
@@ -92,7 +92,7 @@ actor TestAnkiService: AnkiServiceProtocol {
         currentDeckCalls.append(deckId)
     }
 
-    func setBrowserTableNotesMode(_ enabled: Bool) async throws {}
+    func setBrowserTableNotesMode(_: Bool) async throws {}
 
     func lastCompareAnswerCall() -> CompareAnswerCall? {
         compareAnswerCalls.last
@@ -149,10 +149,10 @@ actor TestAtlasService: AtlasServiceProtocol {
             warnings: []
         )
     ) {
-        self.remainingStatuses = statusResponses
-        self.taxonomyTreeValue = taxonomyTree
-        self.noteLinksByNoteId = noteLinks
-        self.neighborhoodsByTopicId = neighborhoods
+        remainingStatuses = statusResponses
+        taxonomyTreeValue = taxonomyTree
+        noteLinksByNoteId = noteLinks
+        neighborhoodsByTopicId = neighborhoods
         self.refreshValue = refreshValue
     }
 
@@ -174,7 +174,7 @@ actor TestAtlasService: AtlasServiceProtocol {
         ChunkSearchResponse(query: request.query, results: [])
     }
 
-    func generatePreview(filePath: String) async throws -> GeneratePreview {
+    func generatePreview(filePath _: String) async throws -> GeneratePreview {
         GeneratePreview(cards: [], topic: nil)
     }
 
@@ -182,24 +182,24 @@ actor TestAtlasService: AtlasServiceProtocol {
         GeneratePreview(cards: [], topic: request.topic)
     }
 
-    func getTaxonomyTree(rootPath: String?) async throws -> [TaxonomyNode] {
+    func getTaxonomyTree(rootPath _: String?) async throws -> [TaxonomyNode] {
         taxonomyCallCount += 1
         return taxonomyTreeValue
     }
 
-    func getCoverage(topicPath: String, includeSubtree: Bool) async throws -> TopicCoverage? {
+    func getCoverage(topicPath _: String, includeSubtree _: Bool) async throws -> TopicCoverage? {
         nil
     }
 
-    func getGaps(topicPath: String, minCoverage: Int) async throws -> [TopicGap] {
+    func getGaps(topicPath _: String, minCoverage _: Int) async throws -> [TopicGap] {
         []
     }
 
-    func getWeakNotes(topicPath: String) async throws -> [WeakNote] {
+    func getWeakNotes(topicPath _: String) async throws -> [WeakNote] {
         []
     }
 
-    func findDuplicates(threshold: Double) async throws -> FindDuplicatesResponse {
+    func findDuplicates(threshold _: Double) async throws -> FindDuplicatesResponse {
         FindDuplicatesResponse(clusters: [], stats: DuplicateStats(totalNotes: 0, clustersFound: 0, duplicateNotes: 0))
     }
 
@@ -217,12 +217,12 @@ actor TestAtlasService: AtlasServiceProtocol {
         )
     }
 
-    func refreshKnowledgeGraph(_ request: RefreshKnowledgeGraphRequest) async throws -> RefreshKnowledgeGraphResponse {
+    func refreshKnowledgeGraph(_: RefreshKnowledgeGraphRequest) async throws -> RefreshKnowledgeGraphResponse {
         refreshCallCount += 1
         return refreshValue
     }
 
-    func getNoteLinks(noteId: Int64, limit: Int) async throws -> NoteLinksResponse {
+    func getNoteLinks(noteId: Int64, limit _: Int) async throws -> NoteLinksResponse {
         requestedNoteIds.append(noteId)
         return NoteLinksResponse(
             focusNoteId: noteId,
@@ -230,7 +230,8 @@ actor TestAtlasService: AtlasServiceProtocol {
         )
     }
 
-    func getTopicNeighborhood(topicId: Int64, maxHops: Int, limitPerHop: Int) async throws -> TopicNeighborhoodResponse {
+    func getTopicNeighborhood(topicId: Int64, maxHops _: Int,
+                              limitPerHop _: Int) async throws -> TopicNeighborhoodResponse {
         requestedTopicIds.append(topicId)
         return neighborhoodsByTopicId[topicId] ?? TopicNeighborhoodResponse(
             rootTopicId: topicId,
@@ -239,7 +240,7 @@ actor TestAtlasService: AtlasServiceProtocol {
         )
     }
 
-    func obsidianScan(_ request: ObsidianScanRequest) async throws -> ObsidianScanPreview {
+    func obsidianScan(_: ObsidianScanRequest) async throws -> ObsidianScanPreview {
         ObsidianScanPreview(totalNotes: 0, notes: [])
     }
 

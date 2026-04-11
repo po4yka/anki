@@ -1,12 +1,12 @@
-import Foundation
-import Observation
-import CoreGraphics
 import AppleBridgeCore
 import AppleSharedUI
+import CoreGraphics
+import Foundation
+import Observation
 #if os(macOS)
-import AppKit
+    import AppKit
 #elseif os(iOS)
-import UIKit
+    import UIKit
 #endif
 
 enum ShapeKind: String, CaseIterable {

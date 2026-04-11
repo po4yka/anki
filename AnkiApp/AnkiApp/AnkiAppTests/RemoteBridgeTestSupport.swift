@@ -33,7 +33,7 @@ final class RemoteBridgeURLProtocol: URLProtocol, @unchecked Sendable {
         lock.unlock()
     }
 
-    override static func canInit(with request: URLRequest) -> Bool {
+    override static func canInit(with _: URLRequest) -> Bool {
         true
     }
 
@@ -75,7 +75,7 @@ actor StubRemoteSessionProvider: RemoteSessionProviding {
     private var recoveries = 0
 
     init(endpoint: BackendEndpoint, accessToken: String, backendSessions: [String]) {
-        self.endpointValue = endpoint
+        endpointValue = endpoint
         accessTokenValue = accessToken
         self.backendSessions = backendSessions
     }
@@ -129,7 +129,7 @@ actor StubRemoteSessionProvider: RemoteSessionProviding {
 }
 
 actor RecordingBackendTransport: BackendCommandTransport {
-    struct Invocation: Sendable {
+    struct Invocation {
         let service: UInt32
         let method: UInt32
         let payload: Data
@@ -142,9 +142,9 @@ actor RecordingBackendTransport: BackendCommandTransport {
         _ message: Message,
         isBackendError: Bool = false
     ) throws {
-        queuedResponses.append(
+        try queuedResponses.append(
             BackendCommandResponse(
-                payload: try message.serializedData(),
+                payload: message.serializedData(),
                 isBackendError: isBackendError
             )
         )
@@ -264,11 +264,11 @@ actor StubRemoteSessionManager: RemoteSessionManaging {
         currentRemoteCollectionStateValue
     }
 
-    func issuePairingCode(deviceName: String?) async throws -> PairingCodeResponse {
+    func issuePairingCode(deviceName _: String?) async throws -> PairingCodeResponse {
         issuedPairingCodeValue
     }
 
-    func exchangePairingCode(_ code: String) async throws -> RemoteAuthSession {
+    func exchangePairingCode(_: String) async throws -> RemoteAuthSession {
         currentSessionValue = exchangedSessionValue
         currentCapabilitiesValue = exchangedSessionValue.capabilities
         return exchangedSessionValue
@@ -324,7 +324,7 @@ actor StubEndpointDiscoverer: BackendEndpointDiscovering {
         }
     }
 
-    func discoverPreferredEndpoint(for deploymentKind: BackendDeploymentKind) async throws -> BackendEndpoint? {
+    func discoverPreferredEndpoint(for _: BackendDeploymentKind) async throws -> BackendEndpoint? {
         discoveredEndpoint
     }
 
@@ -526,4 +526,5 @@ func iso8601(_ date: Date) -> String {
     formatter.formatOptions = [.withInternetDateTime]
     return formatter.string(from: date)
 }
+
 // swiftlint:enable file_length

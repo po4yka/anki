@@ -1,7 +1,7 @@
-import SwiftUI
-import UniformTypeIdentifiers
 import AppleBridgeCore
 import AppleSharedUI
+import SwiftUI
+import UniformTypeIdentifiers
 
 struct GeneralSettingsView: View {
     @Environment(AppState.self) private var appState
@@ -117,9 +117,9 @@ struct GeneralSettingsView: View {
 
     private var isLocalIOSMode: Bool {
         #if os(iOS)
-        appState.connectionStore?.selectedExecutionMode == .local
+            appState.connectionStore?.selectedExecutionMode == .local
         #else
-        false
+            false
         #endif
     }
 

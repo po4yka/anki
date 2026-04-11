@@ -2,61 +2,61 @@ import SwiftUI
 import WebKit
 
 #if os(macOS)
-public struct RichFieldEditor: NSViewRepresentable {
-    @Binding public var html: String
-    public var onContentChange: ((String) -> Void)?
-    public var onCoordinatorReady: ((Coordinator) -> Void)?
+    public struct RichFieldEditor: NSViewRepresentable {
+        @Binding public var html: String
+        public var onContentChange: ((String) -> Void)?
+        public var onCoordinatorReady: ((Coordinator) -> Void)?
 
-    public init(
-        html: Binding<String>,
-        onContentChange: ((String) -> Void)? = nil,
-        onCoordinatorReady: ((Coordinator) -> Void)? = nil
-    ) {
-        _html = html
-        self.onContentChange = onContentChange
-        self.onCoordinatorReady = onCoordinatorReady
-    }
+        public init(
+            html: Binding<String>,
+            onContentChange: ((String) -> Void)? = nil,
+            onCoordinatorReady: ((Coordinator) -> Void)? = nil
+        ) {
+            _html = html
+            self.onContentChange = onContentChange
+            self.onCoordinatorReady = onCoordinatorReady
+        }
 
-    public func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
+        public func makeCoordinator() -> Coordinator {
+            Coordinator(self)
+        }
 
-    public func makeNSView(context: Context) -> WKWebView {
-        makeWebView(context: context)
-    }
+        public func makeNSView(context: Context) -> WKWebView {
+            makeWebView(context: context)
+        }
 
-    public func updateNSView(_ webView: WKWebView, context: Context) {
-        updateWebView(webView, context: context)
+        public func updateNSView(_ webView: WKWebView, context: Context) {
+            updateWebView(webView, context: context)
+        }
     }
-}
 #else
-public struct RichFieldEditor: UIViewRepresentable {
-    @Binding public var html: String
-    public var onContentChange: ((String) -> Void)?
-    public var onCoordinatorReady: ((Coordinator) -> Void)?
+    public struct RichFieldEditor: UIViewRepresentable {
+        @Binding public var html: String
+        public var onContentChange: ((String) -> Void)?
+        public var onCoordinatorReady: ((Coordinator) -> Void)?
 
-    public init(
-        html: Binding<String>,
-        onContentChange: ((String) -> Void)? = nil,
-        onCoordinatorReady: ((Coordinator) -> Void)? = nil
-    ) {
-        _html = html
-        self.onContentChange = onContentChange
-        self.onCoordinatorReady = onCoordinatorReady
-    }
+        public init(
+            html: Binding<String>,
+            onContentChange: ((String) -> Void)? = nil,
+            onCoordinatorReady: ((Coordinator) -> Void)? = nil
+        ) {
+            _html = html
+            self.onContentChange = onContentChange
+            self.onCoordinatorReady = onCoordinatorReady
+        }
 
-    public func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
+        public func makeCoordinator() -> Coordinator {
+            Coordinator(self)
+        }
 
-    public func makeUIView(context: Context) -> WKWebView {
-        makeWebView(context: context)
-    }
+        public func makeUIView(context: Context) -> WKWebView {
+            makeWebView(context: context)
+        }
 
-    public func updateUIView(_ webView: WKWebView, context: Context) {
-        updateWebView(webView, context: context)
+        public func updateUIView(_ webView: WKWebView, context: Context) {
+            updateWebView(webView, context: context)
+        }
     }
-}
 #endif
 
 private extension RichFieldEditor {
@@ -152,8 +152,8 @@ private extension RichFieldEditor {
     }
 }
 
-extension RichFieldEditor {
-    public final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
+public extension RichFieldEditor {
+    final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         public let parent: RichFieldEditor
         public weak var webView: WKWebView?
         public var lastSetHTML: String = ""

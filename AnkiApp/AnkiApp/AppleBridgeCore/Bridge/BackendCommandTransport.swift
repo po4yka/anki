@@ -21,7 +21,7 @@ public extension BackendCommandTransport {
         method: UInt32,
         input: some SwiftProtobuf.Message
     ) async throws -> Output {
-        let response = try await send(service: service, method: method, payload: try input.serializedData())
+        let response = try await send(service: service, method: method, payload: input.serializedData())
         if response.isBackendError {
             let backendError = try Anki_Backend_BackendError(serializedBytes: response.payload)
             throw AnkiError.backend(backendError)

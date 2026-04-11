@@ -1,7 +1,7 @@
 import Foundation
 
-extension RemoteAnkiService {
-    public func searchCards(search: String, order: Anki_Search_SortOrder) async throws -> Anki_Search_SearchResponse {
+public extension RemoteAnkiService {
+    func searchCards(search: String, order: Anki_Search_SortOrder) async throws -> Anki_Search_SearchResponse {
         var req = Anki_Search_SearchRequest()
         req.search = search
         req.order = order
@@ -12,7 +12,7 @@ extension RemoteAnkiService {
         )
     }
 
-    public func searchNotes(search: String, order: Anki_Search_SortOrder) async throws -> Anki_Search_SearchResponse {
+    func searchNotes(search: String, order: Anki_Search_SortOrder) async throws -> Anki_Search_SearchResponse {
         var req = Anki_Search_SearchRequest()
         req.search = search
         req.order = order
@@ -23,7 +23,7 @@ extension RemoteAnkiService {
         )
     }
 
-    public func allBrowserColumns() async throws -> Anki_Search_BrowserColumns {
+    func allBrowserColumns() async throws -> Anki_Search_BrowserColumns {
         try await command(
             service: ServiceIndex.search,
             method: SearchMethod.allBrowserColumns,
@@ -31,7 +31,7 @@ extension RemoteAnkiService {
         )
     }
 
-    public func browserRowForId(id: Int64) async throws -> Anki_Search_BrowserRow {
+    func browserRowForId(id: Int64) async throws -> Anki_Search_BrowserRow {
         var req = Anki_Generic_Int64()
         req.val = id
         return try await command(
@@ -43,7 +43,7 @@ extension RemoteAnkiService {
 
     // Stable bridge signature; wrapping this in a parameter object would not simplify the call sites.
     // swiftlint:disable:next function_parameter_count
-    public func findAndReplace(
+    func findAndReplace(
         nids: [Int64],
         search: String,
         replacement: String,
@@ -65,7 +65,7 @@ extension RemoteAnkiService {
         )
     }
 
-    public func setActiveBrowserColumns(columns: [String]) async throws {
+    func setActiveBrowserColumns(columns: [String]) async throws {
         var req = Anki_Generic_StringList()
         req.vals = columns
         let _: Anki_Generic_Empty = try await command(

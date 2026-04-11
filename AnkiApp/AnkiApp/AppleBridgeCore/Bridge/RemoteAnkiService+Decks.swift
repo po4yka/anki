@@ -1,7 +1,7 @@
 import Foundation
 
-extension RemoteAnkiService {
-    public func getDeck(id: Int64) async throws -> Anki_Decks_Deck {
+public extension RemoteAnkiService {
+    func getDeck(id: Int64) async throws -> Anki_Decks_Deck {
         var req = Anki_Decks_DeckId()
         req.did = id
         return try await command(
@@ -11,7 +11,7 @@ extension RemoteAnkiService {
         )
     }
 
-    public func updateDeck(deck: Anki_Decks_Deck) async throws -> Anki_Collection_OpChanges {
+    func updateDeck(deck: Anki_Decks_Deck) async throws -> Anki_Collection_OpChanges {
         try await command(
             service: ServiceIndex.decks,
             method: DecksMethod.updateDeck,
@@ -19,7 +19,7 @@ extension RemoteAnkiService {
         )
     }
 
-    public func updateDeckConfigs(request: Anki_DeckConfig_UpdateDeckConfigsRequest) async throws
+    func updateDeckConfigs(request: Anki_DeckConfig_UpdateDeckConfigsRequest) async throws
         -> Anki_Collection_OpChanges {
         try await command(
             service: ServiceIndex.deckConfig,

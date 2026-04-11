@@ -1,6 +1,6 @@
-import SwiftUI
 import AppleBridgeCore
 import AppleSharedUI
+import SwiftUI
 
 struct AnalyticsDashboardView: View {
     @Environment(AppState.self) private var appState

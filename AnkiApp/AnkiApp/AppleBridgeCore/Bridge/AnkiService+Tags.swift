@@ -3,8 +3,8 @@
 
 import Foundation
 
-extension AnkiService {
-    public func addNoteTags(noteIds: [Int64], tags: String) async throws -> Anki_Collection_OpChangesWithCount {
+public extension AnkiService {
+    func addNoteTags(noteIds: [Int64], tags: String) async throws -> Anki_Collection_OpChangesWithCount {
         var req = Anki_Tags_NoteIdsAndTagsRequest()
         req.noteIds = noteIds
         req.tags = tags
@@ -15,7 +15,7 @@ extension AnkiService {
         )
     }
 
-    public func removeNoteTags(noteIds: [Int64], tags: String) async throws -> Anki_Collection_OpChangesWithCount {
+    func removeNoteTags(noteIds: [Int64], tags: String) async throws -> Anki_Collection_OpChangesWithCount {
         var req = Anki_Tags_NoteIdsAndTagsRequest()
         req.noteIds = noteIds
         req.tags = tags
@@ -26,7 +26,7 @@ extension AnkiService {
         )
     }
 
-    public func allTags() async throws -> Anki_Generic_StringList {
+    func allTags() async throws -> Anki_Generic_StringList {
         let req = Anki_Generic_Empty()
         return try backend.command(
             service: ServiceIndex.tags,

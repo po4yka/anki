@@ -1,6 +1,6 @@
-import Foundation
 import AppleBridgeCore
 import AppleSharedUI
+import Foundation
 
 enum SyncSettings {
     static var storedUsername: String {

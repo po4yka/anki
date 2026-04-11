@@ -1,6 +1,6 @@
-import SwiftUI
 import AppleBridgeCore
 import AppleSharedUI
+import SwiftUI
 
 // swiftlint:disable:next type_body_length
 struct DeckConfigView: View {

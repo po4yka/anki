@@ -315,4 +315,5 @@ struct AnkiAppTests {
         #expect(await atlas.noteLinkCalls() == [42])
     }
 }
+
 // swiftlint:enable type_body_length

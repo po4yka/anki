@@ -117,6 +117,7 @@ public actor RemoteSessionProvider: RemoteSessionManaging {
         encoder.dateEncodingStrategy = .iso8601
         return encoder
     }()
+
     private static let authDecoder: JSONDecoder = {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
@@ -223,7 +224,7 @@ public actor RemoteSessionProvider: RemoteSessionManaging {
         let endpoint = try await endpoint()
         var request = URLRequest(url: endpoint.baseURL.appendingPathComponent("api/capabilities"))
         request.httpMethod = "GET"
-        request.setValue("Bearer \(try await authorizedAccessToken())", forHTTPHeaderField: "Authorization")
+        try await request.setValue("Bearer \(authorizedAccessToken())", forHTTPHeaderField: "Authorization")
         let (data, response) = try await session.data(for: request)
         try validateJSON(response: response, data: data)
         let capabilities = try Self.authDecoder.decode(BackendCapabilities.self, from: data)
@@ -468,4 +469,5 @@ private struct RefreshRequest: Encodable {
         case refreshToken = "refresh_token"
     }
 }
+
 // swiftlint:enable file_length type_body_length

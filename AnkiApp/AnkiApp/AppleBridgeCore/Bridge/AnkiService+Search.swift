@@ -3,8 +3,8 @@
 
 import Foundation
 
-extension AnkiService {
-    public func searchCards(search: String, order: Anki_Search_SortOrder) async throws -> Anki_Search_SearchResponse {
+public extension AnkiService {
+    func searchCards(search: String, order: Anki_Search_SortOrder) async throws -> Anki_Search_SearchResponse {
         var req = Anki_Search_SearchRequest()
         req.search = search
         req.order = order
@@ -15,7 +15,7 @@ extension AnkiService {
         )
     }
 
-    public func searchNotes(search: String, order: Anki_Search_SortOrder) async throws -> Anki_Search_SearchResponse {
+    func searchNotes(search: String, order: Anki_Search_SortOrder) async throws -> Anki_Search_SearchResponse {
         var req = Anki_Search_SearchRequest()
         req.search = search
         req.order = order
@@ -26,7 +26,7 @@ extension AnkiService {
         )
     }
 
-    public func allBrowserColumns() async throws -> Anki_Search_BrowserColumns {
+    func allBrowserColumns() async throws -> Anki_Search_BrowserColumns {
         let req = Anki_Generic_Empty()
         return try backend.command(
             service: ServiceIndex.search,
@@ -35,7 +35,7 @@ extension AnkiService {
         )
     }
 
-    public func setActiveBrowserColumns(columns: [String]) async throws {
+    func setActiveBrowserColumns(columns: [String]) async throws {
         var req = Anki_Generic_StringList()
         req.vals = columns
         let _: Anki_Generic_Empty = try backend.command(
@@ -46,7 +46,7 @@ extension AnkiService {
     }
 
     // swiftlint:disable:next function_parameter_count
-    public func findAndReplace(
+    func findAndReplace(
         nids: [Int64],
         search: String,
         replacement: String,
@@ -68,7 +68,7 @@ extension AnkiService {
         )
     }
 
-    public func browserRowForId(id: Int64) async throws -> Anki_Search_BrowserRow {
+    func browserRowForId(id: Int64) async throws -> Anki_Search_BrowserRow {
         var req = Anki_Generic_Int64()
         req.val = id
         return try backend.command(

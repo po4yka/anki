@@ -1,7 +1,7 @@
 import Foundation
 
-extension RemoteAnkiService {
-    public func openCollection(path: String, mediaFolder: String, mediaDb: String) async throws {
+public extension RemoteAnkiService {
+    func openCollection(path: String, mediaFolder: String, mediaDb: String) async throws {
         var req = Anki_Collection_OpenCollectionRequest()
         req.collectionPath = path
         req.mediaFolderPath = mediaFolder
@@ -18,7 +18,7 @@ extension RemoteAnkiService {
         )
     }
 
-    public func closeCollection(downgrade: Bool) async throws {
+    func closeCollection(downgrade: Bool) async throws {
         var req = Anki_Collection_CloseCollectionRequest()
         req.downgradeToSchema11 = downgrade
         let _: Anki_Generic_Empty = try await command(
@@ -29,7 +29,7 @@ extension RemoteAnkiService {
         await sessionManager?.clearRemoteCollectionState()
     }
 
-    public func getUndoStatus() async throws -> Anki_Collection_UndoStatus {
+    func getUndoStatus() async throws -> Anki_Collection_UndoStatus {
         try await command(
             service: ServiceIndex.collection,
             method: CollectionMethod.getUndoStatus,
@@ -37,7 +37,7 @@ extension RemoteAnkiService {
         )
     }
 
-    public func undo() async throws -> Anki_Collection_OpChangesAfterUndo {
+    func undo() async throws -> Anki_Collection_OpChangesAfterUndo {
         try await command(
             service: ServiceIndex.collection,
             method: CollectionMethod.undo,
@@ -45,7 +45,7 @@ extension RemoteAnkiService {
         )
     }
 
-    public func redo() async throws -> Anki_Collection_OpChangesAfterUndo {
+    func redo() async throws -> Anki_Collection_OpChangesAfterUndo {
         try await command(
             service: ServiceIndex.collection,
             method: CollectionMethod.redo,
@@ -53,7 +53,7 @@ extension RemoteAnkiService {
         )
     }
 
-    public func createBackup(backupFolder: String, force: Bool, waitForCompletion: Bool) async throws -> Bool {
+    func createBackup(backupFolder: String, force: Bool, waitForCompletion: Bool) async throws -> Bool {
         var req = Anki_Collection_CreateBackupRequest()
         req.backupFolder = backupFolder
         req.force = force
@@ -66,7 +66,7 @@ extension RemoteAnkiService {
         return response.val
     }
 
-    public func awaitBackupCompletion() async throws -> Bool {
+    func awaitBackupCompletion() async throws -> Bool {
         let response: Anki_Generic_Bool = try await command(
             service: ServiceIndex.collection,
             method: CollectionMethod.awaitBackupCompletion,

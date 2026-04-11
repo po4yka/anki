@@ -1,7 +1,7 @@
 import Foundation
 
-extension RemoteAnkiService {
-    public func importAnkiPackage(
+public extension RemoteAnkiService {
+    func importAnkiPackage(
         path: String,
         options: Anki_ImportExport_ImportAnkiPackageOptions
     ) async throws -> Anki_ImportExport_ImportResponse {
@@ -15,7 +15,7 @@ extension RemoteAnkiService {
         )
     }
 
-    public func exportAnkiPackage(
+    func exportAnkiPackage(
         outPath: String,
         options: Anki_ImportExport_ExportAnkiPackageOptions,
         limit: Anki_ImportExport_ExportLimit
@@ -32,7 +32,7 @@ extension RemoteAnkiService {
         return response.val
     }
 
-    public func getCsvMetadata(
+    func getCsvMetadata(
         path: String,
         delimiter: Anki_ImportExport_CsvMetadata.Delimiter?,
         notetypeId: Int64?,
@@ -60,7 +60,7 @@ extension RemoteAnkiService {
         )
     }
 
-    public func importCsv(
+    func importCsv(
         path: String,
         metadata: Anki_ImportExport_CsvMetadata
     ) async throws -> Anki_ImportExport_ImportResponse {

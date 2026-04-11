@@ -141,7 +141,8 @@ struct RemoteAnkiServiceTests {
         )
         #expect(created)
         let _: Anki_Scheduler_CustomStudyDefaultsResponse = try await service.customStudyDefaults(deckId: 77)
-        let _: Anki_ImageOcclusion_GetImageForOcclusionResponse = try await service.getImageForOcclusion(path: "/tmp/image.png")
+        let _: Anki_ImageOcclusion_GetImageForOcclusionResponse = try await service
+            .getImageForOcclusion(path: "/tmp/image.png")
         let _: Anki_CardRendering_ExtractAvTagsResponse = try await service.extractAvTags(
             text: "[sound:test.mp3]",
             questionSide: true

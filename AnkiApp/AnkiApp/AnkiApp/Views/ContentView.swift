@@ -1,10 +1,11 @@
-// swiftlint:disable file_length type_body_length function_body_length
-import SwiftUI
 import AppleBridgeCore
 import AppleSharedUI
+
+// swiftlint:disable file_length type_body_length function_body_length
+import SwiftUI
 #if os(iOS)
-import CoreImage.CIFilterBuiltins
-import UIKit
+    import CoreImage.CIFilterBuiltins
+    import UIKit
 #endif
 
 struct ContentView: View {
@@ -15,9 +16,9 @@ struct ContentView: View {
 
         Group {
             #if os(macOS)
-            macContent
+                macContent
             #else
-            iosContent
+                iosContent
             #endif
         }
         .sheet(item: Binding(
@@ -133,7 +134,6 @@ private struct IOSBackendOnboardingView: View {
         return AnyView(content(connectionStore: connectionStore))
     }
 
-    @ViewBuilder
     private func content(connectionStore: BackendConnectionStore) -> some View {
         NavigationStack {
             ScrollView {
@@ -241,7 +241,6 @@ private struct IOSBackendOnboardingView: View {
         }
     }
 
-    @ViewBuilder
     private func discoverySection(connectionStore: BackendConnectionStore) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Companion Discovery")
@@ -289,7 +288,8 @@ private struct IOSBackendOnboardingView: View {
                                     Task { await connectionStore.selectDiscoveredCompanion(candidate) }
                                 }
                                 .buttonStyle(.bordered)
-                                .disabled(candidate.endpoint.baseURL.absoluteString == connectionStore.endpointURLString)
+                                .disabled(candidate.endpoint.baseURL.absoluteString == connectionStore
+                                    .endpointURLString)
                             }
                             Text(candidate.detail)
                                 .font(.caption)
@@ -347,15 +347,16 @@ private struct IOSBackendOnboardingView: View {
         }
     }
 
-    @ViewBuilder
     private func pairingSection(connectionStore: BackendConnectionStore) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Pairing")
                 .font(.headline)
 
-            Text("Generate a code on iPhone, then open the link or enter the code on the Mac that is running the companion.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Text(
+                "Generate a code on iPhone, then open the link or enter the code on the Mac that is running the companion."
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
 
             if let issued = connectionStore.issuedPairingCode {
                 VStack(alignment: .leading, spacing: 12) {
@@ -372,18 +373,18 @@ private struct IOSBackendOnboardingView: View {
                         .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
 
                     #if os(iOS)
-                    if let pairingURL = issued.pairingURL {
-                        PairingQRCodeView(url: pairingURL)
-                    }
+                        if let pairingURL = issued.pairingURL {
+                            PairingQRCodeView(url: pairingURL)
+                        }
                     #endif
 
                     HStack {
                         #if os(iOS)
-                        Button("Copy Code") {
-                            UIPasteboard.general.string = issued.pairingCode
-                            connectionStore.runtimeStatusMessage = "Copied pairing code."
-                        }
-                        .buttonStyle(.bordered)
+                            Button("Copy Code") {
+                                UIPasteboard.general.string = issued.pairingCode
+                                connectionStore.runtimeStatusMessage = "Copied pairing code."
+                            }
+                            .buttonStyle(.bordered)
                         #endif
 
                         if let pairingURL = issued.pairingURL {
@@ -393,11 +394,11 @@ private struct IOSBackendOnboardingView: View {
                             .buttonStyle(.bordered)
 
                             #if os(iOS)
-                            Button("Copy Link") {
-                                UIPasteboard.general.url = pairingURL
-                                connectionStore.runtimeStatusMessage = "Copied pairing link."
-                            }
-                            .buttonStyle(.bordered)
+                                Button("Copy Link") {
+                                    UIPasteboard.general.url = pairingURL
+                                    connectionStore.runtimeStatusMessage = "Copied pairing link."
+                                }
+                                .buttonStyle(.bordered)
                             #endif
 
                             Link("Open Pairing Link", destination: pairingURL)
@@ -406,9 +407,11 @@ private struct IOSBackendOnboardingView: View {
                     }
                 }
 
-                Text("Tip: if the link opens on the wrong device, copy the code instead and paste it into the companion pairing prompt on your Mac.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text(
+                    "Tip: if the link opens on the wrong device, copy the code instead and paste it into the companion pairing prompt on your Mac."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
 
             TextField("Pairing Code", text: Bindable(connectionStore).pairingCode)
@@ -426,7 +429,6 @@ private struct IOSBackendOnboardingView: View {
         }
     }
 
-    @ViewBuilder
     private func statusSection(connectionStore: BackendConnectionStore) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Status")
@@ -474,11 +476,11 @@ private struct IOSBackendOnboardingView: View {
     private func atlasDetail(from localRuntimeStatus: LocalRuntimeStatus) -> String {
         switch localRuntimeStatus.atlasAvailability {
             case .available:
-                return localRuntimeStatus.atlasMessage ?? "Available"
+                localRuntimeStatus.atlasMessage ?? "Available"
             case .configurationMissing:
-                return localRuntimeStatus.atlasMessage ?? "Configuration Missing"
+                localRuntimeStatus.atlasMessage ?? "Configuration Missing"
             case .unavailable:
-                return localRuntimeStatus.atlasMessage ?? "Unavailable"
+                localRuntimeStatus.atlasMessage ?? "Unavailable"
         }
     }
 
@@ -494,42 +496,42 @@ private struct IOSBackendOnboardingView: View {
 }
 
 #if os(iOS)
-private struct PairingQRCodeView: View {
-    let url: URL
+    private struct PairingQRCodeView: View {
+        let url: URL
 
-    private let context = CIContext()
-    private let filter = CIFilter.qrCodeGenerator()
+        private let context = CIContext()
+        private let filter = CIFilter.qrCodeGenerator()
 
-    var body: some View {
-        Group {
-            if let image = qrImage {
-                Image(uiImage: image)
-                    .interpolation(.none)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 160, height: 160)
-                    .padding(10)
-                    .background(Color.white, in: RoundedRectangle(cornerRadius: 16))
+        var body: some View {
+            Group {
+                if let image = qrImage {
+                    Image(uiImage: image)
+                        .interpolation(.none)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 160, height: 160)
+                        .padding(10)
+                        .background(Color.white, in: RoundedRectangle(cornerRadius: 16))
+                }
             }
         }
-    }
 
-    private var qrImage: UIImage? {
-        filter.setValue(Data(url.absoluteString.utf8), forKey: "inputMessage")
-        filter.setValue("M", forKey: "inputCorrectionLevel")
+        private var qrImage: UIImage? {
+            filter.setValue(Data(url.absoluteString.utf8), forKey: "inputMessage")
+            filter.setValue("M", forKey: "inputCorrectionLevel")
 
-        guard let outputImage = filter.outputImage else {
-            return nil
+            guard let outputImage = filter.outputImage else {
+                return nil
+            }
+
+            let scaledImage = outputImage.transformed(by: CGAffineTransform(scaleX: 8, y: 8))
+            guard let cgImage = context.createCGImage(scaledImage, from: scaledImage.extent) else {
+                return nil
+            }
+
+            return UIImage(cgImage: cgImage)
         }
-
-        let scaledImage = outputImage.transformed(by: CGAffineTransform(scaleX: 8, y: 8))
-        guard let cgImage = context.createCGImage(scaledImage, from: scaledImage.extent) else {
-            return nil
-        }
-
-        return UIImage(cgImage: cgImage)
     }
-}
 #endif
 
 private extension BackendExecutionMode {
@@ -549,23 +551,21 @@ private extension View {
     @ViewBuilder
     func remoteBackendURLFieldStyle() -> some View {
         #if os(iOS)
-        self
-            .keyboardType(.URL)
-            .textInputAutocapitalization(.never)
-            .autocorrectionDisabled()
+            keyboardType(.URL)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
         #else
-        self
+            self
         #endif
     }
 
     @ViewBuilder
     func pairingCodeFieldStyle() -> some View {
         #if os(iOS)
-        self
-            .textInputAutocapitalization(.characters)
-            .autocorrectionDisabled()
+            textInputAutocapitalization(.characters)
+                .autocorrectionDisabled()
         #else
-        self
+            self
         #endif
     }
 }
@@ -635,5 +635,6 @@ private struct MobileMoreView: View {
     ContentView()
         .environment(AppState())
 }
+
 // swiftlint:enable type_body_length
 // swiftlint:enable function_body_length

@@ -3,8 +3,8 @@
 
 import Foundation
 
-extension AnkiService {
-    public func syncLogin(username: String, password: String) async throws -> Anki_Sync_SyncAuth {
+public extension AnkiService {
+    func syncLogin(username: String, password: String) async throws -> Anki_Sync_SyncAuth {
         var req = Anki_Sync_SyncLoginRequest()
         req.username = username
         req.password = password
@@ -15,7 +15,7 @@ extension AnkiService {
         )
     }
 
-    public func syncStatus(auth: Anki_Sync_SyncAuth) async throws -> Anki_Sync_SyncStatusResponse {
+    func syncStatus(auth: Anki_Sync_SyncAuth) async throws -> Anki_Sync_SyncStatusResponse {
         try backend.command(
             service: ServiceIndex.sync,
             method: SyncMethod.syncStatus,
@@ -23,7 +23,7 @@ extension AnkiService {
         )
     }
 
-    public func syncCollection(auth: Anki_Sync_SyncAuth, syncMedia: Bool) async throws -> Anki_Sync_SyncCollectionResponse {
+    func syncCollection(auth: Anki_Sync_SyncAuth, syncMedia: Bool) async throws -> Anki_Sync_SyncCollectionResponse {
         var req = Anki_Sync_SyncCollectionRequest()
         req.auth = auth
         req.syncMedia = syncMedia
@@ -34,7 +34,7 @@ extension AnkiService {
         )
     }
 
-    public func fullUploadOrDownload(auth: Anki_Sync_SyncAuth, upload: Bool, serverUsn: Int32?) async throws {
+    func fullUploadOrDownload(auth: Anki_Sync_SyncAuth, upload: Bool, serverUsn: Int32?) async throws {
         var req = Anki_Sync_FullUploadOrDownloadRequest()
         req.auth = auth
         req.upload = upload
@@ -48,7 +48,7 @@ extension AnkiService {
         )
     }
 
-    public func syncMedia(auth: Anki_Sync_SyncAuth) async throws {
+    func syncMedia(auth: Anki_Sync_SyncAuth) async throws {
         let _: Anki_Generic_Empty = try backend.command(
             service: ServiceIndex.sync,
             method: SyncMethod.syncMedia,

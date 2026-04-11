@@ -1,5 +1,5 @@
-import Foundation
 import AppleBridgeCore
+import Foundation
 
 enum PreferencesTab: String, Hashable {
     case general

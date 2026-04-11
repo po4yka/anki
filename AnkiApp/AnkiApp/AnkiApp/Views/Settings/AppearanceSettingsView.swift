@@ -1,6 +1,6 @@
-import SwiftUI
 import AppleBridgeCore
 import AppleSharedUI
+import SwiftUI
 
 struct AppearanceSettingsView: View {
     @AppStorage("appearance") private var appearance = "system"
@@ -13,11 +13,11 @@ struct AppearanceSettingsView: View {
                     Text("Light").tag("light")
                     Text("Dark").tag("dark")
                 }
-#if os(macOS)
+                #if os(macOS)
                 .pickerStyle(.radioGroup)
-#else
+                #else
                 .pickerStyle(.inline)
-#endif
+                #endif
             }
         }
         .formStyle(.grouped)

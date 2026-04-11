@@ -104,7 +104,8 @@ public actor RemoteAtlasService: AtlasServiceProtocol {
         try await request(method: "kg_status", body: EmptyRequest())
     }
 
-    public func refreshKnowledgeGraph(_ req: RefreshKnowledgeGraphRequest) async throws -> RefreshKnowledgeGraphResponse {
+    public func refreshKnowledgeGraph(_ req: RefreshKnowledgeGraphRequest) async throws
+        -> RefreshKnowledgeGraphResponse {
         try await request(method: "kg_refresh", body: req)
     }
 

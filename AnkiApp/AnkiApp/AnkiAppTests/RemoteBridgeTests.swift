@@ -15,22 +15,22 @@ struct RemoteBridgeTests {
             let exchangeExpiry = Date(timeIntervalSinceNow: 3600)
             RemoteBridgeURLProtocol.install { request in
                 switch request.url?.path {
-                case "/api/auth/pair/exchange":
-                    return try jsonResponse(
-                        for: request,
-                        body: [
-                            "access_token": "access-1",
-                            "refresh_token": "refresh-1",
-                            "expires_at": iso8601(exchangeExpiry),
-                            "account_id": "acct-1",
-                            "account_display_name": "Test Device",
-                            "capabilities": capabilitiesPayload(supportsAtlas: true)
-                        ]
-                    )
-                case "/api/anki/backend/init":
-                    return try jsonResponse(for: request, body: ["backend_session_id": "backend-1"])
-                default:
-                    throw RemoteBridgeTestError.unexpectedRequest(request.url?.absoluteString ?? "<nil>")
+                    case "/api/auth/pair/exchange":
+                        return try jsonResponse(
+                            for: request,
+                            body: [
+                                "access_token": "access-1",
+                                "refresh_token": "refresh-1",
+                                "expires_at": iso8601(exchangeExpiry),
+                                "account_id": "acct-1",
+                                "account_display_name": "Test Device",
+                                "capabilities": capabilitiesPayload(supportsAtlas: true)
+                            ]
+                        )
+                    case "/api/anki/backend/init":
+                        return try jsonResponse(for: request, body: ["backend_session_id": "backend-1"])
+                    default:
+                        throw RemoteBridgeTestError.unexpectedRequest(request.url?.absoluteString ?? "<nil>")
                 }
             }
 
@@ -46,14 +46,18 @@ struct RemoteBridgeTests {
                 preferredLanguages: ["fr", "en"],
                 persistence: persistence
             )
-            #expect(try await restoredProvider.endpoint() == BackendEndpoint(baseURL: endpoint, deploymentKind: .companion))
+            #expect(try await restoredProvider.endpoint() == BackendEndpoint(
+                baseURL: endpoint,
+                deploymentKind: .companion
+            ))
             #expect(await restoredProvider.currentAuthSession()?.accessToken == "access-1")
 
             let backendSession = try await provider.ensureBackendSession()
             #expect(backendSession == "backend-1")
             #expect(try await provider.ensureBackendSession() == "backend-1")
 
-            let initRequest = try #require(RemoteBridgeURLProtocol.requests(matchingPath: "/api/anki/backend/init").first)
+            let initRequest = try #require(RemoteBridgeURLProtocol.requests(matchingPath: "/api/anki/backend/init")
+                .first)
             #expect(initRequest.value(forHTTPHeaderField: "Authorization") == "Bearer access-1")
             let initMessage = try Anki_Backend_BackendInit(serializedBytes: requestBodyData(from: initRequest))
             #expect(initMessage.preferredLangs == ["fr", "en"])
@@ -70,37 +74,37 @@ struct RemoteBridgeTests {
         ) { _, _, provider, _ in
             RemoteBridgeURLProtocol.install { request in
                 switch request.url?.path {
-                case "/api/auth/pair/exchange":
-                    return try jsonResponse(
-                        for: request,
-                        body: [
-                            "access_token": "expired-access",
-                            "refresh_token": "refresh-1",
-                            "expires_at": iso8601(Date(timeIntervalSinceNow: -10)),
-                            "account_id": "acct-1",
-                            "account_display_name": "Expired Session",
-                            "capabilities": capabilitiesPayload(supportsAtlas: false, deploymentKind: "cloud")
-                        ]
-                    )
-                case "/api/auth/refresh":
-                    return try jsonResponse(
-                        for: request,
-                        body: [
-                            "access_token": "fresh-access",
-                            "refresh_token": "refresh-2",
-                            "expires_at": iso8601(Date(timeIntervalSinceNow: 3600)),
-                            "account_id": "acct-1",
-                            "account_display_name": "Fresh Session",
-                            "capabilities": capabilitiesPayload(supportsAtlas: false, deploymentKind: "cloud")
-                        ]
-                    )
-                case "/api/capabilities":
-                    return try jsonResponse(
-                        for: request,
-                        body: capabilitiesPayload(supportsAtlas: true, deploymentKind: "cloud")
-                    )
-                default:
-                    throw RemoteBridgeTestError.unexpectedRequest(request.url?.absoluteString ?? "<nil>")
+                    case "/api/auth/pair/exchange":
+                        return try jsonResponse(
+                            for: request,
+                            body: [
+                                "access_token": "expired-access",
+                                "refresh_token": "refresh-1",
+                                "expires_at": iso8601(Date(timeIntervalSinceNow: -10)),
+                                "account_id": "acct-1",
+                                "account_display_name": "Expired Session",
+                                "capabilities": capabilitiesPayload(supportsAtlas: false, deploymentKind: "cloud")
+                            ]
+                        )
+                    case "/api/auth/refresh":
+                        return try jsonResponse(
+                            for: request,
+                            body: [
+                                "access_token": "fresh-access",
+                                "refresh_token": "refresh-2",
+                                "expires_at": iso8601(Date(timeIntervalSinceNow: 3600)),
+                                "account_id": "acct-1",
+                                "account_display_name": "Fresh Session",
+                                "capabilities": capabilitiesPayload(supportsAtlas: false, deploymentKind: "cloud")
+                            ]
+                        )
+                    case "/api/capabilities":
+                        return try jsonResponse(
+                            for: request,
+                            body: capabilitiesPayload(supportsAtlas: true, deploymentKind: "cloud")
+                        )
+                    default:
+                        throw RemoteBridgeTestError.unexpectedRequest(request.url?.absoluteString ?? "<nil>")
                 }
             }
 
@@ -115,10 +119,12 @@ struct RemoteBridgeTests {
 
             let refreshRequest = try #require(RemoteBridgeURLProtocol.requests(matchingPath: "/api/auth/refresh").first)
             #expect(refreshRequest.httpMethod == "POST")
-            let capabilitiesRequest = try #require(RemoteBridgeURLProtocol.requests(matchingPath: "/api/capabilities").first)
+            let capabilitiesRequest = try #require(RemoteBridgeURLProtocol.requests(matchingPath: "/api/capabilities")
+                .first)
             #expect(capabilitiesRequest.value(forHTTPHeaderField: "Authorization") == "Bearer fresh-access")
         }
     }
+
     // swiftlint:enable function_body_length
 
     @Test
@@ -258,32 +264,36 @@ struct RemoteBridgeTests {
             let exchangeExpiry = Date(timeIntervalSinceNow: 3600)
             RemoteBridgeURLProtocol.install { request in
                 switch request.url?.path {
-                case "/api/auth/pair/exchange":
-                    return try jsonResponse(
-                        for: request,
-                        body: [
-                            "access_token": "access-1",
-                            "refresh_token": "refresh-1",
-                            "expires_at": iso8601(exchangeExpiry),
-                            "account_id": "acct-1",
-                            "account_display_name": "Test Device",
-                            "capabilities": capabilitiesPayload(supportsAtlas: true)
-                        ]
-                    )
-                case "/api/anki/backend/init":
-                    return try jsonResponse(for: request, body: ["backend_session_id": "backend-2"])
-                case "/api/anki/rpc/3/0":
-                    return try protobufResponse(
-                        for: request,
-                        body: try Anki_Generic_Empty().serializedData(),
-                        isBackendError: false
-                    )
-                case "/api/anki/rpc/7/9":
-                    var response = Anki_Generic_String()
-                    response.val = "pong"
-                    return try protobufResponse(for: request, body: response.serializedData(), isBackendError: false)
-                default:
-                    throw RemoteBridgeTestError.unexpectedRequest(request.url?.absoluteString ?? "<nil>")
+                    case "/api/auth/pair/exchange":
+                        return try jsonResponse(
+                            for: request,
+                            body: [
+                                "access_token": "access-1",
+                                "refresh_token": "refresh-1",
+                                "expires_at": iso8601(exchangeExpiry),
+                                "account_id": "acct-1",
+                                "account_display_name": "Test Device",
+                                "capabilities": capabilitiesPayload(supportsAtlas: true)
+                            ]
+                        )
+                    case "/api/anki/backend/init":
+                        return try jsonResponse(for: request, body: ["backend_session_id": "backend-2"])
+                    case "/api/anki/rpc/3/0":
+                        return try protobufResponse(
+                            for: request,
+                            body: Anki_Generic_Empty().serializedData(),
+                            isBackendError: false
+                        )
+                    case "/api/anki/rpc/7/9":
+                        var response = Anki_Generic_String()
+                        response.val = "pong"
+                        return try protobufResponse(
+                            for: request,
+                            body: response.serializedData(),
+                            isBackendError: false
+                        )
+                    default:
+                        throw RemoteBridgeTestError.unexpectedRequest(request.url?.absoluteString ?? "<nil>")
                 }
             }
 
@@ -296,12 +306,14 @@ struct RemoteBridgeTests {
             await provider.invalidateBackendSession()
             try await provider.recoverBackendSessionAfterNotFound()
 
-            let initRequest = try #require(RemoteBridgeURLProtocol.requests(matchingPath: "/api/anki/backend/init").last)
+            let initRequest = try #require(RemoteBridgeURLProtocol.requests(matchingPath: "/api/anki/backend/init")
+                .last)
             #expect(initRequest.value(forHTTPHeaderField: "Authorization") == "Bearer access-1")
 
             let openRequest = try #require(RemoteBridgeURLProtocol.requests(matchingPath: "/api/anki/rpc/3/0").last)
             #expect(openRequest.value(forHTTPHeaderField: "X-Anki-Backend-Session") == "backend-2")
-            let openMessage = try Anki_Collection_OpenCollectionRequest(serializedBytes: requestBodyData(from: openRequest))
+            let openMessage =
+                try Anki_Collection_OpenCollectionRequest(serializedBytes: requestBodyData(from: openRequest))
             #expect(openMessage.collectionPath == "/tmp/collection.anki2")
             #expect(openMessage.mediaFolderPath == "/tmp/collection.media")
             #expect(openMessage.mediaDbPath == "/tmp/collection.media.db2")
@@ -314,6 +326,7 @@ struct RemoteBridgeTests {
             #expect(await restoredProvider.currentRemoteCollectionState()?.path == "/tmp/collection.anki2")
         }
     }
+
     // swiftlint:enable function_body_length
 
     @Test
@@ -322,7 +335,10 @@ struct RemoteBridgeTests {
         try await transport.enqueueResponse(Anki_Generic_Empty())
         try await transport.enqueueResponse(Anki_Generic_Empty())
         let endpoint = try #require(URL(string: "http://remote.test/"))
-        let sessionManager = StubRemoteSessionManager(endpoint: BackendEndpoint(baseURL: endpoint, deploymentKind: .companion))
+        let sessionManager = StubRemoteSessionManager(endpoint: BackendEndpoint(
+            baseURL: endpoint,
+            deploymentKind: .companion
+        ))
         let service = RemoteAnkiService(transport: transport, sessionManager: sessionManager)
 
         try await service.openCollection(
@@ -339,6 +355,7 @@ struct RemoteBridgeTests {
         #expect(await sessionManager.currentRemoteCollectionState() == nil)
     }
 }
+
 // swiftlint:enable type_body_length
 
 private func withRemoteSessionProvider(

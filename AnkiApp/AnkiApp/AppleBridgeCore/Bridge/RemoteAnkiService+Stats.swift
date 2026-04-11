@@ -1,7 +1,7 @@
 import Foundation
 
-extension RemoteAnkiService {
-    public func getGraphs(search: String, days: UInt32) async throws -> Anki_Stats_GraphsResponse {
+public extension RemoteAnkiService {
+    func getGraphs(search: String, days: UInt32) async throws -> Anki_Stats_GraphsResponse {
         var req = Anki_Stats_GraphsRequest()
         req.search = search
         req.days = days
@@ -12,7 +12,7 @@ extension RemoteAnkiService {
         )
     }
 
-    public func getCardStats(cardId: Int64) async throws -> Anki_Stats_CardStatsResponse {
+    func getCardStats(cardId: Int64) async throws -> Anki_Stats_CardStatsResponse {
         var req = Anki_Cards_CardId()
         req.cid = cardId
         return try await command(

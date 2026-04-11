@@ -1,6 +1,6 @@
-import SwiftUI
 import AppleBridgeCore
 import AppleSharedUI
+import SwiftUI
 
 @main
 struct AnkiApp: App {
@@ -12,11 +12,11 @@ struct AnkiApp: App {
         mainWindowScene
 
         #if os(macOS)
-        Settings {
-            PreferencesView()
-                .environment(appState)
-                .preferredColorScheme(colorScheme)
-        }
+            Settings {
+                PreferencesView()
+                    .environment(appState)
+                    .preferredColorScheme(colorScheme)
+            }
         #endif
     }
 
@@ -27,7 +27,7 @@ struct AnkiApp: App {
                 .preferredColorScheme(colorScheme)
                 .task {
                     #if os(iOS)
-                    await appState.restoreBackendState()
+                        await appState.restoreBackendState()
                     #endif
                 }
         }

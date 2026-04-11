@@ -3,8 +3,8 @@
 
 import Foundation
 
-extension AnkiService {
-    public func addMediaFile(desiredName: String, data: Data) async throws -> String {
+public extension AnkiService {
+    func addMediaFile(desiredName: String, data: Data) async throws -> String {
         var req = Anki_Media_AddMediaFileRequest()
         req.desiredName = desiredName
         req.data = data
@@ -16,7 +16,7 @@ extension AnkiService {
         return response.val
     }
 
-    public func checkMedia() async throws -> Anki_Media_CheckMediaResponse {
+    func checkMedia() async throws -> Anki_Media_CheckMediaResponse {
         let req = Anki_Generic_Empty()
         return try backend.command(
             service: ServiceIndex.media,
@@ -25,7 +25,7 @@ extension AnkiService {
         )
     }
 
-    public func trashMediaFiles(filenames: [String]) async throws {
+    func trashMediaFiles(filenames: [String]) async throws {
         var req = Anki_Media_TrashMediaFilesRequest()
         req.fnames = filenames
         let _: Anki_Generic_Empty = try backend.command(
@@ -35,7 +35,7 @@ extension AnkiService {
         )
     }
 
-    public func emptyTrash() async throws {
+    func emptyTrash() async throws {
         let req = Anki_Generic_Empty()
         let _: Anki_Generic_Empty = try backend.command(
             service: ServiceIndex.media,
@@ -44,7 +44,7 @@ extension AnkiService {
         )
     }
 
-    public func restoreTrash() async throws {
+    func restoreTrash() async throws {
         let req = Anki_Generic_Empty()
         let _: Anki_Generic_Empty = try backend.command(
             service: ServiceIndex.media,

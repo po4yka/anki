@@ -1,7 +1,7 @@
-import Foundation
-import Observation
 import AppleBridgeCore
 import AppleSharedUI
+import Foundation
+import Observation
 
 enum CustomStudyMode: String, CaseIterable, Identifiable {
     case increaseNewLimit = "Increase today's new card limit"
