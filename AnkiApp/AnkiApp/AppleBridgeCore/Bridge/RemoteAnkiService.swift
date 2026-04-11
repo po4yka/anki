@@ -3,15 +3,21 @@ import SwiftProtobuf
 
 public actor RemoteAnkiService: AnkiServiceProtocol {
     let transport: any BackendCommandTransport
+    let sessionManager: (any RemoteSessionManaging)?
 
     public init(
-        sessionProvider: any RemoteSessionProviding,
+        sessionProvider: any RemoteSessionManaging,
         session: URLSession = .shared
     ) {
+        sessionManager = sessionProvider
         transport = RemoteHTTPCommandTransport(sessionProvider: sessionProvider, session: session)
     }
 
-    public init(transport: any BackendCommandTransport) {
+    public init(
+        transport: any BackendCommandTransport,
+        sessionManager: (any RemoteSessionManaging)? = nil
+    ) {
+        self.sessionManager = sessionManager
         self.transport = transport
     }
 

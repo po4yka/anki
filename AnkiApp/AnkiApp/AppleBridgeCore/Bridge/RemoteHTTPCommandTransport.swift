@@ -53,7 +53,7 @@ public actor RemoteHTTPCommandTransport: BackendCommandTransport {
                 await sessionProvider.invalidateAuth()
                 throw decodeServerError(data: data, statusCode: httpResponse.statusCode)
             case 404 where allowRetry:
-                await sessionProvider.invalidateBackendSession()
+                try await sessionProvider.recoverBackendSessionAfterNotFound()
                 return try await send(service: service, method: method, payload: payload, allowRetry: false)
             default:
                 throw decodeServerError(data: data, statusCode: httpResponse.statusCode)

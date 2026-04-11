@@ -133,6 +133,10 @@ struct SyncView: View {
         .onChange(of: model.state) { _, newState in
             if case .fullSyncRequired = newState {
                 showFullSyncAlert = true
+            } else if case .syncing = newState {
+                return
+            } else {
+                Task { await appState.resolvePendingExecutionModeIfNeeded() }
             }
         }
     }
@@ -161,7 +165,7 @@ struct SyncView: View {
 
     private func syncButton(model: SyncModel) -> some View {
         Button("Sync Now") {
-            Task { await model.sync() }
+            Task { await appState.syncNow() }
         }
         .buttonStyle(.borderedProminent)
         .keyboardShortcut("s", modifiers: .command)
@@ -172,17 +176,17 @@ struct SyncView: View {
         if case let .fullSyncRequired(upload, serverMediaUsn) = model.state {
             if upload == nil {
                 Button("Upload to AnkiWeb") {
-                    Task { await model.performFullSync(upload: true, serverMediaUsn: serverMediaUsn) }
+                    Task { await appState.performFullSync(upload: true, serverMediaUsn: serverMediaUsn) }
                 }
                 Button("Download from AnkiWeb") {
-                    Task { await model.performFullSync(upload: false, serverMediaUsn: serverMediaUsn) }
+                    Task { await appState.performFullSync(upload: false, serverMediaUsn: serverMediaUsn) }
                 }
                 Button("Cancel", role: .cancel) {
                     model.state = .idle
                 }
             } else if let upload {
                 Button(upload ? "Upload" : "Download") {
-                    Task { await model.performFullSync(upload: upload, serverMediaUsn: serverMediaUsn) }
+                    Task { await appState.performFullSync(upload: upload, serverMediaUsn: serverMediaUsn) }
                 }
                 Button("Cancel", role: .cancel) {
                     model.state = .idle

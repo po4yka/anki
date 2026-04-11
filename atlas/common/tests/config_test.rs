@@ -26,6 +26,8 @@ fn settings_load_returns_defaults_when_no_env_vars() {
             "ANKIATLAS_API_PORT",
             "ANKIATLAS_API_KEY",
             "ANKIATLAS_DEBUG",
+            "ANKIATLAS_DEPLOYMENT_KIND",
+            "ANKIATLAS_INSTANCE_ID",
             "ANKIATLAS_ANKI_COLLECTION_PATH",
             "ANKIATLAS_ANKI_MEDIA_ROOT",
         ],
@@ -55,6 +57,8 @@ fn settings_load_returns_defaults_when_no_env_vars() {
             assert_eq!(settings.api_port, 8000);
             assert!(settings.api_key.is_none());
             assert!(!settings.debug);
+            assert_eq!(settings.deployment_kind, ApiDeploymentKind::Companion);
+            assert!(settings.instance_id.is_none());
 
             // Anki source
             assert!(settings.anki_collection_path.is_none());
@@ -76,6 +80,8 @@ fn settings_load_reads_ankiatlas_prefixed_env_vars() {
             ("ANKIATLAS_API_PORT", Some("9090")),
             ("ANKIATLAS_DEBUG", Some("true")),
             ("ANKIATLAS_API_KEY", Some("secret-key-123")),
+            ("ANKIATLAS_DEPLOYMENT_KIND", Some("cloud")),
+            ("ANKIATLAS_INSTANCE_ID", Some("instance-123")),
             (
                 "ANKIATLAS_ANKI_COLLECTION_PATH",
                 Some("/path/to/collection.anki2"),
@@ -93,6 +99,8 @@ fn settings_load_reads_ankiatlas_prefixed_env_vars() {
             assert_eq!(settings.api_port, 9090);
             assert!(settings.debug);
             assert_eq!(settings.api_key, Some("secret-key-123".to_string()));
+            assert_eq!(settings.deployment_kind, ApiDeploymentKind::Cloud);
+            assert_eq!(settings.instance_id.as_deref(), Some("instance-123"));
             assert_eq!(
                 settings.anki_collection_path,
                 Some("/path/to/collection.anki2".to_string())
@@ -300,6 +308,7 @@ fn settings_clone() {
         let cloned = settings.clone();
         assert_eq!(settings.postgres_url, cloned.postgres_url);
         assert_eq!(settings.api_port, cloned.api_port);
+        assert_eq!(settings.deployment_kind, cloned.deployment_kind);
     });
 }
 
@@ -328,6 +337,8 @@ fn settings_projection_methods_return_narrow_runtime_contracts() {
         let api = settings.api();
         assert_eq!(api.host, "0.0.0.0");
         assert_eq!(api.port, 8000);
+        assert_eq!(api.deployment_kind, ApiDeploymentKind::Companion);
+        assert!(api.instance_id.is_none());
 
         let embedding = settings.embedding();
         assert_eq!(embedding.provider, EmbeddingProviderKind::OpenAi);

@@ -134,6 +134,18 @@ public struct RemoteAuthSession: Codable, Equatable, Sendable {
     }
 }
 
+public struct RemoteCollectionState: Codable, Equatable, Sendable {
+    public var path: String
+    public var mediaFolder: String
+    public var mediaDb: String
+
+    public init(path: String, mediaFolder: String, mediaDb: String) {
+        self.path = path
+        self.mediaFolder = mediaFolder
+        self.mediaDb = mediaDb
+    }
+}
+
 public struct PairingCodeResponse: Codable, Equatable, Sendable {
     public var pairingCode: String
     public var pairingURL: URL?

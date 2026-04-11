@@ -1,9 +1,7 @@
-use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
-use anki::backend::{Backend, init_backend};
 use axum::{
     Router,
     body::{Body, Bytes},
@@ -12,8 +10,10 @@ use axum::{
     response::{IntoResponse, Response},
     routing::{get, post},
 };
-use chrono::{DateTime, Utc};
-use common::config::Settings;
+use common::config::{ApiDeploymentKind, Settings};
+use database::{create_pool, run_migrations};
+mod remote_sessions;
+use remote_sessions::{AuthSessionRecord, SessionManager};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use surface_contracts::knowledge_graph::{
@@ -21,16 +21,12 @@ use surface_contracts::knowledge_graph::{
 };
 use surface_runtime::{BuildSurfaceServicesOptions, SurfaceServices, build_surface_services};
 use tower_http::cors::CorsLayer;
-use tracing::info;
+use tracing::{info, warn};
 use uuid::Uuid;
 
 type SurfaceState = Arc<SurfaceServices>;
 type SharedState = Arc<ServerState>;
 
-const ACCESS_TOKEN_TTL: i64 = 60 * 60;
-const REFRESH_TOKEN_TTL: i64 = 60 * 60 * 24 * 30;
-const PAIRING_CODE_TTL: i64 = 60 * 10;
-const BACKEND_SESSION_TTL: i64 = 60 * 30;
 const BACKEND_SESSION_HEADER: &str = "x-anki-backend-session";
 const BACKEND_ERROR_HEADER: &str = "x-anki-error";
 
@@ -38,44 +34,6 @@ const BACKEND_ERROR_HEADER: &str = "x-anki-error";
 struct ServerState {
     surface: Option<SurfaceState>,
     sessions: Arc<SessionManager>,
-}
-
-#[derive(Default)]
-struct SessionManager {
-    inner: Mutex<SessionState>,
-}
-
-#[derive(Default)]
-struct SessionState {
-    pairings: HashMap<String, PairingRecord>,
-    access_sessions: HashMap<String, AuthSessionRecord>,
-    refresh_index: HashMap<String, String>,
-    backend_sessions: HashMap<String, BackendSessionRecord>,
-}
-
-#[derive(Clone)]
-struct PairingRecord {
-    expires_at: DateTime<Utc>,
-    account_id: String,
-    account_display_name: String,
-}
-
-#[derive(Clone)]
-struct AuthSessionRecord {
-    access_token: String,
-    refresh_token: String,
-    account_id: String,
-    account_display_name: String,
-    access_expires_at: DateTime<Utc>,
-    refresh_expires_at: DateTime<Utc>,
-    capabilities: CapabilitiesResponse,
-}
-
-#[derive(Clone)]
-struct BackendSessionRecord {
-    owner_account_id: String,
-    backend: Backend,
-    expires_at: DateTime<Utc>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -165,8 +123,22 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
 
     let settings = Settings::load().map_err(|e| anyhow::anyhow!("{e}"))?;
+    let pool = create_pool(&settings.database())
+        .await
+        .map_err(|e| anyhow::anyhow!("failed to connect to Postgres: {e}"))?;
+    run_migrations(&pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("failed to run migrations: {e}"))?;
 
     let api = settings.api();
+    let deployment_kind = match api.deployment_kind {
+        ApiDeploymentKind::Companion => DeploymentKind::Companion,
+        ApiDeploymentKind::Cloud => DeploymentKind::Cloud,
+    };
+    let instance_id = api
+        .instance_id
+        .clone()
+        .unwrap_or_else(|| Uuid::new_v4().to_string());
     let addr: SocketAddr = format!("{}:{}", api.host, api.port)
         .parse()
         .unwrap_or_else(|_| SocketAddr::from(([0, 0, 0, 0], api.port)));
@@ -183,8 +155,18 @@ async fn main() -> anyhow::Result<()> {
 
     let state = Arc::new(ServerState {
         surface: Some(Arc::new(services)),
-        sessions: Arc::new(SessionManager::default()),
+        sessions: Arc::new(SessionManager::new(
+            pool,
+            CapabilitiesResponse {
+                supports_remote_anki: true,
+                supports_atlas: true,
+                deployment_kind,
+                execution_mode: ExecutionMode::Remote,
+            },
+            instance_id,
+        )),
     });
+    start_cleanup_task(state.sessions.clone());
 
     let app = build_app(state);
 
@@ -227,312 +209,23 @@ fn build_app(state: SharedState) -> Router {
         .with_state(state)
 }
 
-impl SessionManager {
-    fn capabilities(&self, supports_atlas: bool) -> CapabilitiesResponse {
-        CapabilitiesResponse {
-            supports_remote_anki: true,
-            supports_atlas,
-            deployment_kind: DeploymentKind::Companion,
-            execution_mode: ExecutionMode::Remote,
+fn start_cleanup_task(session_manager: Arc<SessionManager>) {
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(300));
+        loop {
+            interval.tick().await;
+            if let Err(error) = session_manager.purge_expired().await {
+                warn!("failed to purge expired remote sessions: {error:?}");
+            }
         }
-    }
-
-    fn create_pairing_code(
-        &self,
-        supports_atlas: bool,
-        device_name: Option<String>,
-    ) -> PairingCodeResponse {
-        let mut state = self.inner.lock().unwrap_or_else(|err| err.into_inner());
-        purge_expired(&mut state);
-
-        let code = Uuid::new_v4()
-            .simple()
-            .to_string()
-            .chars()
-            .take(8)
-            .collect::<String>()
-            .to_uppercase();
-        let expires_at = Utc::now() + chrono::TimeDelta::seconds(PAIRING_CODE_TTL);
-        let account_display_name = device_name
-            .filter(|name| !name.is_empty())
-            .unwrap_or_else(|| "Anki Companion".to_string());
-
-        state.pairings.insert(
-            code.clone(),
-            PairingRecord {
-                expires_at,
-                account_id: "local-companion".to_string(),
-                account_display_name: account_display_name.clone(),
-            },
-        );
-
-        let _ = self.capabilities(supports_atlas);
-        PairingCodeResponse {
-            pairing_code: code.clone(),
-            pairing_url: format!("ankiapp://pair?code={code}"),
-            expires_at: expires_at.to_rfc3339(),
-        }
-    }
-
-    fn exchange_pairing_code(
-        &self,
-        pairing_code: &str,
-        supports_atlas: bool,
-    ) -> Result<AuthSessionResponse, AppError> {
-        let mut state = self.inner.lock().unwrap_or_else(|err| err.into_inner());
-        purge_expired(&mut state);
-
-        let pairing = state
-            .pairings
-            .remove(pairing_code)
-            .ok_or_else(|| AppError::unauthorized("Invalid or expired pairing code."))?;
-
-        let access_token = Uuid::new_v4().to_string();
-        let refresh_token = Uuid::new_v4().to_string();
-        let access_expires_at = Utc::now() + chrono::TimeDelta::seconds(ACCESS_TOKEN_TTL);
-        let refresh_expires_at = Utc::now() + chrono::TimeDelta::seconds(REFRESH_TOKEN_TTL);
-        let capabilities = self.capabilities(supports_atlas);
-
-        let record = AuthSessionRecord {
-            access_token: access_token.clone(),
-            refresh_token: refresh_token.clone(),
-            account_id: pairing.account_id,
-            account_display_name: pairing.account_display_name,
-            access_expires_at,
-            refresh_expires_at,
-            capabilities: capabilities.clone(),
-        };
-        state
-            .refresh_index
-            .insert(refresh_token.clone(), access_token.clone());
-        state
-            .access_sessions
-            .insert(access_token.clone(), record.clone());
-
-        Ok(auth_session_response(&record))
-    }
-
-    fn refresh_session(
-        &self,
-        refresh_token: &str,
-        supports_atlas: bool,
-    ) -> Result<AuthSessionResponse, AppError> {
-        let mut state = self.inner.lock().unwrap_or_else(|err| err.into_inner());
-        purge_expired(&mut state);
-
-        let existing_access = state
-            .refresh_index
-            .get(refresh_token)
-            .cloned()
-            .ok_or_else(|| AppError::unauthorized("Refresh token is invalid or expired."))?;
-        let existing = state
-            .access_sessions
-            .remove(&existing_access)
-            .ok_or_else(|| AppError::unauthorized("Session is no longer available."))?;
-
-        if existing.refresh_expires_at <= Utc::now() {
-            state.refresh_index.remove(refresh_token);
-            return Err(AppError::unauthorized(
-                "Refresh token is invalid or expired.",
-            ));
-        }
-
-        let access_token = Uuid::new_v4().to_string();
-        let next_refresh_token = Uuid::new_v4().to_string();
-        let access_expires_at = Utc::now() + chrono::TimeDelta::seconds(ACCESS_TOKEN_TTL);
-        let refresh_expires_at = Utc::now() + chrono::TimeDelta::seconds(REFRESH_TOKEN_TTL);
-        let capabilities = self.capabilities(supports_atlas);
-
-        let record = AuthSessionRecord {
-            access_token: access_token.clone(),
-            refresh_token: next_refresh_token.clone(),
-            account_id: existing.account_id,
-            account_display_name: existing.account_display_name,
-            access_expires_at,
-            refresh_expires_at,
-            capabilities: capabilities.clone(),
-        };
-
-        state.refresh_index.remove(refresh_token);
-        state
-            .refresh_index
-            .insert(next_refresh_token.clone(), access_token.clone());
-        state.access_sessions.insert(access_token, record.clone());
-
-        Ok(auth_session_response(&record))
-    }
-
-    fn session_for_access_token(&self, access_token: &str) -> Result<AuthSessionRecord, AppError> {
-        let mut state = self.inner.lock().unwrap_or_else(|err| err.into_inner());
-        purge_expired(&mut state);
-        let session = state
-            .access_sessions
-            .get(access_token)
-            .cloned()
-            .ok_or_else(|| AppError::unauthorized("Access token is invalid or expired."))?;
-        if session.access_expires_at <= Utc::now() {
-            state.access_sessions.remove(access_token);
-            state.refresh_index.retain(|_, value| value != access_token);
-            return Err(AppError::unauthorized(
-                "Access token is invalid or expired.",
-            ));
-        }
-        Ok(session)
-    }
-
-    fn logout(&self, access_token: &str, refresh_token: Option<&str>) {
-        let mut state = self.inner.lock().unwrap_or_else(|err| err.into_inner());
-        if let Some(record) = state.access_sessions.remove(access_token) {
-            state.refresh_index.remove(&record.refresh_token);
-            state
-                .backend_sessions
-                .retain(|_, session| session.owner_account_id != record.account_id);
-        }
-        if let Some(refresh_token) = refresh_token {
-            state.refresh_index.remove(refresh_token);
-        }
-    }
-
-    fn create_backend_session(
-        &self,
-        access_token: &str,
-        init_bytes: &[u8],
-    ) -> Result<BackendSessionInitResponse, AppError> {
-        let session = self.session_for_access_token(access_token)?;
-        let backend = init_backend(init_bytes)
-            .map_err(|err| AppError::bad_request(format!("Invalid backend init: {err}")))?;
-        let session_id = Uuid::new_v4().to_string();
-
-        let mut state = self.inner.lock().unwrap_or_else(|err| err.into_inner());
-        purge_expired(&mut state);
-        state.backend_sessions.insert(
-            session_id.clone(),
-            BackendSessionRecord {
-                owner_account_id: session.account_id,
-                backend,
-                expires_at: Utc::now() + chrono::TimeDelta::seconds(BACKEND_SESSION_TTL),
-            },
-        );
-
-        Ok(BackendSessionInitResponse {
-            backend_session_id: session_id,
-        })
-    }
-
-    fn free_backend_session(
-        &self,
-        access_token: &str,
-        backend_session_id: &str,
-    ) -> Result<(), AppError> {
-        let auth_session = self.session_for_access_token(access_token)?;
-        let mut state = self.inner.lock().unwrap_or_else(|err| err.into_inner());
-        let session = state
-            .backend_sessions
-            .get(backend_session_id)
-            .cloned()
-            .ok_or_else(|| AppError::not_found("Backend session was not found."))?;
-        if session.owner_account_id != auth_session.account_id {
-            return Err(AppError::unauthorized(
-                "Backend session does not belong to this account.",
-            ));
-        }
-        state.backend_sessions.remove(backend_session_id);
-        Ok(())
-    }
-
-    fn run_backend_rpc(
-        &self,
-        access_token: &str,
-        backend_session_id: &str,
-        service: u32,
-        method: u32,
-        input: &[u8],
-    ) -> Result<RpcResponse, AppError> {
-        let auth_session = self.session_for_access_token(access_token)?;
-        let mut state = self.inner.lock().unwrap_or_else(|err| err.into_inner());
-        purge_expired(&mut state);
-        let session = state
-            .backend_sessions
-            .get_mut(backend_session_id)
-            .ok_or_else(|| AppError::not_found("Backend session was not found."))?;
-
-        if session.owner_account_id != auth_session.account_id {
-            return Err(AppError::unauthorized(
-                "Backend session does not belong to this account.",
-            ));
-        }
-
-        session.expires_at = Utc::now() + chrono::TimeDelta::seconds(BACKEND_SESSION_TTL);
-        match session.backend.run_service_method(service, method, input) {
-            Ok(payload) => Ok(RpcResponse {
-                payload,
-                is_backend_error: false,
-            }),
-            Err(payload) => Ok(RpcResponse {
-                payload,
-                is_backend_error: true,
-            }),
-        }
-    }
-}
-
-fn purge_expired(state: &mut SessionState) {
-    let now = Utc::now();
-    state.pairings.retain(|_, record| record.expires_at > now);
-
-    let expired_access = state
-        .access_sessions
-        .iter()
-        .filter_map(|(token, record)| (record.access_expires_at <= now).then_some(token.clone()))
-        .collect::<Vec<_>>();
-    for token in expired_access {
-        if let Some(record) = state.access_sessions.remove(&token) {
-            state.refresh_index.remove(&record.refresh_token);
-            state
-                .backend_sessions
-                .retain(|_, session| session.owner_account_id != record.account_id);
-        }
-    }
-
-    let expired_refresh = state
-        .access_sessions
-        .iter()
-        .filter_map(|(token, record)| {
-            (record.refresh_expires_at <= now).then_some((
-                token.clone(),
-                record.refresh_token.clone(),
-                record.account_id.clone(),
-            ))
-        })
-        .collect::<Vec<_>>();
-    for (token, refresh, account_id) in expired_refresh {
-        state.access_sessions.remove(&token);
-        state.refresh_index.remove(&refresh);
-        state
-            .backend_sessions
-            .retain(|_, session| session.owner_account_id != account_id);
-    }
-
-    state
-        .backend_sessions
-        .retain(|_, record| record.expires_at > now);
-}
-
-fn auth_session_response(record: &AuthSessionRecord) -> AuthSessionResponse {
-    AuthSessionResponse {
-        access_token: record.access_token.clone(),
-        refresh_token: record.refresh_token.clone(),
-        expires_at: record.access_expires_at.to_rfc3339(),
-        account_id: record.account_id.clone(),
-        account_display_name: record.account_display_name.clone(),
-        capabilities: record.capabilities.clone(),
-    }
+    });
 }
 
 async fn handle_health() -> &'static str {
     "ok"
 }
 
+#[derive(Debug)]
 struct AppError(StatusCode, String);
 
 impl AppError {
@@ -584,9 +277,12 @@ fn backend_session_id(headers: &HeaderMap) -> Result<&str, AppError> {
         .ok_or_else(|| AppError::unauthorized("Missing backend session header."))
 }
 
-fn require_auth(state: &ServerState, headers: &HeaderMap) -> Result<AuthSessionRecord, AppError> {
+async fn require_auth(
+    state: &ServerState,
+    headers: &HeaderMap,
+) -> Result<AuthSessionRecord, AppError> {
     let token = bearer_token(headers)?;
-    state.sessions.session_for_access_token(token)
+    state.sessions.session_for_access_token(token).await
 }
 
 async fn handle_pair_create(
@@ -595,7 +291,8 @@ async fn handle_pair_create(
 ) -> Result<axum::Json<PairingCodeResponse>, AppError> {
     let response = state
         .sessions
-        .create_pairing_code(state.surface.is_some(), input.device_name);
+        .create_pairing_code(input.device_name)
+        .await?;
     Ok(axum::Json(response))
 }
 
@@ -605,7 +302,8 @@ async fn handle_pair_exchange(
 ) -> Result<axum::Json<AuthSessionResponse>, AppError> {
     let response = state
         .sessions
-        .exchange_pairing_code(&input.pairing_code, state.surface.is_some())?;
+        .exchange_pairing_code(&input.pairing_code)
+        .await?;
     Ok(axum::Json(response))
 }
 
@@ -613,9 +311,7 @@ async fn handle_refresh(
     State(state): State<SharedState>,
     axum::Json(input): axum::Json<RefreshInput>,
 ) -> Result<axum::Json<AuthSessionResponse>, AppError> {
-    let response = state
-        .sessions
-        .refresh_session(&input.refresh_token, state.surface.is_some())?;
+    let response = state.sessions.refresh_session(&input.refresh_token).await?;
     Ok(axum::Json(response))
 }
 
@@ -625,11 +321,14 @@ async fn handle_logout(
     body: Option<axum::Json<LogoutInput>>,
 ) -> Result<StatusCode, AppError> {
     let access_token = bearer_token(&headers)?;
-    state.sessions.logout(
-        access_token,
-        body.as_ref()
-            .and_then(|value| value.refresh_token.as_deref()),
-    );
+    state
+        .sessions
+        .logout(
+            access_token,
+            body.as_ref()
+                .and_then(|value| value.refresh_token.as_deref()),
+        )
+        .await;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -637,7 +336,7 @@ async fn handle_me(
     State(state): State<SharedState>,
     headers: HeaderMap,
 ) -> Result<axum::Json<MeResponse>, AppError> {
-    let session = require_auth(&state, &headers)?;
+    let session = require_auth(&state, &headers).await?;
     Ok(axum::Json(MeResponse {
         account: AccountResponse {
             account_id: session.account_id,
@@ -651,7 +350,7 @@ async fn handle_capabilities(
     State(state): State<SharedState>,
     headers: HeaderMap,
 ) -> Result<axum::Json<CapabilitiesResponse>, AppError> {
-    let session = require_auth(&state, &headers)?;
+    let session = require_auth(&state, &headers).await?;
     Ok(axum::Json(session.capabilities))
 }
 
@@ -663,7 +362,8 @@ async fn handle_backend_init(
     let access_token = bearer_token(&headers)?;
     let response = state
         .sessions
-        .create_backend_session(access_token, body.as_ref())?;
+        .create_backend_session(access_token, body.as_ref())
+        .await?;
     Ok(axum::Json(response))
 }
 
@@ -675,7 +375,8 @@ async fn handle_backend_free(
     let session_id = backend_session_id(&headers)?;
     state
         .sessions
-        .free_backend_session(access_token, session_id)?;
+        .free_backend_session(access_token, session_id)
+        .await?;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -687,10 +388,10 @@ async fn handle_backend_rpc(
 ) -> Result<Response, AppError> {
     let access_token = bearer_token(&headers)?;
     let session_id = backend_session_id(&headers)?;
-    let response =
-        state
-            .sessions
-            .run_backend_rpc(access_token, session_id, service, method, body.as_ref())?;
+    let response = state
+        .sessions
+        .run_backend_rpc(access_token, session_id, service, method, body.as_ref())
+        .await?;
 
     let mut headers = HeaderMap::new();
     headers.insert(
@@ -710,7 +411,7 @@ async fn handle_search(
     headers: HeaderMap,
     axum::Json(request): axum::Json<surface_contracts::search::SearchRequest>,
 ) -> Result<axum::Json<Value>, AppError> {
-    require_auth(&state, &headers)?;
+    require_auth(&state, &headers).await?;
     let services = surface_services(&state)?;
     let result = services
         .search
@@ -727,7 +428,7 @@ async fn handle_search_chunks(
     headers: HeaderMap,
     axum::Json(request): axum::Json<surface_contracts::search::ChunkSearchRequest>,
 ) -> Result<axum::Json<Value>, AppError> {
-    require_auth(&state, &headers)?;
+    require_auth(&state, &headers).await?;
     let services = surface_services(&state)?;
     let result = services
         .search
@@ -749,7 +450,7 @@ async fn handle_taxonomy_tree(
     headers: HeaderMap,
     axum::Json(input): axum::Json<TaxonomyTreeInput>,
 ) -> Result<axum::Json<Value>, AppError> {
-    require_auth(&state, &headers)?;
+    require_auth(&state, &headers).await?;
     let services = surface_services(&state)?;
     let result = services
         .analytics
@@ -773,7 +474,7 @@ async fn handle_coverage(
     headers: HeaderMap,
     axum::Json(input): axum::Json<CoverageInput>,
 ) -> Result<axum::Json<Value>, AppError> {
-    require_auth(&state, &headers)?;
+    require_auth(&state, &headers).await?;
     let services = surface_services(&state)?;
     let result = services
         .analytics
@@ -797,7 +498,7 @@ async fn handle_gaps(
     headers: HeaderMap,
     axum::Json(input): axum::Json<GapsInput>,
 ) -> Result<axum::Json<Value>, AppError> {
-    require_auth(&state, &headers)?;
+    require_auth(&state, &headers).await?;
     let services = surface_services(&state)?;
     let result = services
         .analytics
@@ -825,7 +526,7 @@ async fn handle_weak_notes(
     headers: HeaderMap,
     axum::Json(input): axum::Json<WeakNotesInput>,
 ) -> Result<axum::Json<Value>, AppError> {
-    require_auth(&state, &headers)?;
+    require_auth(&state, &headers).await?;
     let services = surface_services(&state)?;
     let result = services
         .analytics
@@ -860,7 +561,7 @@ async fn handle_duplicates(
     headers: HeaderMap,
     axum::Json(input): axum::Json<DuplicatesInput>,
 ) -> Result<axum::Json<Value>, AppError> {
-    require_auth(&state, &headers)?;
+    require_auth(&state, &headers).await?;
     let services = surface_services(&state)?;
     let (clusters, stats) = services
         .analytics
@@ -881,7 +582,7 @@ async fn handle_kg_status(
     State(state): State<SharedState>,
     headers: HeaderMap,
 ) -> Result<axum::Json<Value>, AppError> {
-    require_auth(&state, &headers)?;
+    require_auth(&state, &headers).await?;
     let services = surface_services(&state)?;
     let result = services
         .knowledge_graph
@@ -898,7 +599,7 @@ async fn handle_kg_refresh(
     headers: HeaderMap,
     axum::Json(request): axum::Json<RefreshKnowledgeGraphRequest>,
 ) -> Result<axum::Json<Value>, AppError> {
-    require_auth(&state, &headers)?;
+    require_auth(&state, &headers).await?;
     let services = surface_services(&state)?;
     let result = services
         .knowledge_graph
@@ -915,7 +616,7 @@ async fn handle_kg_note_links(
     headers: HeaderMap,
     axum::Json(request): axum::Json<NoteLinksRequest>,
 ) -> Result<axum::Json<Value>, AppError> {
-    require_auth(&state, &headers)?;
+    require_auth(&state, &headers).await?;
     let services = surface_services(&state)?;
     let result = services
         .knowledge_graph
@@ -932,7 +633,7 @@ async fn handle_kg_topic_neighborhood(
     headers: HeaderMap,
     axum::Json(request): axum::Json<TopicNeighborhoodRequest>,
 ) -> Result<axum::Json<Value>, AppError> {
-    require_auth(&state, &headers)?;
+    require_auth(&state, &headers).await?;
     let services = surface_services(&state)?;
     let result = services
         .knowledge_graph
@@ -954,7 +655,7 @@ async fn handle_generate_preview(
     headers: HeaderMap,
     axum::Json(input): axum::Json<GeneratePreviewInput>,
 ) -> Result<axum::Json<Value>, AppError> {
-    require_auth(&state, &headers)?;
+    require_auth(&state, &headers).await?;
     let services = surface_services(&state)?;
     let preview = services
         .generate_preview
@@ -977,7 +678,7 @@ async fn handle_obsidian_scan(
     headers: HeaderMap,
     axum::Json(input): axum::Json<ObsidianScanInput>,
 ) -> Result<axum::Json<Value>, AppError> {
-    require_auth(&state, &headers)?;
+    require_auth(&state, &headers).await?;
     let services = surface_services(&state)?;
     let preview = services
         .obsidian_scan
@@ -995,22 +696,58 @@ async fn handle_obsidian_scan(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use anki::backend::init_backend;
     use anki_proto::generic::Empty;
     use axum::body::to_bytes;
     use axum::http::Request;
     use prost::Message;
+    use sqlx::PgPool;
+    use sqlx::postgres::PgPoolOptions;
+    use testcontainers::runners::AsyncRunner;
+    use testcontainers_modules::postgres::Postgres;
     use tower::util::ServiceExt;
 
-    fn test_state() -> SharedState {
+    async fn setup_pool() -> Option<(PgPool, testcontainers::ContainerAsync<Postgres>)> {
+        let container = match Postgres::default().start().await {
+            Ok(container) => container,
+            Err(error) => {
+                eprintln!("skipping postgres-backed server test: {error}");
+                return None;
+            }
+        };
+        let host = container.get_host().await.expect("postgres host");
+        let port = container
+            .get_host_port_ipv4(5432)
+            .await
+            .expect("postgres port");
+        let url = format!("postgresql://postgres:postgres@{host}:{port}/postgres");
+        let pool = PgPoolOptions::new()
+            .max_connections(5)
+            .connect(&url)
+            .await
+            .expect("postgres pool");
+        run_migrations(&pool).await.expect("server migrations");
+        Some((pool, container))
+    }
+
+    fn test_state(pool: PgPool, deployment_kind: DeploymentKind, instance_id: &str) -> SharedState {
         Arc::new(ServerState {
             surface: None,
-            sessions: Arc::new(SessionManager::default()),
+            sessions: Arc::new(SessionManager::new(
+                pool,
+                CapabilitiesResponse {
+                    supports_remote_anki: true,
+                    supports_atlas: false,
+                    deployment_kind,
+                    execution_mode: ExecutionMode::Remote,
+                },
+                instance_id.to_string(),
+            )),
         })
     }
 
-    async fn auth_session(app: Router) -> AuthSessionResponse {
+    async fn pairing_code(app: Router) -> PairingCodeResponse {
         let pair_response = app
-            .clone()
             .oneshot(
                 Request::builder()
                     .method("POST")
@@ -1025,9 +762,11 @@ mod tests {
         let pair_body = to_bytes(pair_response.into_body(), usize::MAX)
             .await
             .expect("pair body");
-        let pairing: PairingCodeResponse =
-            serde_json::from_slice(&pair_body).expect("pairing json");
+        serde_json::from_slice(&pair_body).expect("pairing json")
+    }
 
+    async fn auth_session(app: Router) -> AuthSessionResponse {
+        let pairing = pairing_code(app.clone()).await;
         let exchange_payload = serde_json::to_vec(&serde_json::json!({
             "pairing_code": pairing.pairing_code
         }))
@@ -1051,11 +790,42 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn pair_exchange_and_me_endpoint_work() {
-        let app = build_app(test_state());
-        let auth = auth_session(app.clone()).await;
+    async fn pairing_survives_process_restart_and_me_works() {
+        let Some((pool, _container)) = setup_pool().await else {
+            return;
+        };
+        let app1 = build_app(test_state(
+            pool.clone(),
+            DeploymentKind::Companion,
+            "instance-a",
+        ));
+        let pairing = pairing_code(app1).await;
+        let app2 = build_app(test_state(pool, DeploymentKind::Companion, "instance-b"));
 
-        let response = app
+        let exchange_payload = serde_json::to_vec(&serde_json::json!({
+            "pairing_code": pairing.pairing_code
+        }))
+        .expect("pairing exchange json");
+        let exchange_response = app2
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/auth/pair/exchange")
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(exchange_payload))
+                    .expect("exchange request"),
+            )
+            .await
+            .expect("exchange response");
+        assert_eq!(exchange_response.status(), StatusCode::OK);
+        let exchange_body = to_bytes(exchange_response.into_body(), usize::MAX)
+            .await
+            .expect("exchange body");
+        let auth: AuthSessionResponse =
+            serde_json::from_slice(&exchange_body).expect("auth session json");
+
+        let response = app2
             .oneshot(
                 Request::builder()
                     .method("GET")
@@ -1080,8 +850,120 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn backend_rpc_matches_local_backend_output() {
-        let app = build_app(test_state());
+    async fn auth_refresh_survives_process_restart() {
+        let Some((pool, _container)) = setup_pool().await else {
+            return;
+        };
+        let app1 = build_app(test_state(
+            pool.clone(),
+            DeploymentKind::Companion,
+            "instance-a",
+        ));
+        let auth = auth_session(app1).await;
+        let app2 = build_app(test_state(pool, DeploymentKind::Companion, "instance-b"));
+
+        let refresh_payload = serde_json::to_vec(&serde_json::json!({
+            "refresh_token": auth.refresh_token
+        }))
+        .expect("refresh json");
+        let response = app2
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/auth/refresh")
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(refresh_payload))
+                    .expect("refresh request"),
+            )
+            .await
+            .expect("refresh response");
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn logout_revokes_sessions_durably() {
+        let Some((pool, _container)) = setup_pool().await else {
+            return;
+        };
+        let app1 = build_app(test_state(
+            pool.clone(),
+            DeploymentKind::Companion,
+            "instance-a",
+        ));
+        let auth = auth_session(app1).await;
+        let app2 = build_app(test_state(
+            pool.clone(),
+            DeploymentKind::Companion,
+            "instance-b",
+        ));
+
+        let logout_payload = serde_json::to_vec(&serde_json::json!({
+            "refresh_token": auth.refresh_token
+        }))
+        .expect("logout json");
+        let logout = app2
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/auth/logout")
+                    .header(
+                        header::AUTHORIZATION,
+                        format!("Bearer {}", auth.access_token),
+                    )
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(logout_payload))
+                    .expect("logout request"),
+            )
+            .await
+            .expect("logout response");
+        assert_eq!(logout.status(), StatusCode::NO_CONTENT);
+
+        let app3 = build_app(test_state(pool, DeploymentKind::Companion, "instance-c"));
+        let me = app3
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("GET")
+                    .uri("/api/me")
+                    .header(
+                        header::AUTHORIZATION,
+                        format!("Bearer {}", auth.access_token),
+                    )
+                    .body(Body::empty())
+                    .expect("me request"),
+            )
+            .await
+            .expect("me response");
+        assert_eq!(me.status(), StatusCode::UNAUTHORIZED);
+
+        let refresh_payload = serde_json::to_vec(&serde_json::json!({
+            "refresh_token": auth.refresh_token
+        }))
+        .expect("refresh json");
+        let refresh = app3
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/auth/refresh")
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(refresh_payload))
+                    .expect("refresh request"),
+            )
+            .await
+            .expect("refresh response");
+        assert_eq!(refresh.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn backend_lease_rows_are_created_and_closed() {
+        let Some((pool, _container)) = setup_pool().await else {
+            return;
+        };
+        let app = build_app(test_state(
+            pool.clone(),
+            DeploymentKind::Companion,
+            "instance-a",
+        ));
         let auth = auth_session(app.clone()).await;
 
         let init_msg = anki_proto::backend::BackendInit {
@@ -1113,6 +995,16 @@ mod tests {
             .expect("backend init body");
         let backend_session: BackendSessionInitResponse =
             serde_json::from_slice(&init_body).expect("backend init json");
+        let backend_session_id = backend_session.backend_session_id.clone();
+
+        let closed_at: Option<Option<chrono::DateTime<chrono::Utc>>> = sqlx::query_scalar(
+            "SELECT closed_at FROM remote_backend_leases WHERE backend_session_id = $1",
+        )
+        .bind(&backend_session_id)
+        .fetch_optional(&pool)
+        .await
+        .expect("lease row query");
+        assert_eq!(closed_at.flatten(), None);
 
         let local_backend = init_backend(&init_bytes).expect("local backend");
         let input = Empty {}.encode_to_vec();
@@ -1123,6 +1015,7 @@ mod tests {
             };
 
         let rpc_response = app
+            .clone()
             .oneshot(
                 Request::builder()
                     .method("POST")
@@ -1131,7 +1024,7 @@ mod tests {
                         header::AUTHORIZATION,
                         format!("Bearer {}", auth.access_token),
                     )
-                    .header(BACKEND_SESSION_HEADER, backend_session.backend_session_id)
+                    .header(BACKEND_SESSION_HEADER, &backend_session_id)
                     .header(header::CONTENT_TYPE, "application/x-protobuf")
                     .body(Body::from(input))
                     .expect("rpc request"),
@@ -1151,5 +1044,124 @@ mod tests {
             .await
             .expect("rpc body");
         assert_eq!(rpc_body.as_ref(), local_output.as_slice());
+
+        let free_response = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/anki/backend/free")
+                    .header(
+                        header::AUTHORIZATION,
+                        format!("Bearer {}", auth.access_token),
+                    )
+                    .header(BACKEND_SESSION_HEADER, &backend_session_id)
+                    .body(Body::empty())
+                    .expect("backend free request"),
+            )
+            .await
+            .expect("backend free response");
+        assert_eq!(free_response.status(), StatusCode::NO_CONTENT);
+
+        let closed_after_free: Option<Option<chrono::DateTime<chrono::Utc>>> = sqlx::query_scalar(
+            "SELECT closed_at FROM remote_backend_leases WHERE backend_session_id = $1",
+        )
+        .bind(&backend_session_id)
+        .fetch_optional(&pool)
+        .await
+        .expect("lease row query");
+        assert!(closed_after_free.flatten().is_some());
+    }
+
+    #[tokio::test]
+    async fn rpc_returns_not_found_when_runtime_cache_is_lost_after_restart() {
+        let Some((pool, _container)) = setup_pool().await else {
+            return;
+        };
+        let app1 = build_app(test_state(
+            pool.clone(),
+            DeploymentKind::Companion,
+            "instance-a",
+        ));
+        let auth = auth_session(app1.clone()).await;
+
+        let init_msg = anki_proto::backend::BackendInit {
+            preferred_langs: vec!["en".to_string()],
+            locale_folder_path: String::new(),
+            server: true,
+        };
+        let init_bytes = init_msg.encode_to_vec();
+        let init_response = app1
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/anki/backend/init")
+                    .header(
+                        header::AUTHORIZATION,
+                        format!("Bearer {}", auth.access_token),
+                    )
+                    .header(header::CONTENT_TYPE, "application/x-protobuf")
+                    .body(Body::from(init_bytes))
+                    .expect("backend init request"),
+            )
+            .await
+            .expect("backend init response");
+        let init_body = to_bytes(init_response.into_body(), usize::MAX)
+            .await
+            .expect("backend init body");
+        let backend_session: BackendSessionInitResponse =
+            serde_json::from_slice(&init_body).expect("backend init json");
+
+        let app2 = build_app(test_state(pool, DeploymentKind::Companion, "instance-b"));
+        let rpc_response = app2
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/anki/rpc/3/7")
+                    .header(
+                        header::AUTHORIZATION,
+                        format!("Bearer {}", auth.access_token),
+                    )
+                    .header(BACKEND_SESSION_HEADER, backend_session.backend_session_id)
+                    .header(header::CONTENT_TYPE, "application/x-protobuf")
+                    .body(Body::from(Empty {}.encode_to_vec()))
+                    .expect("rpc request"),
+            )
+            .await
+            .expect("rpc response");
+        assert_eq!(rpc_response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn capabilities_reflect_cloud_deployment_config() {
+        let Some((pool, _container)) = setup_pool().await else {
+            return;
+        };
+        let app = build_app(test_state(pool, DeploymentKind::Cloud, "instance-cloud"));
+        let auth = auth_session(app.clone()).await;
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("GET")
+                    .uri("/api/capabilities")
+                    .header(
+                        header::AUTHORIZATION,
+                        format!("Bearer {}", auth.access_token),
+                    )
+                    .body(Body::empty())
+                    .expect("capabilities request"),
+            )
+            .await
+            .expect("capabilities response");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("capabilities body");
+        let capabilities: CapabilitiesResponse =
+            serde_json::from_slice(&body).expect("capabilities json");
+        assert!(matches!(
+            capabilities.deployment_kind,
+            DeploymentKind::Cloud
+        ));
     }
 }

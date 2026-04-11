@@ -204,24 +204,24 @@ private struct IOSBackendOnboardingView: View {
 
             HStack {
                 Button("Save Endpoint") {
-                    Task { await connectionStore.saveEndpoint() }
+                    Task { await appState.saveBackendEndpoint() }
                 }
                 .buttonStyle(.bordered)
 
                 Button("Test Connection") {
-                    Task { await connectionStore.verifyConnection() }
+                    Task { await appState.verifyBackendConnection() }
                 }
                 .buttonStyle(.bordered)
 
                 Button("Generate Pairing Code") {
-                    Task { await connectionStore.requestPairingCode() }
+                    Task { await appState.requestBackendPairingCode() }
                 }
                 .buttonStyle(.bordered)
             }
 
             if connectionStore.deploymentKind == .companion {
                 Button("Discover Companion") {
-                    Task { await connectionStore.discoverCompanion() }
+                    Task { await appState.discoverCompanionBackend() }
                 }
                 .buttonStyle(.borderedProminent)
             }
@@ -248,7 +248,7 @@ private struct IOSBackendOnboardingView: View {
 
             Button("Probe Local Runtime") {
                 Task {
-                    await connectionStore.refreshLocalRuntimeStatus()
+                    await appState.refreshLocalRuntimeStatus()
                     await appState.selectExecutionMode(.local)
                 }
             }
@@ -280,7 +280,7 @@ private struct IOSBackendOnboardingView: View {
 
             Button("Connect") {
                 Task {
-                    await connectionStore.connect()
+                    await appState.connectRemoteBackend()
                     await appState.selectExecutionMode(.remote)
                 }
             }
@@ -308,7 +308,7 @@ private struct IOSBackendOnboardingView: View {
 
             Button("Refresh Status") {
                 Task {
-                    await connectionStore.refreshStatus()
+                    await appState.refreshBackendStatus()
                     await appState.selectExecutionMode(connectionStore.selectedExecutionMode)
                 }
             }

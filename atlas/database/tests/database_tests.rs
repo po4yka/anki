@@ -48,6 +48,8 @@ fn settings_for_container(host: &str, port: u16) -> common::config::Settings {
         api_port: 8000,
         api_key: None,
         debug: false,
+        deployment_kind: common::config::ApiDeploymentKind::Companion,
+        instance_id: None,
         anki_collection_path: None,
         anki_media_root: None,
     }
@@ -375,12 +377,13 @@ fn embedded_migrations_match_python_source() {
     // byte-identical to packages/common/migrations/. We verify by checking
     // the embedded content contains expected markers.
     let migrations = database::migrations::MIGRATIONS;
-    assert_eq!(migrations.len(), 5);
+    assert_eq!(migrations.len(), 6);
     assert_eq!(migrations[0].0, "001_initial_schema");
     assert_eq!(migrations[1].0, "002_pg_trgm_lexical_search");
     assert_eq!(migrations[2].0, "003_knowledge_graph");
     assert_eq!(migrations[3].0, "004_pgvector_note_chunks");
     assert_eq!(migrations[4].0, "005_knowledge_graph_topic_cooccurrence");
+    assert_eq!(migrations[5].0, "006_remote_session_persistence");
 
     // Verify key content from migration 1
     assert!(
@@ -428,5 +431,19 @@ fn embedded_migrations_match_python_source() {
             .1
             .contains("ALTER TYPE edge_source ADD VALUE IF NOT EXISTS 'topic_cooccurrence'"),
         "005 should add topic_cooccurrence edge source"
+    );
+
+    // Verify key content from migration 6
+    assert!(
+        migrations[5]
+            .1
+            .contains("CREATE TABLE IF NOT EXISTS remote_auth_sessions"),
+        "006 should contain remote_auth_sessions table"
+    );
+    assert!(
+        migrations[5]
+            .1
+            .contains("CREATE TABLE IF NOT EXISTS remote_backend_leases"),
+        "006 should contain remote_backend_leases table"
     );
 }

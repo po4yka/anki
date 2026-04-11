@@ -37,6 +37,10 @@ pub static MIGRATIONS: &[(&str, &str)] = &[
         "005_knowledge_graph_topic_cooccurrence",
         include_str!("../migrations/005_knowledge_graph_topic_cooccurrence.sql"),
     ),
+    (
+        "006_remote_session_persistence",
+        include_str!("../migrations/006_remote_session_persistence.sql"),
+    ),
 ];
 
 /// Run all pending SQL migrations.

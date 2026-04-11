@@ -35,6 +35,7 @@ public final class BackendConnectionStore {
     private let endpointDiscoverer: any BackendEndpointDiscovering
     private let localRuntimeProbe: @Sendable () async -> LocalRuntimeStatus
     private let defaults: UserDefaults
+    @ObservationIgnored public var onAvailabilityChange: (@MainActor @Sendable () async -> Void)?
 
     public init(
         sessionProvider: any RemoteSessionManaging,
@@ -138,27 +139,40 @@ public final class BackendConnectionStore {
         guard mode != .unavailable else { return }
         selectedExecutionMode = mode
         defaults.set(mode.rawValue, forKey: Self.selectedExecutionModeDefaultsKey)
-        await reevaluateAvailability()
-    }
-
-    public func saveEndpoint() async {
-        do {
-            _ = try await persistConfiguredEndpoint()
-            lastErrorMessage = nil
-            runtimeStatusMessage = "Saved backend endpoint."
-        } catch {
-            lastErrorMessage = error.localizedDescription
+        switch mode {
+            case .remote:
+                executionPolicy = .preferRemote
+            case .local:
+                executionPolicy = .preferLocal
+            case .unavailable:
+                break
         }
         await reevaluateAvailability()
     }
 
+    public func saveEndpoint() async {
+        var successMessage: String?
+        do {
+            _ = try await persistConfiguredEndpoint()
+            lastErrorMessage = nil
+            successMessage = "Saved backend endpoint."
+        } catch {
+            lastErrorMessage = error.localizedDescription
+        }
+        await reevaluateAvailability()
+        if let successMessage {
+            runtimeStatusMessage = successMessage
+        }
+    }
+
     public func verifyConnection() async {
         connectionState = .connecting
+        var successMessage: String?
         do {
             let endpoint = try await persistConfiguredEndpoint()
             try await endpointDiscoverer.verify(endpoint: endpoint)
             lastVerifiedEndpoint = endpoint
-            runtimeStatusMessage = "Verified backend endpoint at \(endpoint.baseURL.absoluteString)."
+            successMessage = "Verified backend endpoint at \(endpoint.baseURL.absoluteString)."
             lastErrorMessage = nil
             if let account = connectedAccount {
                 connectionState = .connected(account)
@@ -170,10 +184,14 @@ public final class BackendConnectionStore {
             lastErrorMessage = error.localizedDescription
         }
         await reevaluateAvailability()
+        if let successMessage {
+            runtimeStatusMessage = successMessage
+        }
     }
 
     public func discoverCompanion() async {
         connectionState = .connecting
+        var successMessage: String?
         do {
             guard let endpoint = try await endpointDiscoverer.discoverPreferredEndpoint(for: .companion) else {
                 throw AnkiError.message("No reachable companion endpoint was found on this device.")
@@ -182,7 +200,7 @@ public final class BackendConnectionStore {
             deploymentKind = endpoint.deploymentKind
             await sessionProvider.updateEndpoint(endpoint)
             lastVerifiedEndpoint = endpoint
-            runtimeStatusMessage = "Discovered companion backend at \(endpoint.baseURL.absoluteString)."
+            successMessage = "Discovered companion backend at \(endpoint.baseURL.absoluteString)."
             lastErrorMessage = nil
             if let account = connectedAccount {
                 connectionState = .connected(account)
@@ -194,6 +212,9 @@ public final class BackendConnectionStore {
             lastErrorMessage = error.localizedDescription
         }
         await reevaluateAvailability()
+        if let successMessage {
+            runtimeStatusMessage = successMessage
+        }
     }
 
     public func refreshStatus() async {
@@ -302,6 +323,8 @@ public final class BackendConnectionStore {
     }
 
     private func reevaluateAvailability() async {
+        let previousExecutionMode = executionMode
+        let previousReachability = canServeBackend
         let remoteCapabilities: BackendCapabilities?
         if let capabilities {
             remoteCapabilities = capabilities
@@ -310,39 +333,37 @@ public final class BackendConnectionStore {
         }
         capabilities = remoteCapabilities
 
-        switch selectedExecutionMode {
+        let decision = failoverCoordinator.resolveDecision(
+            remoteCapabilities: remoteCapabilities,
+            isRemoteConnected: isConnected,
+            localReplicaAvailable: localBackendReady
+        )
+        executionMode = decision.executionMode
+        canServeBackend = decision.isBackendReachable
+
+        switch executionMode {
             case .remote:
-                if remoteBackendReady {
-                    executionMode = .remote
-                    canServeBackend = true
-                    runtimeStatusMessage = runtimeStatusMessage ?? "Remote backend ready."
-                } else {
-                    executionMode = .unavailable
-                    canServeBackend = false
-                    runtimeStatusMessage =
-                        lastErrorMessage
-                        ?? runtimeStatusMessage
-                        ?? "Enter a backend URL, pair with the companion or cloud deployment, and then switch back to Remote mode."
-                }
+                runtimeStatusMessage =
+                    decision.message
+                    ?? runtimeStatusMessage
+                    ?? "Remote backend ready."
             case .local:
-                if localBackendReady {
-                    executionMode = .local
-                    canServeBackend = true
-                    runtimeStatusMessage =
-                        localRuntimeStatus.detailMessage
-                        ?? runtimeStatusMessage
-                        ?? "Local iOS backend ready."
-                } else {
-                    executionMode = .unavailable
-                    canServeBackend = false
-                    runtimeStatusMessage =
-                        localRuntimeStatus.detailMessage
-                        ?? "Import a local collection after the iOS backend runtime becomes available."
-                }
+                runtimeStatusMessage =
+                    localRuntimeStatus.detailMessage
+                    ?? decision.message
+                    ?? runtimeStatusMessage
+                    ?? "Local iOS backend ready."
             case .unavailable:
-                executionMode = .unavailable
-                canServeBackend = false
-                runtimeStatusMessage = "Select either Local or Remote execution."
+                runtimeStatusMessage =
+                    lastErrorMessage
+                    ?? decision.message
+                    ?? localRuntimeStatus.detailMessage
+                    ?? runtimeStatusMessage
+                    ?? "No backend is currently available."
+        }
+
+        if previousExecutionMode != executionMode || previousReachability != canServeBackend {
+            await onAvailabilityChange?()
         }
     }
 }

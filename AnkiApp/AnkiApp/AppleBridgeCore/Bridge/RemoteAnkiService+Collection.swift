@@ -11,6 +11,11 @@ extension RemoteAnkiService {
             method: CollectionMethod.openCollection,
             input: req
         )
+        await sessionManager?.recordRemoteCollectionState(
+            path: path,
+            mediaFolder: mediaFolder,
+            mediaDb: mediaDb
+        )
     }
 
     public func closeCollection(downgrade: Bool) async throws {
@@ -21,6 +26,7 @@ extension RemoteAnkiService {
             method: CollectionMethod.closeCollection,
             input: req
         )
+        await sessionManager?.clearRemoteCollectionState()
     }
 
     public func getUndoStatus() async throws -> Anki_Collection_UndoStatus {

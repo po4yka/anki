@@ -8,7 +8,7 @@ pub mod embedding;
 pub mod jobs;
 pub mod rerank;
 
-pub use api::ApiSettings;
+pub use api::{ApiDeploymentKind, ApiSettings};
 pub use database::DatabaseSettings;
 pub use embedding::{EmbeddingProviderKind, EmbeddingSettings};
 pub use jobs::JobSettings;
@@ -44,6 +44,8 @@ pub struct Settings {
     pub api_port: u16,
     pub api_key: Option<String>,
     pub debug: bool,
+    pub deployment_kind: ApiDeploymentKind,
+    pub instance_id: Option<String>,
     pub anki_collection_path: Option<String>,
     pub anki_media_root: Option<String>,
 }
@@ -82,6 +84,11 @@ impl Settings {
                 .map_err(|e| ConfigError(format!("invalid api_port: {e}")))?,
             api_key: env::var("ANKIATLAS_API_KEY").ok().filter(|s| !s.is_empty()),
             debug: env_or("ANKIATLAS_DEBUG", "false").parse_bool("debug")?,
+            deployment_kind: env_or("ANKIATLAS_DEPLOYMENT_KIND", "companion")
+                .parse_enum("deployment_kind")?,
+            instance_id: env::var("ANKIATLAS_INSTANCE_ID")
+                .ok()
+                .filter(|s| !s.is_empty()),
             anki_collection_path: env::var("ANKIATLAS_ANKI_COLLECTION_PATH")
                 .ok()
                 .filter(|s| !s.is_empty()),
@@ -184,6 +191,8 @@ impl Settings {
             port: self.api_port,
             api_key: self.api_key.clone(),
             debug: self.debug,
+            deployment_kind: self.deployment_kind,
+            instance_id: self.instance_id.clone(),
         }
     }
 

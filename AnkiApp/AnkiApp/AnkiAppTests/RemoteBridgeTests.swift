@@ -3,6 +3,7 @@ import Foundation
 import SwiftProtobuf
 import Testing
 
+// swiftlint:disable type_body_length
 @Suite(.serialized)
 struct RemoteBridgeTests {
     @Test
@@ -204,11 +205,104 @@ struct RemoteBridgeTests {
         }
 
         #expect(await sessionProvider.invalidatedBackendSessionCount() == 1)
+        #expect(await sessionProvider.recoveryCount() == 1)
         #expect(await sessionProvider.ensureBackendSessionCallCount() == 2)
         let retriedRequest = try #require(RemoteBridgeURLProtocol.requests(matchingPath: "/api/anki/rpc/5/2").last)
         #expect(retriedRequest.value(forHTTPHeaderField: "X-Anki-Backend-Session") == "fresh-session")
     }
+
+    @Test
+    // swiftlint:disable function_body_length
+    func sessionProviderRecoversLostBackendAndReplaysOpenCollection() async throws {
+        try await withRemoteSessionProvider(
+            preferredLanguages: ["en"],
+            deploymentKind: .companion
+        ) { session, _, provider, persistence in
+            let exchangeExpiry = Date(timeIntervalSinceNow: 3600)
+            RemoteBridgeURLProtocol.install { request in
+                switch request.url?.path {
+                case "/api/auth/pair/exchange":
+                    return try jsonResponse(
+                        for: request,
+                        body: [
+                            "access_token": "access-1",
+                            "refresh_token": "refresh-1",
+                            "expires_at": iso8601(exchangeExpiry),
+                            "account_id": "acct-1",
+                            "account_display_name": "Test Device",
+                            "capabilities": capabilitiesPayload(supportsAtlas: true)
+                        ]
+                    )
+                case "/api/anki/backend/init":
+                    return try jsonResponse(for: request, body: ["backend_session_id": "backend-2"])
+                case "/api/anki/rpc/3/0":
+                    return try protobufResponse(
+                        for: request,
+                        body: try Anki_Generic_Empty().serializedData(),
+                        isBackendError: false
+                    )
+                case "/api/anki/rpc/7/9":
+                    var response = Anki_Generic_String()
+                    response.val = "pong"
+                    return try protobufResponse(for: request, body: response.serializedData(), isBackendError: false)
+                default:
+                    throw RemoteBridgeTestError.unexpectedRequest(request.url?.absoluteString ?? "<nil>")
+                }
+            }
+
+            _ = try await provider.exchangePairingCode("PAIR1234")
+            await provider.recordRemoteCollectionState(
+                path: "/tmp/collection.anki2",
+                mediaFolder: "/tmp/collection.media",
+                mediaDb: "/tmp/collection.media.db2"
+            )
+            await provider.invalidateBackendSession()
+            try await provider.recoverBackendSessionAfterNotFound()
+
+            let initRequest = try #require(RemoteBridgeURLProtocol.requests(matchingPath: "/api/anki/backend/init").last)
+            #expect(initRequest.value(forHTTPHeaderField: "Authorization") == "Bearer access-1")
+
+            let openRequest = try #require(RemoteBridgeURLProtocol.requests(matchingPath: "/api/anki/rpc/3/0").last)
+            #expect(openRequest.value(forHTTPHeaderField: "X-Anki-Backend-Session") == "backend-2")
+            let openMessage = try Anki_Collection_OpenCollectionRequest(serializedBytes: requestBodyData(from: openRequest))
+            #expect(openMessage.collectionPath == "/tmp/collection.anki2")
+            #expect(openMessage.mediaFolderPath == "/tmp/collection.media")
+            #expect(openMessage.mediaDbPath == "/tmp/collection.media.db2")
+
+            let restoredProvider = RemoteSessionProvider(
+                session: session,
+                preferredLanguages: ["en"],
+                persistence: persistence
+            )
+            #expect(await restoredProvider.currentRemoteCollectionState()?.path == "/tmp/collection.anki2")
+        }
+    }
+    // swiftlint:enable function_body_length
+
+    @Test
+    func remoteOpenAndCloseCollectionPersistRemoteCollectionState() async throws {
+        let transport = RecordingBackendTransport()
+        try await transport.enqueueResponse(Anki_Generic_Empty())
+        try await transport.enqueueResponse(Anki_Generic_Empty())
+        let endpoint = try #require(URL(string: "http://remote.test/"))
+        let sessionManager = StubRemoteSessionManager(endpoint: BackendEndpoint(baseURL: endpoint, deploymentKind: .companion))
+        let service = RemoteAnkiService(transport: transport, sessionManager: sessionManager)
+
+        try await service.openCollection(
+            path: "/tmp/collection.anki2",
+            mediaFolder: "/tmp/collection.media",
+            mediaDb: "/tmp/collection.media.db2"
+        )
+        let recordedState = await sessionManager.currentRemoteCollectionState()
+        #expect(recordedState?.path == "/tmp/collection.anki2")
+        #expect(recordedState?.mediaFolder == "/tmp/collection.media")
+        #expect(recordedState?.mediaDb == "/tmp/collection.media.db2")
+
+        try await service.closeCollection(downgrade: false)
+        #expect(await sessionManager.currentRemoteCollectionState() == nil)
+    }
 }
+// swiftlint:enable type_body_length
 
 private func withRemoteSessionProvider(
     preferredLanguages: [String],

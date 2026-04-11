@@ -72,6 +72,7 @@ actor StubRemoteSessionProvider: RemoteSessionProviding {
     private var currentBackendSession: String?
     private var backendSessionCalls = 0
     private var backendSessionInvalidations = 0
+    private var recoveries = 0
 
     init(endpoint: BackendEndpoint, accessToken: String, backendSessions: [String]) {
         self.endpointValue = endpoint
@@ -107,12 +108,23 @@ actor StubRemoteSessionProvider: RemoteSessionProviding {
         currentBackendSession = nil
     }
 
+    func recoverBackendSessionAfterNotFound() async throws {
+        recoveries += 1
+        backendSessionInvalidations += 1
+        currentBackendSession = nil
+        _ = try await ensureBackendSession()
+    }
+
     func invalidatedBackendSessionCount() -> Int {
         backendSessionInvalidations
     }
 
     func ensureBackendSessionCallCount() -> Int {
         backendSessionCalls
+    }
+
+    func recoveryCount() -> Int {
+        recoveries
     }
 }
 
@@ -159,6 +171,7 @@ actor StubRemoteSessionManager: RemoteSessionManaging {
     var issuedPairingCodeValue: PairingCodeResponse
     var exchangedSessionValue: RemoteAuthSession
     var refreshedCapabilitiesValue: BackendCapabilities
+    var currentRemoteCollectionStateValue: RemoteCollectionState?
     private(set) var endpointUpdates: [BackendEndpoint] = []
     private(set) var signOutCallCount = 0
 
@@ -223,6 +236,8 @@ actor StubRemoteSessionManager: RemoteSessionManaging {
 
     func invalidateBackendSession() async {}
 
+    func recoverBackendSessionAfterNotFound() async throws {}
+
     func updateEndpoint(_ endpoint: BackendEndpoint) async {
         endpointValue = endpoint
         endpointUpdates.append(endpoint)
@@ -234,6 +249,10 @@ actor StubRemoteSessionManager: RemoteSessionManaging {
 
     func currentCapabilities() async -> BackendCapabilities? {
         currentCapabilitiesValue
+    }
+
+    func currentRemoteCollectionState() async -> RemoteCollectionState? {
+        currentRemoteCollectionStateValue
     }
 
     func issuePairingCode(deviceName: String?) async throws -> PairingCodeResponse {
@@ -249,6 +268,18 @@ actor StubRemoteSessionManager: RemoteSessionManaging {
     func refreshCapabilities() async throws -> BackendCapabilities {
         currentCapabilitiesValue = refreshedCapabilitiesValue
         return refreshedCapabilitiesValue
+    }
+
+    func recordRemoteCollectionState(path: String, mediaFolder: String, mediaDb: String) async {
+        currentRemoteCollectionStateValue = RemoteCollectionState(
+            path: path,
+            mediaFolder: mediaFolder,
+            mediaDb: mediaDb
+        )
+    }
+
+    func clearRemoteCollectionState() async {
+        currentRemoteCollectionStateValue = nil
     }
 
     func signOut() async {
@@ -297,6 +328,7 @@ final class RemoteSessionPersistenceBox: @unchecked Sendable {
     private let lock = NSLock()
     private var endpoint: BackendEndpoint?
     private var authSessionJSON: String?
+    private var remoteCollectionJSON: String?
 
     func saveEndpoint(_ endpoint: BackendEndpoint) {
         lock.lock()
@@ -327,6 +359,24 @@ final class RemoteSessionPersistenceBox: @unchecked Sendable {
         authSessionJSON = nil
         lock.unlock()
     }
+
+    func saveRemoteCollectionJSON(_ json: String) {
+        lock.lock()
+        remoteCollectionJSON = json
+        lock.unlock()
+    }
+
+    func loadRemoteCollectionJSON() -> String? {
+        lock.lock()
+        defer { lock.unlock() }
+        return remoteCollectionJSON
+    }
+
+    func deleteRemoteCollection() {
+        lock.lock()
+        remoteCollectionJSON = nil
+        lock.unlock()
+    }
 }
 
 func makeInMemoryRemoteSessionPersistence() -> RemoteSessionPersistence {
@@ -336,7 +386,10 @@ func makeInMemoryRemoteSessionPersistence() -> RemoteSessionPersistence {
         loadEndpoint: { box.loadEndpoint() },
         saveAuthSessionJSON: { json in box.saveAuthSessionJSON(json) },
         loadAuthSessionJSON: { box.loadAuthSessionJSON() },
-        deleteAuthSession: { box.deleteAuthSession() }
+        deleteAuthSession: { box.deleteAuthSession() },
+        saveRemoteCollectionJSON: { json in box.saveRemoteCollectionJSON(json) },
+        loadRemoteCollectionJSON: { box.loadRemoteCollectionJSON() },
+        deleteRemoteCollection: { box.deleteRemoteCollection() }
     )
 }
 
@@ -349,6 +402,7 @@ func makeIsolatedUserDefaults(suiteName: String = UUID().uuidString) -> UserDefa
 
 func clearRemoteBridgeArtifacts() {
     UserDefaults.standard.removeObject(forKey: "remoteBackendEndpoint")
+    UserDefaults.standard.removeObject(forKey: "remoteBackendCollectionState")
     UserDefaults.standard.removeObject(forKey: "remoteBackendExecutionPolicy")
     KeychainHelper.deleteRemoteAuthSession()
 }

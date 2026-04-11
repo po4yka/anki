@@ -203,6 +203,9 @@ final class AppState {
     let connectionStore: BackendConnectionStore?
     private let remoteSessionProvider: RemoteSessionProvider?
     private let preferredLanguages: [String]
+    @ObservationIgnored private var appliedExecutionMode: BackendExecutionMode
+    @ObservationIgnored private var pendingExecutionMode: BackendExecutionMode?
+    @ObservationIgnored private var isApplyingExecutionModeChange = false
 
     init(
         service: any AnkiServiceProtocol,
@@ -220,6 +223,7 @@ final class AppState {
         self.connectionStore = connectionStore
         self.remoteSessionProvider = remoteSessionProvider
         self.preferredLanguages = preferredLanguages
+        appliedExecutionMode = Self.serviceExecutionMode(for: service)
     }
 
     convenience init() {
@@ -238,6 +242,9 @@ final class AppState {
             remoteSessionProvider: sessionProvider,
             preferredLanguages: preferredLanguages
         )
+        connectionStore.onAvailabilityChange = { [weak self] in
+            await self?.handleExecutionModeChangeIfNeeded()
+        }
         #else
         let service = Self.makeService()
         self.init(
@@ -455,32 +462,37 @@ final class AppState {
     func closeCollection() async {
         await session.closeCollection()
         navigation.presentedSheet = nil
+        #if os(iOS)
+        await resolvePendingExecutionModeIfNeeded()
+        #endif
     }
 
     func restoreBackendState() async {
         #if os(iOS)
         await connectionStore?.restore()
-        await refreshServiceBindings(closeCollectionIfNeeded: false)
+        await handleExecutionModeChangeIfNeeded(force: true)
         #endif
     }
 
     func selectExecutionMode(_ mode: BackendExecutionMode) async {
         #if os(iOS)
+        pendingExecutionMode = nil
         if isCollectionOpen {
             await closeCollection()
         }
         await connectionStore?.selectExecutionMode(mode)
-        await refreshServiceBindings(closeCollectionIfNeeded: false)
+        await handleExecutionModeChangeIfNeeded(force: true)
         #endif
     }
 
     func signOutRemoteBackend() async {
         #if os(iOS)
+        pendingExecutionMode = nil
         if isCollectionOpen, connectionStore?.selectedExecutionMode == .remote {
             await closeCollection()
         }
         await connectionStore?.signOut()
-        await refreshServiceBindings(closeCollectionIfNeeded: false)
+        await handleExecutionModeChangeIfNeeded(force: true)
         #endif
     }
 
@@ -512,6 +524,9 @@ final class AppState {
 
     func dismissPresentedSheet() {
         navigation.presentedSheet = nil
+        #if os(iOS)
+        Task { await resolvePendingExecutionModeIfNeeded() }
+        #endif
     }
 
     func refreshReviewPreferences() async {
@@ -521,6 +536,60 @@ final class AppState {
     func refreshSyncSchedule() {
         session.refreshSyncSchedule()
     }
+
+    func resolvePendingExecutionModeIfNeeded() async {
+        #if os(iOS)
+        guard let pendingExecutionMode else { return }
+        await handleExecutionModeChangeIfNeeded(force: true, preferredTargetMode: pendingExecutionMode)
+        #endif
+    }
+
+    func syncNow() async {
+        await syncModel.sync()
+        await resolvePendingExecutionModeIfNeeded()
+    }
+
+    func performFullSync(upload: Bool, serverMediaUsn: Int32) async {
+        await syncModel.performFullSync(upload: upload, serverMediaUsn: serverMediaUsn)
+        await resolvePendingExecutionModeIfNeeded()
+    }
+
+    #if os(iOS)
+    func saveBackendEndpoint() async {
+        await connectionStore?.saveEndpoint()
+        await handleExecutionModeChangeIfNeeded(force: true)
+    }
+
+    func verifyBackendConnection() async {
+        await connectionStore?.verifyConnection()
+        await handleExecutionModeChangeIfNeeded(force: true)
+    }
+
+    func requestBackendPairingCode() async {
+        await connectionStore?.requestPairingCode()
+        await handleExecutionModeChangeIfNeeded(force: true)
+    }
+
+    func discoverCompanionBackend() async {
+        await connectionStore?.discoverCompanion()
+        await handleExecutionModeChangeIfNeeded(force: true)
+    }
+
+    func refreshLocalRuntimeStatus() async {
+        await connectionStore?.refreshLocalRuntimeStatus()
+        await handleExecutionModeChangeIfNeeded(force: true)
+    }
+
+    func connectRemoteBackend() async {
+        await connectionStore?.connect()
+        await handleExecutionModeChangeIfNeeded(force: true)
+    }
+
+    func refreshBackendStatus() async {
+        await connectionStore?.refreshStatus()
+        await handleExecutionModeChangeIfNeeded(force: true)
+    }
+    #endif
 
     func showPreferences() {
         #if os(macOS)
@@ -546,6 +615,16 @@ final class AppState {
         }
     }
 
+    private static func serviceExecutionMode(for service: any AnkiServiceProtocol) -> BackendExecutionMode {
+        if service is RemoteAnkiService {
+            return .remote
+        }
+        if service is UnavailableAnkiService {
+            return .unavailable
+        }
+        return .local
+    }
+
     #if os(iOS)
     private func refreshServiceBindings(closeCollectionIfNeeded: Bool) async {
         if closeCollectionIfNeeded, isCollectionOpen {
@@ -558,6 +637,7 @@ final class AppState {
             atlasService: bindings.atlasService,
             atlasServiceFactory: bindings.atlasServiceFactory
         )
+        appliedExecutionMode = Self.serviceExecutionMode(for: bindings.service)
         await refreshReviewPreferences()
     }
 
@@ -577,7 +657,7 @@ final class AppState {
             )
         }
 
-        switch connectionStore.selectedExecutionMode {
+        switch connectionStore.executionMode {
             case .remote:
                 guard connectionStore.remoteBackendReady, let remoteSessionProvider else {
                     return IOSServiceBindings(
@@ -655,6 +735,114 @@ final class AppState {
             atlasMessage: "Atlas is available in local mode after you provide PostgreSQL and embedding settings."
         )
     }
+
+    // swiftlint:disable cyclomatic_complexity
+    private func handleExecutionModeChangeIfNeeded(
+        force: Bool = false,
+        preferredTargetMode: BackendExecutionMode? = nil
+    ) async {
+        guard let connectionStore else { return }
+
+        let targetMode = preferredTargetMode ?? connectionStore.executionMode
+        guard force || targetMode != appliedExecutionMode else { return }
+        guard !isApplyingExecutionModeChange else { return }
+
+        if shouldDeferExecutionModeChange(to: targetMode) {
+            pendingExecutionMode = targetMode
+            connectionStore.runtimeStatusMessage = deferredExecutionModeMessage(for: targetMode)
+            return
+        }
+
+        isApplyingExecutionModeChange = true
+        defer { isApplyingExecutionModeChange = false }
+
+        let wasCollectionOpen = isCollectionOpen
+        let reopenPath = wasCollectionOpen ? collectionPathForExecutionMode(targetMode) : nil
+
+        if wasCollectionOpen,
+           targetMode != .unavailable,
+           syncModel.isAuthenticated,
+           !syncModel.isSyncing {
+            await syncModel.sync()
+            if case .fullSyncRequired = syncModel.state {
+                pendingExecutionMode = targetMode
+                connectionStore.runtimeStatusMessage =
+                    "Automatic failover paused until the required AnkiWeb full sync is completed."
+                return
+            }
+            if case .error = syncModel.state {
+                pendingExecutionMode = targetMode
+                connectionStore.runtimeStatusMessage =
+                    "Automatic failover paused until the current sync error is resolved."
+                return
+            }
+        }
+
+        pendingExecutionMode = nil
+        navigation.presentedSheet = nil
+
+        if wasCollectionOpen {
+            await session.closeCollection()
+        }
+
+        await refreshServiceBindings(closeCollectionIfNeeded: false)
+
+        if let reopenPath, targetMode != .unavailable {
+            await openCollection(path: reopenPath)
+            if !session.isCollectionOpen {
+                connectionStore.runtimeStatusMessage = missingCollectionReopenMessage(for: targetMode)
+            }
+        } else if wasCollectionOpen, targetMode != .unavailable {
+            connectionStore.runtimeStatusMessage = missingCollectionReopenMessage(for: targetMode)
+        }
+    }
+    // swiftlint:enable cyclomatic_complexity
+
+    private func shouldDeferExecutionModeChange(to targetMode: BackendExecutionMode) -> Bool {
+        guard targetMode != appliedExecutionMode else { return false }
+        guard isCollectionOpen else { return false }
+        if syncModel.isSyncing {
+            return true
+        }
+        return navigation.presentedSheet == .reviewer
+    }
+
+    private func deferredExecutionModeMessage(for targetMode: BackendExecutionMode) -> String {
+        if syncModel.isSyncing {
+            return "Automatic failover to \(targetMode == .local ? "Local" : "Remote") is waiting for the current sync to finish."
+        }
+        if navigation.presentedSheet == .reviewer {
+            return "Automatic failover to \(targetMode == .local ? "Local" : "Remote") is waiting for the active review session to end."
+        }
+        return "Automatic failover is pending."
+    }
+
+    private func collectionPathForExecutionMode(_ mode: BackendExecutionMode) -> String? {
+        switch mode {
+            case .local:
+                return ProfileManager().activeProfile?.path
+            case .remote:
+                let storedPath = UserDefaults.standard.string(forKey: "collectionPath")?
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                if let storedPath, !storedPath.isEmpty {
+                    return storedPath
+                }
+                return nil
+            case .unavailable:
+                return nil
+        }
+    }
+
+    private func missingCollectionReopenMessage(for mode: BackendExecutionMode) -> String {
+        switch mode {
+            case .local:
+                return "Automatic failover switched to Local mode. Import or select a sandboxed local profile to reopen the collection."
+            case .remote:
+                return "Automatic failover switched to Remote mode. Select a remote collection path in Preferences to reopen the collection."
+            case .unavailable:
+                return "No backend is currently available."
+        }
+    }
     #endif
 
     private static func preferredLanguages() -> [String] {
@@ -674,4 +862,16 @@ final class AppState {
     }
 }
 // swiftlint:enable type_body_length
+
+#if !os(iOS)
+extension AppState {
+    func saveBackendEndpoint() async {}
+    func verifyBackendConnection() async {}
+    func requestBackendPairingCode() async {}
+    func discoverCompanionBackend() async {}
+    func refreshLocalRuntimeStatus() async {}
+    func connectRemoteBackend() async {}
+    func refreshBackendStatus() async {}
+}
+#endif
 // swiftlint:enable file_length

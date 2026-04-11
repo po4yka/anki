@@ -90,7 +90,73 @@ struct BackendConnectionStoreTests {
 
         #expect(!store.canServeBackend)
         #expect(store.executionMode == .unavailable)
-        #expect(store.runtimeStatusMessage == "Local bridge support is missing.")
+        #expect(store.runtimeStatusMessage == "Neither a local replica nor a remote backend is available.")
+    }
+
+    @Test
+    @MainActor
+    func preferRemotePolicyFallsBackToLocalReplica() async throws {
+        let endpoint = try #require(URL(string: "http://remote.test/"))
+        let store = BackendConnectionStore(
+            sessionProvider: StubRemoteSessionManager(
+                endpoint: BackendEndpoint(baseURL: endpoint, deploymentKind: .companion)
+            ),
+            endpointDiscoverer: StubEndpointDiscoverer(),
+            localRuntimeProbe: {
+                .ready(
+                    atlasAvailability: .available,
+                    atlasMessage: "Atlas local runtime ready."
+                )
+            },
+            defaults: makeIsolatedUserDefaults()
+        )
+
+        await store.restore()
+
+        #expect(store.selectedExecutionMode == .remote)
+        #expect(store.executionMode == .local)
+        #expect(store.canServeBackend)
+        #expect(store.runtimeStatusMessage?.contains("falling back to the local replica") == true)
+    }
+
+    @Test
+    @MainActor
+    func preferLocalPolicyFallsBackToRemoteBackend() async throws {
+        let endpoint = try #require(URL(string: "http://remote.test/"))
+        let capabilities = BackendCapabilities(
+            supportsRemoteAnki: true,
+            supportsAtlas: true,
+            deploymentKind: .cloud,
+            executionMode: .remote
+        )
+        let session = RemoteAuthSession(
+            accessToken: "access-token",
+            refreshToken: "refresh-token",
+            expiresAt: Date(timeIntervalSinceNow: 3600),
+            accountID: "acct-1",
+            accountDisplayName: "Cloud Account",
+            capabilities: capabilities
+        )
+        let store = BackendConnectionStore(
+            sessionProvider: StubRemoteSessionManager(
+                endpoint: BackendEndpoint(baseURL: endpoint, deploymentKind: .cloud),
+                currentSession: session,
+                currentCapabilities: capabilities
+            ),
+            endpointDiscoverer: StubEndpointDiscoverer(),
+            localRuntimeProbe: {
+                .unavailable(message: "Local bridge support is missing.")
+            },
+            defaults: makeIsolatedUserDefaults()
+        )
+
+        await store.restore()
+        await store.selectExecutionMode(.local)
+
+        #expect(store.selectedExecutionMode == .local)
+        #expect(store.executionMode == .remote)
+        #expect(store.canServeBackend)
+        #expect(store.runtimeStatusMessage?.contains("continuing with the remote backend") == true)
     }
 
     @Test
