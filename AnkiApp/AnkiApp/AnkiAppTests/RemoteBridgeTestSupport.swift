@@ -301,10 +301,16 @@ actor StubRemoteSessionManager: RemoteSessionManaging {
 actor StubEndpointDiscoverer: BackendEndpointDiscovering {
     var verificationError: Error?
     var discoveredEndpoint: BackendEndpoint?
+    var discoveredCandidates: [DiscoveredBackendCandidate] = []
     private(set) var verifiedEndpoints: [BackendEndpoint] = []
 
     func setDiscoveredEndpoint(_ endpoint: BackendEndpoint?) {
         discoveredEndpoint = endpoint
+    }
+
+    func setDiscoveredCandidates(_ candidates: [DiscoveredBackendCandidate]) {
+        discoveredCandidates = candidates
+        discoveredEndpoint = candidates.first?.endpoint
     }
 
     func setVerificationError(_ error: Error?) {
@@ -320,6 +326,10 @@ actor StubEndpointDiscoverer: BackendEndpointDiscovering {
 
     func discoverPreferredEndpoint(for deploymentKind: BackendDeploymentKind) async throws -> BackendEndpoint? {
         discoveredEndpoint
+    }
+
+    func discoverCompanionEndpoints() async throws -> [DiscoveredBackendCandidate] {
+        discoveredCandidates
     }
 
     func allVerifiedEndpoints() -> [BackendEndpoint] {

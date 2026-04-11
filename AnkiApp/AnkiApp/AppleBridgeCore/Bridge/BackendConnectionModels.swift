@@ -74,6 +74,22 @@ public struct BackendEndpoint: Codable, Equatable, Sendable {
     }
 }
 
+public struct DiscoveredBackendCandidate: Equatable, Sendable, Identifiable {
+    public var endpoint: BackendEndpoint
+    public var label: String
+    public var detail: String
+
+    public var id: String {
+        endpoint.baseURL.absoluteString
+    }
+
+    public init(endpoint: BackendEndpoint, label: String, detail: String) {
+        self.endpoint = endpoint
+        self.label = label
+        self.detail = detail
+    }
+}
+
 public struct BackendCapabilities: Codable, Equatable, Sendable {
     public var supportsRemoteAnki: Bool
     public var supportsAtlas: Bool

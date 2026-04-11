@@ -164,14 +164,23 @@ struct BackendConnectionStoreTests {
     func discoverAndVerifyUpdateEndpointState() async throws {
         let originalEndpoint = try #require(URL(string: "http://127.0.0.1:8080/"))
         let discoveredURL = try #require(URL(string: "http://localhost:8080/"))
+        let alternateURL = try #require(URL(string: "http://anki-companion.local:8080/"))
         let sessionManager = StubRemoteSessionManager(
             endpoint: BackendEndpoint(baseURL: originalEndpoint, deploymentKind: .companion)
         )
         let discoverer = StubEndpointDiscoverer()
-        await discoverer.setDiscoveredEndpoint(BackendEndpoint(
-            baseURL: discoveredURL,
-            deploymentKind: .companion
-        ))
+        await discoverer.setDiscoveredCandidates([
+            DiscoveredBackendCandidate(
+                endpoint: BackendEndpoint(baseURL: discoveredURL, deploymentKind: .companion),
+                label: "Localhost",
+                detail: "Loopback"
+            ),
+            DiscoveredBackendCandidate(
+                endpoint: BackendEndpoint(baseURL: alternateURL, deploymentKind: .companion),
+                label: "Anki Companion (.local)",
+                detail: "Bonjour host"
+            )
+        ])
 
         let store = BackendConnectionStore(
             sessionProvider: sessionManager,
@@ -182,10 +191,16 @@ struct BackendConnectionStoreTests {
         await store.discoverCompanion()
         #expect(store.endpointURLString == discoveredURL.absoluteString)
         #expect(store.lastVerifiedEndpoint?.baseURL == discoveredURL)
+        #expect(store.discoveredCompanionCandidates.count == 2)
+
+        let alternate = try #require(store.discoveredCompanionCandidates.last)
+        await store.selectDiscoveredCompanion(alternate)
+        #expect(store.endpointURLString == alternateURL.absoluteString)
+        #expect(store.lastVerifiedEndpoint?.baseURL == alternateURL)
 
         await store.verifyConnection()
         let verified = await discoverer.allVerifiedEndpoints()
-        #expect(verified.last?.baseURL == discoveredURL)
+        #expect(verified.last?.baseURL == alternateURL)
         #expect(store.runtimeStatusMessage?.contains("Verified backend endpoint") == true)
     }
 }

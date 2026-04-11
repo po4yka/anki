@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 
+// swiftlint:disable file_length
 // swiftlint:disable type_body_length
 @Observable
 @MainActor
@@ -14,6 +15,8 @@ public final class BackendConnectionStore {
     public var cloudPairingKey: String
     public var pairingCode: String = ""
     public var issuedPairingCode: PairingCodeResponse?
+    public var isDiscoveringCompanion: Bool = false
+    public var discoveredCompanionCandidates: [DiscoveredBackendCandidate] = []
     public var connectionState: BackendConnectionState = .disconnected
     public var capabilities: BackendCapabilities?
     public var executionMode: BackendExecutionMode = .unavailable
@@ -195,16 +198,21 @@ public final class BackendConnectionStore {
 
     public func discoverCompanion() async {
         connectionState = .connecting
+        isDiscoveringCompanion = true
         var successMessage: String?
         do {
-            guard let endpoint = try await endpointDiscoverer.discoverPreferredEndpoint(for: .companion) else {
+            let candidates = try await endpointDiscoverer.discoverCompanionEndpoints()
+            discoveredCompanionCandidates = candidates
+
+            guard let preferredCandidate = candidates.first else {
                 throw AnkiError.message("No reachable companion endpoint was found on this device.")
             }
-            endpointURLString = endpoint.baseURL.absoluteString
-            deploymentKind = endpoint.deploymentKind
-            await sessionProvider.updateEndpoint(endpoint)
-            lastVerifiedEndpoint = endpoint
-            successMessage = "Discovered companion backend at \(endpoint.baseURL.absoluteString)."
+            await applyDiscoveredCompanion(preferredCandidate)
+            successMessage = if candidates.count == 1 {
+                "Discovered companion backend at \(preferredCandidate.endpoint.baseURL.absoluteString)."
+            } else {
+                "Found \(candidates.count) reachable companion endpoints. Selected \(preferredCandidate.label.lowercased())."
+            }
             lastErrorMessage = nil
             if let account = connectedAccount {
                 connectionState = .connected(account)
@@ -212,13 +220,26 @@ public final class BackendConnectionStore {
                 connectionState = .disconnected
             }
         } catch {
+            discoveredCompanionCandidates = []
             connectionState = .error(error.localizedDescription)
             lastErrorMessage = error.localizedDescription
         }
+        isDiscoveringCompanion = false
         await reevaluateAvailability()
         if let successMessage {
             runtimeStatusMessage = successMessage
         }
+    }
+
+    public func selectDiscoveredCompanion(_ candidate: DiscoveredBackendCandidate) async {
+        await applyDiscoveredCompanion(candidate)
+        runtimeStatusMessage = "Selected \(candidate.label) at \(candidate.endpoint.baseURL.absoluteString)."
+        if let account = connectedAccount {
+            connectionState = .connected(account)
+        } else {
+            connectionState = .disconnected
+        }
+        await reevaluateAvailability()
     }
 
     public func refreshStatus() async {
@@ -320,6 +341,13 @@ public final class BackendConnectionStore {
         await sessionProvider.updateEndpoint(endpoint)
         lastVerifiedEndpoint = nil
         return endpoint
+    }
+
+    private func applyDiscoveredCompanion(_ candidate: DiscoveredBackendCandidate) async {
+        endpointURLString = candidate.endpoint.baseURL.absoluteString
+        deploymentKind = candidate.endpoint.deploymentKind
+        await sessionProvider.updateEndpoint(candidate.endpoint)
+        lastVerifiedEndpoint = candidate.endpoint
     }
 
     private func persistExecutionPolicy() {

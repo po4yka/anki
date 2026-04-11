@@ -1,7 +1,11 @@
-// swiftlint:disable file_length
+// swiftlint:disable file_length type_body_length function_body_length
 import SwiftUI
 import AppleBridgeCore
 import AppleSharedUI
+#if os(iOS)
+import CoreImage.CIFilterBuiltins
+import UIKit
+#endif
 
 struct ContentView: View {
     @Environment(AppState.self) private var appState
@@ -232,10 +236,69 @@ private struct IOSBackendOnboardingView: View {
             }
 
             if connectionStore.deploymentKind == .companion {
-                Button("Discover Companion") {
-                    Task { await appState.discoverCompanionBackend() }
+                discoverySection(connectionStore: connectionStore)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func discoverySection(connectionStore: BackendConnectionStore) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Companion Discovery")
+                .font(.subheadline.weight(.semibold))
+
+            Text("Scan common local companion addresses, then pick the one running on your Mac.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Button {
+                Task { await appState.discoverCompanionBackend() }
+            } label: {
+                if connectionStore.isDiscoveringCompanion {
+                    Label("Scanning for Companion", systemImage: "dot.radiowaves.left.and.right")
+                } else {
+                    Label("Scan for Companion", systemImage: "dot.radiowaves.left.and.right")
                 }
-                .buttonStyle(.borderedProminent)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(connectionStore.isDiscoveringCompanion)
+
+            if connectionStore.isDiscoveringCompanion {
+                ProgressView("Probing local endpoints…")
+                    .font(.caption)
+            }
+
+            if !connectionStore.discoveredCompanionCandidates.isEmpty {
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(connectionStore.discoveredCompanionCandidates) { candidate in
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(alignment: .firstTextBaseline) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(candidate.label)
+                                        .font(.subheadline.weight(.semibold))
+                                    Text(candidate.endpoint.baseURL.absoluteString)
+                                        .font(.caption.monospaced())
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Button(
+                                    candidate.endpoint.baseURL.absoluteString == connectionStore.endpointURLString
+                                        ? "Selected"
+                                        : "Use"
+                                ) {
+                                    Task { await connectionStore.selectDiscoveredCompanion(candidate) }
+                                }
+                                .buttonStyle(.bordered)
+                                .disabled(candidate.endpoint.baseURL.absoluteString == connectionStore.endpointURLString)
+                            }
+                            Text(candidate.detail)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(12)
+                        .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
+                    }
+                }
             }
         }
     }
@@ -274,16 +337,62 @@ private struct IOSBackendOnboardingView: View {
             Text("Pairing")
                 .font(.headline)
 
-            if let issued = connectionStore.issuedPairingCode {
-                statusRow(
-                    title: "Issued Code",
-                    detail: "\(issued.pairingCode) · expires \(issued.expiresAt.formatted(date: .omitted, time: .shortened))"
-                )
+            Text("Generate a code on iPhone, then open the link or enter the code on the Mac that is running the companion.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
-                if let pairingURL = issued.pairingURL {
-                    Link("Open Pairing Link", destination: pairingURL)
-                        .font(.callout.weight(.semibold))
+            if let issued = connectionStore.issuedPairingCode {
+                VStack(alignment: .leading, spacing: 12) {
+                    statusRow(
+                        title: "Issued Code",
+                        detail: "Expires \(issued.expiresAt.formatted(date: .omitted, time: .shortened))"
+                    )
+
+                    Text(issued.pairingCode)
+                        .font(.system(.title2, design: .monospaced).weight(.bold))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 12)
+                        .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
+
+                    #if os(iOS)
+                    if let pairingURL = issued.pairingURL {
+                        PairingQRCodeView(url: pairingURL)
+                    }
+                    #endif
+
+                    HStack {
+                        #if os(iOS)
+                        Button("Copy Code") {
+                            UIPasteboard.general.string = issued.pairingCode
+                            connectionStore.runtimeStatusMessage = "Copied pairing code."
+                        }
+                        .buttonStyle(.bordered)
+                        #endif
+
+                        if let pairingURL = issued.pairingURL {
+                            ShareLink(item: pairingURL) {
+                                Label("Share Link", systemImage: "square.and.arrow.up")
+                            }
+                            .buttonStyle(.bordered)
+
+                            #if os(iOS)
+                            Button("Copy Link") {
+                                UIPasteboard.general.url = pairingURL
+                                connectionStore.runtimeStatusMessage = "Copied pairing link."
+                            }
+                            .buttonStyle(.bordered)
+                            #endif
+
+                            Link("Open Pairing Link", destination: pairingURL)
+                                .font(.callout.weight(.semibold))
+                        }
+                    }
                 }
+
+                Text("Tip: if the link opens on the wrong device, copy the code instead and paste it into the companion pairing prompt on your Mac.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             TextField("Pairing Code", text: Bindable(connectionStore).pairingCode)
@@ -363,6 +472,45 @@ private struct IOSBackendOnboardingView: View {
         }
     }
 }
+
+#if os(iOS)
+private struct PairingQRCodeView: View {
+    let url: URL
+
+    private let context = CIContext()
+    private let filter = CIFilter.qrCodeGenerator()
+
+    var body: some View {
+        Group {
+            if let image = qrImage {
+                Image(uiImage: image)
+                    .interpolation(.none)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 160, height: 160)
+                    .padding(10)
+                    .background(Color.white, in: RoundedRectangle(cornerRadius: 16))
+            }
+        }
+    }
+
+    private var qrImage: UIImage? {
+        filter.setValue(Data(url.absoluteString.utf8), forKey: "inputMessage")
+        filter.setValue("M", forKey: "inputCorrectionLevel")
+
+        guard let outputImage = filter.outputImage else {
+            return nil
+        }
+
+        let scaledImage = outputImage.transformed(by: CGAffineTransform(scaleX: 8, y: 8))
+        guard let cgImage = context.createCGImage(scaledImage, from: scaledImage.extent) else {
+            return nil
+        }
+
+        return UIImage(cgImage: cgImage)
+    }
+}
+#endif
 
 private extension BackendExecutionMode {
     var displayName: String {
@@ -467,4 +615,5 @@ private struct MobileMoreView: View {
     ContentView()
         .environment(AppState())
 }
-// swiftlint:enable file_length
+// swiftlint:enable type_body_length
+// swiftlint:enable function_body_length
