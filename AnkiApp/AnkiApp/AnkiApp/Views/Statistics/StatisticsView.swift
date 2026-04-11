@@ -1,5 +1,7 @@
 import Charts
 import SwiftUI
+import AppleBridgeCore
+import AppleSharedUI
 
 struct StatisticsView: View {
     @Environment(AppState.self) private var appState

@@ -1,4 +1,6 @@
 import SwiftUI
+import AppleBridgeCore
+import AppleSharedUI
 
 struct SeeAlsoNotesView: View {
     let atlas: any AtlasServiceProtocol

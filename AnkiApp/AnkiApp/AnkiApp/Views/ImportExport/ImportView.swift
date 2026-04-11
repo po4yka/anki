@@ -1,5 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import AppleBridgeCore
+import AppleSharedUI
 
 struct ImportView: View {
     @Environment(AppState.self) private var appState

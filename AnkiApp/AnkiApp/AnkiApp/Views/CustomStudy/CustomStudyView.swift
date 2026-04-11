@@ -1,4 +1,6 @@
 import SwiftUI
+import AppleBridgeCore
+import AppleSharedUI
 
 struct CustomStudyView: View {
     @Environment(\.dismiss) private var dismiss

@@ -1,5 +1,7 @@
 import Foundation
 import Observation
+import AppleBridgeCore
+import AppleSharedUI
 #if os(macOS)
 import AppKit
 #elseif os(iOS)
@@ -183,18 +185,34 @@ final class NavigationStore {
 final class AppState {
     let session: SessionStore
     let navigation = NavigationStore()
+    let connectionStore: BackendConnectionStore?
 
-    init(service: any AnkiServiceProtocol, atlasService: (any AtlasServiceProtocol)? = nil) {
+    init(
+        service: any AnkiServiceProtocol,
+        atlasService: (any AtlasServiceProtocol)? = nil,
+        connectionStore: BackendConnectionStore? = nil
+    ) {
         session = SessionStore(service: service, atlasService: atlasService)
+        self.connectionStore = connectionStore
     }
 
     convenience init() {
+        #if os(iOS)
+        let sessionProvider = RemoteSessionProvider(preferredLanguages: Self.preferredLanguages())
+        let connectionStore = BackendConnectionStore(sessionProvider: sessionProvider)
+        self.init(
+            service: RemoteAnkiService(sessionProvider: sessionProvider),
+            atlasService: RemoteAtlasService(sessionProvider: sessionProvider),
+            connectionStore: connectionStore
+        )
+        #else
         let service = Self.makeService()
         self.init(service: service, atlasService: SessionStore.makeAtlasService())
-        if service is UnavailableAnkiService {
-            session.error = .message("Failed to initialize the Anki backend.")
-        }
+        #endif
     }
+
+    static let unavailableBackendMessage =
+        "This platform build does not have a connected Anki backend yet."
 
     var isCollectionOpen: Bool {
         session.isCollectionOpen
@@ -226,6 +244,55 @@ final class AppState {
         session.service
     }
 
+    var hasBackendService: Bool {
+        #if os(iOS)
+        connectionStore?.isConnected ?? false
+        #else
+        !(session.service is UnavailableAnkiService)
+        #endif
+    }
+
+    var requiresBackendIntegration: Bool {
+        !hasBackendService
+    }
+
+    var backendStatusTitle: String {
+        #if os(iOS)
+        if hasBackendService {
+            return "Remote Backend Connected"
+        }
+        switch connectionStore?.connectionState ?? .disconnected {
+            case .connecting:
+                return "Connecting to Backend"
+            case let .error(message):
+                return message.isEmpty ? "Connection Failed" : "Connection Failed"
+            case .disconnected:
+                return "Remote Backend Required"
+            case .connected:
+                return "Remote Backend Connected"
+        }
+        #else
+        return hasBackendService ? "Backend Ready" : "Backend Integration Required"
+        #endif
+    }
+
+    var backendStatusMessage: String {
+        if hasBackendService {
+            #if os(iOS)
+            return "This iOS build is connected to a remote Anki backend. Open Preferences to select a collection path on the companion or cloud host."
+            #else
+            return "This app target has access to the Anki backend."
+            #endif
+        }
+
+        #if os(iOS)
+        return connectionStore?.lastErrorMessage
+            ?? "Enter a backend URL, pair with the companion or cloud deployment, and then open a remote collection from Preferences."
+        #else
+        return Self.unavailableBackendMessage
+        #endif
+    }
+
     var ttsSettings: TTSSettings {
         session.ttsSettings
     }
@@ -240,7 +307,27 @@ final class AppState {
     }
 
     var isAtlasAvailable: Bool {
+        #if os(iOS)
+        connectionStore?.supportsAtlas ?? false
+        #else
         session.isAtlasAvailable
+        #endif
+    }
+
+    var backendExecutionMode: BackendExecutionMode {
+        #if os(iOS)
+        connectionStore?.executionMode ?? .unavailable
+        #else
+        .local
+        #endif
+    }
+
+    var canEditNotes: Bool {
+        #if os(iOS)
+        backendExecutionMode != .remote
+        #else
+        true
+        #endif
     }
 
     var selectedSidebarItem: SidebarItem {
@@ -303,6 +390,10 @@ final class AppState {
     func presentAddNote() {
         guard isCollectionOpen else {
             error = .message("Open a collection before adding notes.")
+            return
+        }
+        guard canEditNotes else {
+            error = .message("Adding notes is not enabled for the remote iOS backend yet.")
             return
         }
         navigation.presentedSheet = .addNote

@@ -1,4 +1,6 @@
 import Foundation
+import AppleBridgeCore
+import AppleSharedUI
 
 struct FieldRequirements {
     let requiredFieldIndexes: Set<Int>

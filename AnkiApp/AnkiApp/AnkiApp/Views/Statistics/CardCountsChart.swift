@@ -1,5 +1,7 @@
 import Charts
 import SwiftUI
+import AppleBridgeCore
+import AppleSharedUI
 
 private struct CardSegment {
     let label: String

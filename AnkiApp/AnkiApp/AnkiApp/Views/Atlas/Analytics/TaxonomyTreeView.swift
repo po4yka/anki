@@ -1,4 +1,6 @@
 import SwiftUI
+import AppleBridgeCore
+import AppleSharedUI
 
 private extension TaxonomyNode {
     var childrenOrNil: [TaxonomyNode]? {

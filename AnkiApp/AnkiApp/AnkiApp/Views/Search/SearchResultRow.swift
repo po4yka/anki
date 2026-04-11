@@ -1,4 +1,6 @@
 import SwiftUI
+import AppleBridgeCore
+import AppleSharedUI
 
 struct SearchResultRow: View {
     let row: Anki_Search_BrowserRow

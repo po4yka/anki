@@ -1,6 +1,8 @@
 import Foundation
 import Observation
 import SwiftUI
+import AppleBridgeCore
+import AppleSharedUI
 
 @Observable
 @MainActor

@@ -15,6 +15,11 @@
 		A1B2C3032F830001006E3286 /* SwiftProtobufPluginLibrary in Frameworks */ = {isa = PBXBuildFile; productRef = 0CFE7C122F824E17006E3286 /* SwiftProtobufPluginLibrary */; };
 		A1B2C3042F830001006E3286 /* protoc in Frameworks */ = {isa = PBXBuildFile; productRef = 0CFE7C142F824E17006E3286 /* protoc */; };
 		A1B2C3052F830001006E3286 /* protoc-gen-swift in Frameworks */ = {isa = PBXBuildFile; productRef = 0CFE7C162F824E17006E3286 /* protoc-gen-swift */; };
+		B10000212F830001006E3286 /* AppleBridgeCore in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000012F830001006E3286 /* AppleBridgeCore.a */; };
+		B10000222F830001006E3286 /* AppleSharedUI in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000022F830001006E3286 /* AppleSharedUI.a */; };
+		B10000232F830001006E3286 /* AppleBridgeCore in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000012F830001006E3286 /* AppleBridgeCore.a */; };
+		B10000242F830001006E3286 /* AppleSharedUI in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000022F830001006E3286 /* AppleSharedUI.a */; };
+		B10000252F830001006E3286 /* SwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = 0CFE7C102F824E17006E3286 /* SwiftProtobuf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -32,6 +37,20 @@
 			remoteGlobalIDString = 0CFE7BE22F8248B1006E3286;
 			remoteInfo = AnkiApp;
 		};
+		B10000312F830001006E3286 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0CFE7BDB2F8248B1006E3286 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B10000612F830001006E3286;
+			remoteInfo = AppleBridgeCore;
+		};
+		B10000322F830001006E3286 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0CFE7BDB2F8248B1006E3286 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B10000622F830001006E3286;
+			remoteInfo = AppleSharedUI;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
@@ -39,6 +58,8 @@
 		0CFE7BF22F8248B5006E3286 /* AnkiAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AnkiAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0CFE7BFC2F8248B5006E3286 /* AnkiAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AnkiAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1B2C3012F830001006E3286 /* AnkiIOSApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AnkiIOSApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000012F830001006E3286 /* AppleBridgeCore.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = AppleBridgeCore.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000022F830001006E3286 /* AppleSharedUI.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = AppleSharedUI.a; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -57,6 +78,16 @@
 			path = AnkiAppUITests;
 			sourceTree = "<group>";
 		};
+		B10000112F830001006E3286 /* AppleBridgeCore */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = AppleBridgeCore;
+			sourceTree = "<group>";
+		};
+		B10000122F830001006E3286 /* AppleSharedUI */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = AppleSharedUI;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -64,6 +95,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B10000222F830001006E3286 /* AppleSharedUI in Frameworks */,
+				B10000212F830001006E3286 /* AppleBridgeCore in Frameworks */,
 				0CFE7C172F824E18006E3286 /* protoc-gen-swift in Frameworks */,
 				0CFE7C132F824E17006E3286 /* SwiftProtobufPluginLibrary in Frameworks */,
 				0CFE7C112F824E17006E3286 /* SwiftProtobuf in Frameworks */,
@@ -89,10 +122,27 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B10000242F830001006E3286 /* AppleSharedUI in Frameworks */,
+				B10000232F830001006E3286 /* AppleBridgeCore in Frameworks */,
 				A1B2C3052F830001006E3286 /* protoc-gen-swift in Frameworks */,
 				A1B2C3032F830001006E3286 /* SwiftProtobufPluginLibrary in Frameworks */,
 				A1B2C3022F830001006E3286 /* SwiftProtobuf in Frameworks */,
 				A1B2C3042F830001006E3286 /* protoc in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B10000512F830001006E3286 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B10000252F830001006E3286 /* SwiftProtobuf in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B10000522F830001006E3286 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -103,6 +153,8 @@
 			isa = PBXGroup;
 			children = (
 				0CFE7BE52F8248B1006E3286 /* AnkiApp */,
+				B10000112F830001006E3286 /* AppleBridgeCore */,
+				B10000122F830001006E3286 /* AppleSharedUI */,
 				0CFE7BF52F8248B5006E3286 /* AnkiAppTests */,
 				0CFE7BFF2F8248B5006E3286 /* AnkiAppUITests */,
 				0CFE7BE42F8248B1006E3286 /* Products */,
@@ -114,6 +166,8 @@
 			children = (
 				0CFE7BE32F8248B1006E3286 /* AnkiApp.app */,
 				A1B2C3012F830001006E3286 /* AnkiIOSApp.app */,
+				B10000012F830001006E3286 /* AppleBridgeCore.a */,
+				B10000022F830001006E3286 /* AppleSharedUI.a */,
 				0CFE7BF22F8248B5006E3286 /* AnkiAppTests.xctest */,
 				0CFE7BFC2F8248B5006E3286 /* AnkiAppUITests.xctest */,
 			);
@@ -134,6 +188,8 @@
 			buildRules = (
 			);
 			dependencies = (
+				B10000412F830001006E3286 /* PBXTargetDependency */,
+				B10000422F830001006E3286 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				0CFE7BE52F8248B1006E3286 /* AnkiApp */,
@@ -206,6 +262,8 @@
 			buildRules = (
 			);
 			dependencies = (
+				B10000432F830001006E3286 /* PBXTargetDependency */,
+				B10000442F830001006E3286 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				0CFE7BE52F8248B1006E3286 /* AnkiApp */,
@@ -220,6 +278,49 @@
 			productName = AnkiIOSApp;
 			productReference = A1B2C3012F830001006E3286 /* AnkiIOSApp.app */;
 			productType = "com.apple.product-type.application";
+		};
+		B10000612F830001006E3286 /* AppleBridgeCore */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B10000712F830001006E3286 /* Build configuration list for PBXNativeTarget "AppleBridgeCore" */;
+			buildPhases = (
+				B10000532F830001006E3286 /* Sources */,
+				B10000512F830001006E3286 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				B10000112F830001006E3286 /* AppleBridgeCore */,
+			);
+			name = AppleBridgeCore;
+			packageProductDependencies = (
+				0CFE7C102F824E17006E3286 /* SwiftProtobuf */,
+			);
+			productName = AppleBridgeCore;
+			productReference = B10000012F830001006E3286 /* AppleBridgeCore.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		B10000622F830001006E3286 /* AppleSharedUI */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B10000722F830001006E3286 /* Build configuration list for PBXNativeTarget "AppleSharedUI" */;
+			buildPhases = (
+				B10000542F830001006E3286 /* Sources */,
+				B10000522F830001006E3286 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				B10000122F830001006E3286 /* AppleSharedUI */,
+			);
+			name = AppleSharedUI;
+			packageProductDependencies = (
+			);
+			productName = AppleSharedUI;
+			productReference = B10000022F830001006E3286 /* AppleSharedUI.a */;
+			productType = "com.apple.product-type.library.static";
 		};
 /* End PBXNativeTarget section */
 
@@ -245,6 +346,12 @@
 					A1B2C3092F830001006E3286 = {
 						CreatedOnToolsVersion = 26.4;
 					};
+					B10000612F830001006E3286 = {
+						CreatedOnToolsVersion = 26.4;
+					};
+					B10000622F830001006E3286 = {
+						CreatedOnToolsVersion = 26.4;
+					};
 				};
 			};
 			buildConfigurationList = 0CFE7BDE2F8248B1006E3286 /* Build configuration list for PBXProject "AnkiApp" */;
@@ -266,6 +373,8 @@
 			targets = (
 				0CFE7BE22F8248B1006E3286 /* AnkiApp */,
 				A1B2C3092F830001006E3286 /* AnkiIOSApp */,
+				B10000612F830001006E3286 /* AppleBridgeCore */,
+				B10000622F830001006E3286 /* AppleSharedUI */,
 				0CFE7BF12F8248B5006E3286 /* AnkiAppTests */,
 				0CFE7BFB2F8248B5006E3286 /* AnkiAppUITests */,
 			);
@@ -332,6 +441,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B10000532F830001006E3286 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B10000542F830001006E3286 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -344,6 +467,26 @@
 			isa = PBXTargetDependency;
 			target = 0CFE7BE22F8248B1006E3286 /* AnkiApp */;
 			targetProxy = 0CFE7BFD2F8248B5006E3286 /* PBXContainerItemProxy */;
+		};
+		B10000412F830001006E3286 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B10000612F830001006E3286 /* AppleBridgeCore */;
+			targetProxy = B10000312F830001006E3286 /* PBXContainerItemProxy */;
+		};
+		B10000422F830001006E3286 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B10000622F830001006E3286 /* AppleSharedUI */;
+			targetProxy = B10000322F830001006E3286 /* PBXContainerItemProxy */;
+		};
+		B10000432F830001006E3286 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B10000612F830001006E3286 /* AppleBridgeCore */;
+			targetProxy = B10000312F830001006E3286 /* PBXContainerItemProxy */;
+		};
+		B10000442F830001006E3286 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B10000622F830001006E3286 /* AppleSharedUI */;
+			targetProxy = B10000322F830001006E3286 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -502,7 +645,6 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = AnkiApp/Bridge/AnkiBridge.h;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -544,7 +686,6 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = AnkiApp/Bridge/AnkiBridge.h;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -682,6 +823,72 @@
 			};
 			name = Release;
 		};
+		B100008112F830001006E3286 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_OBJC_BRIDGING_HEADER = AppleBridgeCore/Bridge/AnkiBridge.h;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		B100008122F830001006E3286 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_OBJC_BRIDGING_HEADER = AppleBridgeCore/Bridge/AnkiBridge.h;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		B100008212F830001006E3286 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		B100008222F830001006E3286 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -726,6 +933,24 @@
 			buildConfigurations = (
 				A1B2C30B2F830001006E3286 /* Debug */,
 				A1B2C30C2F830001006E3286 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B10000712F830001006E3286 /* Build configuration list for PBXNativeTarget "AppleBridgeCore" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B100008112F830001006E3286 /* Debug */,
+				B100008122F830001006E3286 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B10000722F830001006E3286 /* Build configuration list for PBXNativeTarget "AppleSharedUI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B100008212F830001006E3286 /* Debug */,
+				B100008222F830001006E3286 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

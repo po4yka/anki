@@ -1,4 +1,6 @@
 import AVFoundation
+import AppleBridgeCore
+import AppleSharedUI
 
 actor TTSService {
     private let synthesizer = AVSpeechSynthesizer()

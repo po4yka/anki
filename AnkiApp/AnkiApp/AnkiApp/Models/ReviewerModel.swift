@@ -1,5 +1,7 @@
 import Foundation
 import Observation
+import AppleBridgeCore
+import AppleSharedUI
 
 // swiftlint:disable file_length
 

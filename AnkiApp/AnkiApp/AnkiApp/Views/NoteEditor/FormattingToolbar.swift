@@ -1,4 +1,6 @@
 import SwiftUI
+import AppleBridgeCore
+import AppleSharedUI
 
 struct FormattingToolbar: View {
     var isClozeNotetype: Bool

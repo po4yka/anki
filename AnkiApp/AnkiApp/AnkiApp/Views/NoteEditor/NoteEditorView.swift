@@ -1,5 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import AppleBridgeCore
+import AppleSharedUI
 
 struct NoteEditorView: View {
     @Environment(AppState.self) private var appState

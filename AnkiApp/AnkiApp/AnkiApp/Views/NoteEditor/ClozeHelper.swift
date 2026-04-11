@@ -1,4 +1,6 @@
 import Foundation
+import AppleBridgeCore
+import AppleSharedUI
 
 enum ClozeHelper {
     static func insertCloze(into text: String, at range: NSRange, number: Int) -> String {

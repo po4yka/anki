@@ -1,5 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import AppleBridgeCore
+import AppleSharedUI
 
 struct FieldEditorView: View {
     let label: String

@@ -1,5 +1,7 @@
 import Charts
 import SwiftUI
+import AppleBridgeCore
+import AppleSharedUI
 
 struct IntervalChart: View {
     let model: StatsModel

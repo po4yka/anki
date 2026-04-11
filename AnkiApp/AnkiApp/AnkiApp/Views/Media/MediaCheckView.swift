@@ -1,4 +1,6 @@
 import SwiftUI
+import AppleBridgeCore
+import AppleSharedUI
 
 struct MediaCheckView: View {
     @Environment(AppState.self) private var appState

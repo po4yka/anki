@@ -1,4 +1,6 @@
 import SwiftUI
+import AppleBridgeCore
+import AppleSharedUI
 
 enum SidebarItem: String, CaseIterable, Identifiable {
     case decks = "Decks"

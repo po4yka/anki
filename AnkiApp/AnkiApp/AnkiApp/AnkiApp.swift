@@ -1,4 +1,6 @@
 import SwiftUI
+import AppleBridgeCore
+import AppleSharedUI
 
 @main
 struct AnkiApp: App {
@@ -23,6 +25,11 @@ struct AnkiApp: App {
             ContentView()
                 .environment(appState)
                 .preferredColorScheme(colorScheme)
+                .task {
+                    #if os(iOS)
+                    await appState.connectionStore?.restore()
+                    #endif
+                }
         }
         #if os(macOS)
         .commands {

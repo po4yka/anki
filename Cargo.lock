@@ -273,18 +273,24 @@ dependencies = [
 name = "anki-atlas-server"
 version = "0.0.0"
 dependencies = [
+ "anki",
+ "anki_proto",
  "anyhow",
  "axum",
+ "chrono",
  "common",
  "dotenvy",
+ "prost",
  "serde",
  "serde_json",
  "surface-contracts",
  "surface-runtime",
  "tokio",
+ "tower",
  "tower-http",
  "tracing",
  "tracing-subscriber",
+ "uuid",
 ]
 
 [[package]]

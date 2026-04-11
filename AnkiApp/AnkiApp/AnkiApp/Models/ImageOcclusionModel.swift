@@ -1,6 +1,8 @@
 import Foundation
 import Observation
 import CoreGraphics
+import AppleBridgeCore
+import AppleSharedUI
 #if os(macOS)
 import AppKit
 #elseif os(iOS)

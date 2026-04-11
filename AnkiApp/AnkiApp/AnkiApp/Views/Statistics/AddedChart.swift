@@ -1,5 +1,7 @@
 import Charts
 import SwiftUI
+import AppleBridgeCore
+import AppleSharedUI
 
 struct AddedChart: View {
     let model: StatsModel

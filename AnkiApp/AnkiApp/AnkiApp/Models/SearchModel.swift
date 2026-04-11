@@ -1,5 +1,7 @@
 import Foundation
 import Observation
+import AppleBridgeCore
+import AppleSharedUI
 
 enum BrowserSearchMode: String, CaseIterable {
     case cards = "Cards"

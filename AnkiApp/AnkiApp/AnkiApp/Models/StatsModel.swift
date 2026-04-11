@@ -1,5 +1,7 @@
 import Foundation
 import Observation
+import AppleBridgeCore
+import AppleSharedUI
 
 enum StatsTab: String, CaseIterable, Identifiable {
     case today = "Today"

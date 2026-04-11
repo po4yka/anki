@@ -1,4 +1,6 @@
 import SwiftUI
+import AppleBridgeCore
+import AppleSharedUI
 
 struct NotetypeEditorView: View {
     @Bindable var model: NotetypeModel
