@@ -64,6 +64,7 @@ mod tests {
     use crate::reranker::{Reranker, ScoredNote};
     use database::run_migrations;
     use sqlx::postgres::PgPoolOptions;
+    use testcontainers::ImageExt;
     use testcontainers::runners::AsyncRunner;
     use testcontainers_modules::postgres::Postgres;
 
@@ -419,7 +420,12 @@ mod tests {
     }
 
     async fn setup_real_pool() -> Option<(sqlx::PgPool, testcontainers::ContainerAsync<Postgres>)> {
-        let container = Postgres::default().start().await.ok()?;
+        let container = Postgres::default()
+            .with_name("pgvector/pgvector")
+            .with_tag("pg16")
+            .start()
+            .await
+            .ok()?;
         let host = container.get_host().await.ok()?;
         let port = container.get_host_port_ipv4(5432).await.ok()?;
         let url = format!("postgresql://postgres:postgres@{host}:{port}/postgres");

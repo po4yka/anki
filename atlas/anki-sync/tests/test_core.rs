@@ -6,6 +6,7 @@ use rusqlite::Connection;
 use sqlx::PgPool;
 use std::sync::{Arc, Mutex};
 use tempfile::NamedTempFile;
+use testcontainers::ImageExt;
 use testcontainers::runners::AsyncRunner;
 use testcontainers_modules::postgres::Postgres;
 
@@ -170,7 +171,12 @@ fn create_orphan_stats_anki_db() -> NamedTempFile {
 
 /// Start a PostgreSQL testcontainer, run migrations, and return the pool.
 async fn setup_pg() -> Option<(PgPool, testcontainers::ContainerAsync<Postgres>)> {
-    let container = match Postgres::default().start().await {
+    let container = match Postgres::default()
+        .with_name("pgvector/pgvector")
+        .with_tag("pg16")
+        .start()
+        .await
+    {
         Ok(container) => container,
         Err(error) => {
             eprintln!("skipping postgres-backed anki-sync test: {error}");

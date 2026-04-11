@@ -872,12 +872,18 @@ mod tests {
     use prost::Message;
     use sqlx::PgPool;
     use sqlx::postgres::PgPoolOptions;
+    use testcontainers::ImageExt;
     use testcontainers::runners::AsyncRunner;
     use testcontainers_modules::postgres::Postgres;
     use tower::util::ServiceExt;
 
     async fn setup_pool() -> Option<(PgPool, testcontainers::ContainerAsync<Postgres>)> {
-        let container = match Postgres::default().start().await {
+        let container = match Postgres::default()
+            .with_name("pgvector/pgvector")
+            .with_tag("pg16")
+            .start()
+            .await
+        {
             Ok(container) => container,
             Err(error) => {
                 eprintln!("skipping postgres-backed server test: {error}");

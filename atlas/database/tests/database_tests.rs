@@ -5,12 +5,18 @@ use database::migrations::{MigrationResult, run_migrations};
 use database::pool::{check_connection, create_pool};
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
+use testcontainers::ImageExt;
 use testcontainers::runners::AsyncRunner;
 use testcontainers_modules::postgres::Postgres;
 
 /// Spin up a Postgres container and return a connected pool.
 async fn setup_pool() -> Option<(PgPool, testcontainers::ContainerAsync<Postgres>)> {
-    let container = match Postgres::default().start().await {
+    let container = match Postgres::default()
+        .with_name("pgvector/pgvector")
+        .with_tag("pg16")
+        .start()
+        .await
+    {
         Ok(container) => container,
         Err(error) => {
             eprintln!("skipping postgres-backed database test: {error}");
@@ -63,7 +69,12 @@ fn settings_for_container(host: &str, port: u16) -> common::config::Settings {
 
 #[tokio::test]
 async fn test_create_pool_connects_successfully() {
-    let container = match Postgres::default().start().await {
+    let container = match Postgres::default()
+        .with_name("pgvector/pgvector")
+        .with_tag("pg16")
+        .start()
+        .await
+    {
         Ok(container) => container,
         Err(error) => {
             eprintln!("skipping postgres-backed database test: {error}");
