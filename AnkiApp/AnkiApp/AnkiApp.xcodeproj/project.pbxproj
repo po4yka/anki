@@ -15,6 +15,8 @@
 		A1B2C3032F830001006E3286 /* SwiftProtobufPluginLibrary in Frameworks */ = {isa = PBXBuildFile; productRef = 0CFE7C122F824E17006E3286 /* SwiftProtobufPluginLibrary */; };
 		A1B2C3042F830001006E3286 /* protoc in Frameworks */ = {isa = PBXBuildFile; productRef = 0CFE7C142F824E17006E3286 /* protoc */; };
 		A1B2C3052F830001006E3286 /* protoc-gen-swift in Frameworks */ = {isa = PBXBuildFile; productRef = 0CFE7C162F824E17006E3286 /* protoc-gen-swift */; };
+		E10000012F830001006E3286 /* AppleBridgeCore in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000012F830001006E3286 /* AppleBridgeCore.a */; };
+		E10000022F830001006E3286 /* SwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = 0CFE7C102F824E17006E3286 /* SwiftProtobuf */; };
 		B10000212F830001006E3286 /* AppleBridgeCore in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000012F830001006E3286 /* AppleBridgeCore.a */; };
 		B10000222F830001006E3286 /* AppleSharedUI in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000022F830001006E3286 /* AppleSharedUI.a */; };
 		B10000232F830001006E3286 /* AppleBridgeCore in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000012F830001006E3286 /* AppleBridgeCore.a */; };
@@ -108,6 +110,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E10000012F830001006E3286 /* AppleBridgeCore in Frameworks */,
+				E10000022F830001006E3286 /* SwiftProtobuf in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -217,12 +221,14 @@
 			);
 			dependencies = (
 				0CFE7BF42F8248B5006E3286 /* PBXTargetDependency */,
+				E10000032F830001006E3286 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				0CFE7BF52F8248B5006E3286 /* AnkiAppTests */,
 			);
 			name = AnkiAppTests;
 			packageProductDependencies = (
+				0CFE7C102F824E17006E3286 /* SwiftProtobuf */,
 			);
 			productName = AnkiAppTests;
 			productReference = 0CFE7BF22F8248B5006E3286 /* AnkiAppTests.xctest */;
@@ -487,6 +493,11 @@
 			isa = PBXTargetDependency;
 			target = B10000622F830001006E3286 /* AppleSharedUI */;
 			targetProxy = B10000322F830001006E3286 /* PBXContainerItemProxy */;
+		};
+		E10000032F830001006E3286 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B10000612F830001006E3286 /* AppleBridgeCore */;
+			targetProxy = B10000312F830001006E3286 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
