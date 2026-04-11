@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -12,6 +13,8 @@ use axum::{
 };
 use common::config::{ApiDeploymentKind, Settings};
 use database::{create_pool, run_migrations};
+use if_addrs::{IfAddr, get_if_addrs};
+use mdns_sd::{ServiceDaemon, ServiceInfo};
 mod remote_sessions;
 use remote_sessions::{AuthSessionRecord, SessionManager};
 use serde::{Deserialize, Serialize};
@@ -29,6 +32,8 @@ type SharedState = Arc<ServerState>;
 
 const BACKEND_SESSION_HEADER: &str = "x-anki-backend-session";
 const BACKEND_ERROR_HEADER: &str = "x-anki-error";
+const COMPANION_SERVICE_TYPE: &str = "_anki-atlas._tcp.local.";
+const COMPANION_SERVICE_KIND: &str = "_anki-atlas._tcp";
 
 #[derive(Clone)]
 struct ServerState {
@@ -120,6 +125,18 @@ struct RpcResponse {
     is_backend_error: bool,
 }
 
+struct CompanionAdvertiser {
+    daemon: ServiceDaemon,
+}
+
+impl Drop for CompanionAdvertiser {
+    fn drop(&mut self) {
+        if let Err(error) = self.daemon.shutdown() {
+            warn!("failed to stop companion Bonjour advertisement: {error}");
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let _ = dotenvy::dotenv();
@@ -166,7 +183,7 @@ async fn main() -> anyhow::Result<()> {
                 deployment_kind,
                 execution_mode: ExecutionMode::Remote,
             },
-            instance_id,
+            instance_id.clone(),
         )),
         deployment_kind,
         pairing_api_key: api.api_key.clone(),
@@ -176,6 +193,12 @@ async fn main() -> anyhow::Result<()> {
         },
     });
     start_cleanup_task(state.sessions.clone());
+    let _companion_advertiser = maybe_start_companion_advertiser(
+        deployment_kind,
+        addr,
+        &state.pairing_account,
+        &instance_id,
+    );
 
     let app = build_app(state);
 
@@ -184,6 +207,119 @@ async fn main() -> anyhow::Result<()> {
     axum::serve(listener, app).await?;
 
     Ok(())
+}
+
+fn maybe_start_companion_advertiser(
+    deployment_kind: DeploymentKind,
+    addr: SocketAddr,
+    account: &AccountResponse,
+    instance_id: &str,
+) -> Option<CompanionAdvertiser> {
+    if deployment_kind != DeploymentKind::Companion {
+        return None;
+    }
+
+    let advertised_ips = match discover_companion_addresses(addr) {
+        Ok(addresses) if !addresses.is_empty() => addresses,
+        Ok(_) => {
+            warn!("no companion addresses available for Bonjour advertisement");
+            return None;
+        }
+        Err(error) => {
+            warn!("failed to enumerate companion addresses for Bonjour advertisement: {error}");
+            return None;
+        }
+    };
+
+    let daemon = match ServiceDaemon::new() {
+        Ok(daemon) => daemon,
+        Err(error) => {
+            warn!("failed to start Bonjour daemon for companion discovery: {error}");
+            return None;
+        }
+    };
+
+    let host_name = format!(
+        "anki-atlas-{}.local.",
+        instance_id.chars().take(8).collect::<String>()
+    );
+    let instance_name = format!("Anki Atlas on {}", account.account_display_name);
+    let ip_list = advertised_ips
+        .iter()
+        .map(std::string::ToString::to_string)
+        .collect::<Vec<_>>()
+        .join(",");
+    let properties = HashMap::from([
+        ("deployment".to_string(), "companion".to_string()),
+        ("supports_remote_anki".to_string(), "true".to_string()),
+        ("supports_atlas".to_string(), "true".to_string()),
+        ("account_id".to_string(), account.account_id.clone()),
+        (
+            "account_display_name".to_string(),
+            account.account_display_name.clone(),
+        ),
+        ("path".to_string(), "/".to_string()),
+        ("health".to_string(), "/health".to_string()),
+    ]);
+
+    let service_info = match ServiceInfo::new(
+        COMPANION_SERVICE_TYPE,
+        &instance_name,
+        &host_name,
+        ip_list.as_str(),
+        addr.port(),
+        properties,
+    ) {
+        Ok(service_info) => service_info.enable_addr_auto(),
+        Err(error) => {
+            warn!("failed to construct Bonjour service info for companion discovery: {error}");
+            return None;
+        }
+    };
+
+    if let Err(error) = daemon.register(service_info) {
+        warn!("failed to register Bonjour service for companion discovery: {error}");
+        return None;
+    }
+
+    info!(
+        "advertising companion discovery service {COMPANION_SERVICE_KIND} on port {}",
+        addr.port()
+    );
+    Some(CompanionAdvertiser { daemon })
+}
+
+fn discover_companion_addresses(addr: SocketAddr) -> anyhow::Result<Vec<String>> {
+    let mut addresses: Vec<String> = Vec::new();
+
+    if let std::net::IpAddr::V4(ipv4) = addr.ip()
+        && !ipv4.is_unspecified()
+        && !ipv4.is_loopback()
+    {
+        addresses.push(ipv4.to_string());
+    }
+
+    for interface in get_if_addrs()? {
+        if let IfAddr::V4(ipv4) = interface.addr {
+            if ipv4.ip.is_loopback() {
+                continue;
+            }
+
+            let rendered = ipv4.ip.to_string();
+            if !addresses.contains(&rendered) {
+                addresses.push(rendered);
+            }
+        }
+    }
+
+    if addresses.is_empty()
+        && let std::net::IpAddr::V4(ipv4) = addr.ip()
+        && !ipv4.is_unspecified()
+    {
+        addresses.push(ipv4.to_string());
+    }
+
+    Ok(addresses)
 }
 
 fn build_app(state: SharedState) -> Router {
