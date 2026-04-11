@@ -1,3 +1,4 @@
+// swiftlint:disable file_length
 import Foundation
 import Observation
 import AppleBridgeCore
@@ -473,3 +474,4 @@ final class AppState {
         return languages.isEmpty ? ["en"] : languages
     }
 }
+// swiftlint:enable file_length

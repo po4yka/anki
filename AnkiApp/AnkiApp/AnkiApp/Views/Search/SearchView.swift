@@ -93,140 +93,23 @@ struct SearchView: View {
     @ViewBuilder
     private func searchContent(model: SearchModel) -> some View {
         #if os(macOS)
-        HSplitView {
-            SavedSearchesSidebar(
-                model: model,
-                showingSaveSearch: $showingSaveSearch,
-                saveSearchName: $saveSearchName,
-                renamingSearchId: $renamingSearchId,
-                renameSearchText: $renameSearchText
-            )
-            .frame(minWidth: 160, maxWidth: 220)
-
-            VStack(spacing: 0) {
-                SearchBar(model: model)
-                    .padding()
-
-                Divider()
-
-                HStack {
-                    modePicker(model: model)
-                        .frame(width: 200)
-
-                    Spacer()
-
-                    Text("\(model.resultIds.count) results")
-                        .foregroundStyle(.secondary)
-                        .font(.caption)
-
-                    if !model.selectedResultIds.isEmpty {
-                        Text("\(model.selectedResultIds.count) selected")
-                            .foregroundStyle(.blue)
-                            .font(.caption)
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.vertical, 6)
-
-                Divider()
-
-                if model.resultIds.isEmpty, !model.isSearching {
-                    ContentUnavailableView(
-                        "Search Notes",
-                        systemImage: "magnifyingglass",
-                        description: Text("Enter a query above and press Return to search.")
-                    )
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    resultsTable(model: model)
-                }
-            }
-        }
-        .navigationTitle("Browse")
-        .toolbar {
-            ToolbarItemGroup {
-                Button {
-                    showingColumnPicker = true
-                } label: {
-                    Label("Columns", systemImage: "gearshape")
-                }
-                .popover(isPresented: $showingColumnPicker) {
-                    ColumnPickerView(model: model)
-                }
-
-                Button {
-                    dueDateInput = ""
-                    showingSetDueDate = true
-                } label: {
-                    Label("Set Due Date", systemImage: "calendar")
-                }
-                .disabled(model.selectedResultIds.isEmpty)
-
-                Button {
-                    tagInput = ""
-                    showingAddTags = true
-                } label: {
-                    Label("Add Tags", systemImage: "tag")
-                }
-                .disabled(model.selectedResultIds.isEmpty)
-
-                Button(role: .destructive) {
-                    Task { await model.deleteSelected() }
-                } label: {
-                    Label("Delete", systemImage: "trash")
-                }
-                .disabled(model.selectedResultIds.isEmpty)
-            }
-        }
+        MacSearchContent(
+            model: model,
+            editingNoteId: $editingNoteId,
+            showingSetDueDate: $showingSetDueDate,
+            showingAddTags: $showingAddTags,
+            showingColumnPicker: $showingColumnPicker,
+            dueDateInput: $dueDateInput,
+            tagInput: $tagInput,
+            showingSaveSearch: $showingSaveSearch,
+            saveSearchName: $saveSearchName,
+            renamingSearchID: $renamingSearchId,
+            renameSearchText: $renameSearchText,
+            resultsTable: { resultsTable(model: model) }
+        )
         #else
-        VStack(spacing: 12) {
-            SearchBar(model: model)
-
-            modePicker(model: model)
-                .pickerStyle(.segmented)
-
-            if model.isSearching {
-                ProgressView("Searching...")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if model.results.isEmpty {
-                ContentUnavailableView(
-                    "Search Notes",
-                    systemImage: "magnifyingglass",
-                    description: Text("Enter a query above and press Return to search.")
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                List(model.results) { row in
-                    Button {
-                        Task {
-                            if let noteId = await model.noteID(for: row.id) {
-                                editingNoteId = noteId
-                            }
-                        }
-                    } label: {
-                        SearchResultRow(row: model.rows[row.id] ?? Anki_Search_BrowserRow())
-                    }
-                }
-                .listStyle(.plain)
-            }
-        }
-        .padding()
-        .navigationTitle("Browse")
+        IOSSearchContent(model: model, editingNoteId: $editingNoteId)
         #endif
-    }
-
-    private func modePicker(model: SearchModel) -> some View {
-        Picker("Mode", selection: Binding(
-            get: { model.searchMode },
-            set: { mode in
-                model.searchMode = mode
-                Task { await model.search() }
-            }
-        )) {
-            ForEach(BrowserSearchMode.allCases, id: \.self) { mode in
-                Text(mode.rawValue).tag(mode)
-            }
-        }
     }
 
     #if os(macOS)
@@ -310,6 +193,175 @@ private struct EditNoteItem: Identifiable {
         noteId
     }
 }
+
+private struct SearchModePicker: View {
+    let model: SearchModel
+
+    var body: some View {
+        Picker("Mode", selection: Binding(
+            get: { model.searchMode },
+            set: { mode in
+                model.searchMode = mode
+                Task { await model.search() }
+            }
+        )) {
+            ForEach(BrowserSearchMode.allCases, id: \.self) { mode in
+                Text(mode.rawValue).tag(mode)
+            }
+        }
+    }
+}
+
+#if os(macOS)
+private struct MacSearchContent<ResultsTable: View>: View {
+    let model: SearchModel
+    @Binding var editingNoteId: Int64?
+    @Binding var showingSetDueDate: Bool
+    @Binding var showingAddTags: Bool
+    @Binding var showingColumnPicker: Bool
+    @Binding var dueDateInput: String
+    @Binding var tagInput: String
+    @Binding var showingSaveSearch: Bool
+    @Binding var saveSearchName: String
+    @Binding var renamingSearchID: UUID?
+    @Binding var renameSearchText: String
+    @ViewBuilder let resultsTable: () -> ResultsTable
+
+    var body: some View {
+        HSplitView {
+            SavedSearchesSidebar(
+                model: model,
+                showingSaveSearch: $showingSaveSearch,
+                saveSearchName: $saveSearchName,
+                renamingSearchId: $renamingSearchID,
+                renameSearchText: $renameSearchText
+            )
+            .frame(minWidth: 160, maxWidth: 220)
+
+            VStack(spacing: 0) {
+                SearchBar(model: model)
+                    .padding()
+
+                Divider()
+                header
+                Divider()
+
+                if model.resultIds.isEmpty, !model.isSearching {
+                    ContentUnavailableView(
+                        "Search Notes",
+                        systemImage: "magnifyingglass",
+                        description: Text("Enter a query above and press Return to search.")
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    resultsTable()
+                }
+            }
+        }
+        .navigationTitle("Browse")
+        .toolbar { toolbarContent }
+    }
+
+    private var header: some View {
+        HStack {
+            SearchModePicker(model: model)
+                .frame(width: 200)
+
+            Spacer()
+
+            Text("\(model.resultIds.count) results")
+                .foregroundStyle(.secondary)
+                .font(.caption)
+
+            if !model.selectedResultIds.isEmpty {
+                Text("\(model.selectedResultIds.count) selected")
+                    .foregroundStyle(.blue)
+                    .font(.caption)
+            }
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 6)
+    }
+
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItemGroup {
+            Button {
+                showingColumnPicker = true
+            } label: {
+                Label("Columns", systemImage: "gearshape")
+            }
+            .popover(isPresented: $showingColumnPicker) {
+                ColumnPickerView(model: model)
+            }
+
+            Button {
+                dueDateInput = ""
+                showingSetDueDate = true
+            } label: {
+                Label("Set Due Date", systemImage: "calendar")
+            }
+            .disabled(model.selectedResultIds.isEmpty)
+
+            Button {
+                tagInput = ""
+                showingAddTags = true
+            } label: {
+                Label("Add Tags", systemImage: "tag")
+            }
+            .disabled(model.selectedResultIds.isEmpty)
+
+            Button(role: .destructive) {
+                Task { await model.deleteSelected() }
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+            .disabled(model.selectedResultIds.isEmpty)
+        }
+    }
+}
+#else
+private struct IOSSearchContent: View {
+    let model: SearchModel
+    @Binding var editingNoteId: Int64?
+
+    var body: some View {
+        VStack(spacing: 12) {
+            SearchBar(model: model)
+
+            SearchModePicker(model: model)
+                .pickerStyle(.segmented)
+
+            if model.isSearching {
+                ProgressView("Searching...")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if model.results.isEmpty {
+                ContentUnavailableView(
+                    "Search Notes",
+                    systemImage: "magnifyingglass",
+                    description: Text("Enter a query above and press Return to search.")
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List(model.results) { row in
+                    Button {
+                        Task {
+                            if let noteId = await model.noteID(for: row.id) {
+                                editingNoteId = noteId
+                            }
+                        }
+                    } label: {
+                        SearchResultRow(row: model.rows[row.id] ?? Anki_Search_BrowserRow())
+                    }
+                }
+                .listStyle(.plain)
+            }
+        }
+        .padding()
+        .navigationTitle("Browse")
+    }
+}
+#endif
 
 private struct SearchBar: View {
     let model: SearchModel

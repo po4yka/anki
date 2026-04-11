@@ -4,7 +4,6 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use anki::backend::{Backend, init_backend};
-use anki_proto::generic::Empty;
 use axum::{
     Router,
     body::{Body, Bytes},
@@ -15,14 +14,12 @@ use axum::{
 };
 use chrono::{DateTime, Utc};
 use common::config::Settings;
-use prost::Message;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use surface_contracts::knowledge_graph::{
     NoteLinksRequest, RefreshKnowledgeGraphRequest, TopicNeighborhoodRequest,
 };
 use surface_runtime::{BuildSurfaceServicesOptions, SurfaceServices, build_surface_services};
-use tower::util::ServiceExt;
 use tower_http::cors::CorsLayer;
 use tracing::info;
 use uuid::Uuid;
@@ -998,8 +995,11 @@ async fn handle_obsidian_scan(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use anki_proto::generic::Empty;
     use axum::body::to_bytes;
     use axum::http::Request;
+    use prost::Message;
+    use tower::util::ServiceExt;
 
     fn test_state() -> SharedState {
         Arc::new(ServerState {

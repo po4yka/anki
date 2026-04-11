@@ -133,87 +133,102 @@ private struct IOSRemoteBackendOnboardingView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    ContentUnavailableView(
-                        appState.backendStatusTitle,
-                        systemImage: "iphone.and.arrow.forward",
-                        description: Text(appState.backendStatusMessage)
-                    )
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Connection")
-                            .font(.headline)
-                        TextField("Backend URL", text: Bindable(connectionStore).endpointURLString)
-                            .textFieldStyle(.roundedBorder)
-                            .remoteBackendURLFieldStyle()
-
-                        Picker("Deployment", selection: Bindable(connectionStore).deploymentKind) {
-                            ForEach(BackendDeploymentKind.allCases, id: \.self) { kind in
-                                Text(kind.rawValue.capitalized).tag(kind)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-
-                        HStack {
-                            Button("Save Endpoint") {
-                                Task { await connectionStore.saveEndpoint() }
-                            }
-                            .buttonStyle(.bordered)
-
-                            Button("Generate Pairing Code") {
-                                Task { await connectionStore.requestPairingCode() }
-                            }
-                            .buttonStyle(.bordered)
-                        }
-                    }
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Pairing")
-                            .font(.headline)
-
-                        if let issued = connectionStore.issuedPairingCode {
-                            statusRow(
-                                title: "Issued Code",
-                                detail: "\(issued.pairingCode) · expires \(issued.expiresAt.formatted(date: .omitted, time: .shortened))"
-                            )
-                        }
-
-                        TextField("Pairing Code", text: Bindable(connectionStore).pairingCode)
-                            .textFieldStyle(.roundedBorder)
-                            .pairingCodeFieldStyle()
-
-                        Button("Connect") {
-                            Task { await connectionStore.connect() }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(connectionStore.pairingCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    }
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Status")
-                            .font(.headline)
-                        statusRow(title: "Execution Mode", detail: appState.backendExecutionMode.rawValue.capitalized)
-                        statusRow(
-                            title: "Atlas",
-                            detail: connectionStore.supportsAtlas ? "Available" : "Unavailable until the connection is established."
-                        )
-
-                        if connectionStore.isConnected {
-                            Button("Open Preferences") {
-                                appState.showPreferences()
-                            }
-                            .buttonStyle(.borderedProminent)
-
-                            Button("Sign Out") {
-                                Task { await connectionStore.signOut() }
-                            }
-                            .buttonStyle(.bordered)
-                        }
-                    }
+                    statusHeader
+                    connectionSection(connectionStore: connectionStore)
+                    pairingSection(connectionStore: connectionStore)
+                    statusSection(connectionStore: connectionStore)
                 }
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .navigationTitle("iOS Status")
+        }
+    }
+
+    private var statusHeader: some View {
+        ContentUnavailableView(
+            appState.backendStatusTitle,
+            systemImage: "iphone.and.arrow.forward",
+            description: Text(appState.backendStatusMessage)
+        )
+    }
+
+    private func connectionSection(connectionStore: BackendConnectionStore) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Connection")
+                .font(.headline)
+            TextField("Backend URL", text: Bindable(connectionStore).endpointURLString)
+                .textFieldStyle(.roundedBorder)
+                .remoteBackendURLFieldStyle()
+
+            Picker("Deployment", selection: Bindable(connectionStore).deploymentKind) {
+                ForEach(BackendDeploymentKind.allCases, id: \.self) { kind in
+                    Text(kind.rawValue.capitalized).tag(kind)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            HStack {
+                Button("Save Endpoint") {
+                    Task { await connectionStore.saveEndpoint() }
+                }
+                .buttonStyle(.bordered)
+
+                Button("Generate Pairing Code") {
+                    Task { await connectionStore.requestPairingCode() }
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func pairingSection(connectionStore: BackendConnectionStore) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Pairing")
+                .font(.headline)
+
+            if let issued = connectionStore.issuedPairingCode {
+                statusRow(
+                    title: "Issued Code",
+                    detail: "\(issued.pairingCode) · expires \(issued.expiresAt.formatted(date: .omitted, time: .shortened))"
+                )
+            }
+
+            TextField("Pairing Code", text: Bindable(connectionStore).pairingCode)
+                .textFieldStyle(.roundedBorder)
+                .pairingCodeFieldStyle()
+
+            Button("Connect") {
+                Task { await connectionStore.connect() }
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(connectionStore.pairingCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        }
+    }
+
+    @ViewBuilder
+    private func statusSection(connectionStore: BackendConnectionStore) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Status")
+                .font(.headline)
+            statusRow(title: "Execution Mode", detail: appState.backendExecutionMode.rawValue.capitalized)
+            statusRow(
+                title: "Atlas",
+                detail: connectionStore.supportsAtlas ? "Available" : "Unavailable until the connection is established."
+            )
+
+            if connectionStore.isConnected {
+                Button("Open Preferences") {
+                    appState.showPreferences()
+                }
+                .buttonStyle(.borderedProminent)
+
+                Button("Sign Out") {
+                    Task { await connectionStore.signOut() }
+                }
+                .buttonStyle(.bordered)
+            }
         }
     }
 
