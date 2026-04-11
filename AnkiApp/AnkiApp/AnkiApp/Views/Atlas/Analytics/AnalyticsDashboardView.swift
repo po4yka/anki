@@ -8,11 +8,7 @@ struct AnalyticsDashboardView: View {
 
     var body: some View {
         guard let atlas = appState.atlasService else {
-            return AnyView(ContentUnavailableView(
-                "Atlas Not Configured",
-                systemImage: "chart.bar",
-                description: Text("Configure Atlas in Settings to use Analytics.")
-            ))
+            return AnyView(AtlasUnavailableView(featureName: "Analytics", systemImage: "chart.bar"))
         }
         let analyticsModel = model ?? AnalyticsModel(atlas: atlas)
         return AnyView(DashboardTabView(model: analyticsModel)

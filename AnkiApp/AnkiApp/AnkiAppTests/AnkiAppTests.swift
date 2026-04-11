@@ -1,7 +1,9 @@
 @testable import AnkiApp
 @testable import AppleBridgeCore
+import Foundation
 import Testing
 
+// swiftlint:disable type_body_length
 struct AnkiAppTests {
     @Test func parsesFieldTypeAnswer() {
         let spec = TypeAnswerSpec.parse(questionHTML: "<div>[[type:Front]]</div>")
@@ -144,6 +146,79 @@ struct AnkiAppTests {
     }
 
     @Test @MainActor
+    func showAtlasSettingsSelectsAtlasPreferencesTab() {
+        let state = AppState(service: TestAnkiService(), preferredLanguages: ["en"])
+
+        state.showAtlasSettings()
+
+        #expect(state.selectedPreferencesTab == .atlas)
+    }
+
+    @Test @MainActor
+    func atlasSetupStatusIsReadyWhenAtlasServiceExists() {
+        let state = AppState(
+            service: TestAnkiService(),
+            atlasService: TestAtlasService(),
+            atlasServiceFactory: { TestAtlasService() },
+            preferredLanguages: ["en"]
+        )
+
+        let status = state.atlasSetupStatus
+
+        #expect(status.kind == .ready)
+        #expect(status.title == "Local Atlas Ready")
+    }
+
+    @Test @MainActor
+    func atlasSetupStatusRequestsConfigurationWhenLocalSettingsAreMissing() {
+        let savedProvider = UserDefaults.standard.string(forKey: "atlasEmbeddingProvider")
+        let savedModel = UserDefaults.standard.string(forKey: "atlasEmbeddingModel")
+        let savedDimension = UserDefaults.standard.object(forKey: "atlasEmbeddingDimension")
+        let savedApiKey = KeychainHelper.loadAtlasApiKey()
+        let savedPostgresURL = KeychainHelper.loadAtlasPostgresUrl()
+
+        UserDefaults.standard.removeObject(forKey: "atlasEmbeddingProvider")
+        UserDefaults.standard.removeObject(forKey: "atlasEmbeddingModel")
+        UserDefaults.standard.removeObject(forKey: "atlasEmbeddingDimension")
+        KeychainHelper.deleteAtlasApiKey()
+        KeychainHelper.deleteAtlasPostgresUrl()
+
+        defer {
+            if let savedProvider {
+                UserDefaults.standard.set(savedProvider, forKey: "atlasEmbeddingProvider")
+            } else {
+                UserDefaults.standard.removeObject(forKey: "atlasEmbeddingProvider")
+            }
+            if let savedModel {
+                UserDefaults.standard.set(savedModel, forKey: "atlasEmbeddingModel")
+            } else {
+                UserDefaults.standard.removeObject(forKey: "atlasEmbeddingModel")
+            }
+            if let savedDimension {
+                UserDefaults.standard.set(savedDimension, forKey: "atlasEmbeddingDimension")
+            } else {
+                UserDefaults.standard.removeObject(forKey: "atlasEmbeddingDimension")
+            }
+            if let savedApiKey {
+                KeychainHelper.saveAtlasApiKey(savedApiKey)
+            } else {
+                KeychainHelper.deleteAtlasApiKey()
+            }
+            if let savedPostgresURL {
+                KeychainHelper.saveAtlasPostgresUrl(savedPostgresURL)
+            } else {
+                KeychainHelper.deleteAtlasPostgresUrl()
+            }
+        }
+
+        let state = AppState(service: TestAnkiService(), preferredLanguages: ["en"])
+        let status = state.atlasSetupStatus
+
+        #expect(status.kind == .needsConfiguration)
+        #expect(status.checklist.contains(where: { !$0.isSatisfied }))
+    }
+
+    @Test @MainActor
     func knowledgeGraphModelLoadsStatusAndTaxonomy() async {
         let atlas = TestAtlasService(
             statusResponses: [
@@ -240,3 +315,4 @@ struct AnkiAppTests {
         #expect(await atlas.noteLinkCalls() == [42])
     }
 }
+// swiftlint:enable type_body_length

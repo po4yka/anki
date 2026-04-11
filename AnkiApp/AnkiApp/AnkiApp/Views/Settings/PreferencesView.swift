@@ -7,31 +7,43 @@ struct PreferencesView: View {
     @Environment(AppState.self) private var appState
 
     var body: some View {
-        TabView {
+        TabView(selection: Binding(
+            get: { appState.selectedPreferencesTab },
+            set: { appState.selectedPreferencesTab = $0 }
+        )) {
             GeneralSettingsView()
                 .environment(appState)
                 .tabItem { Label("General", systemImage: "gear") }
+                .tag(PreferencesTab.general)
             SchedulingPreferencesView()
                 .environment(appState)
                 .tabItem { Label("Scheduling", systemImage: "calendar") }
+                .tag(PreferencesTab.scheduling)
             ReviewPreferencesView()
                 .environment(appState)
                 .tabItem { Label("Review", systemImage: "rectangle.stack") }
+                .tag(PreferencesTab.review)
             BackupSettingsView()
                 .environment(appState)
                 .tabItem { Label("Backups", systemImage: "externaldrive") }
+                .tag(PreferencesTab.backups)
             ProfilesSettingsView()
                 .environment(appState)
                 .tabItem { Label("Profiles", systemImage: "person.2") }
+                .tag(PreferencesTab.profiles)
             AppearanceSettingsView()
                 .tabItem { Label("Appearance", systemImage: "paintbrush") }
+                .tag(PreferencesTab.appearance)
             SyncSettingsView()
                 .tabItem { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
+                .tag(PreferencesTab.sync)
             AtlasSettingsView()
                 .environment(appState)
                 .tabItem { Label("Atlas", systemImage: "brain") }
+                .tag(PreferencesTab.atlas)
             AboutView()
                 .tabItem { Label("About", systemImage: "info.circle") }
+                .tag(PreferencesTab.about)
         }
         .frame(width: 500, height: 450)
     }

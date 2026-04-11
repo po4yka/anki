@@ -192,6 +192,7 @@ final class NavigationStore {
     var selectedMobileTab: MobileTab = .decks
     var presentedSheet: AppSheet?
     var isShowingPreferencesSheet = false
+    var selectedPreferencesTab: PreferencesTab = .general
 }
 
 @Observable
@@ -340,8 +341,7 @@ final class AppState {
             #if os(iOS)
             switch backendExecutionMode {
                 case .local:
-                    return connectionStore?.localRuntimeStatus.atlasMessage
-                        ?? "This iOS build is running the local backend. Open Preferences to import or switch sandbox-managed collections."
+                    return atlasSetupStatus.summary
                 case .remote:
                     return "This iOS build is connected to a remote Anki backend. Open Preferences to select a collection path on the companion or cloud host."
                 case .unavailable:
@@ -354,9 +354,7 @@ final class AppState {
 
         #if os(iOS)
         if connectionStore?.selectedExecutionMode == .local {
-            return connectionStore?.localRuntimeStatus.detailMessage
-                ?? connectionStore?.runtimeStatusMessage
-                ?? "Switch to Local mode, then import an Anki collection into on-device storage."
+            return atlasSetupStatus.summary
         }
         return connectionStore?.lastErrorMessage
             ?? connectionStore?.runtimeStatusMessage
@@ -396,6 +394,26 @@ final class AppState {
         connectionStore?.executionMode ?? .unavailable
         #else
         .local
+        #endif
+    }
+
+    var selectedPreferencesTab: PreferencesTab {
+        get { navigation.selectedPreferencesTab }
+        set { navigation.selectedPreferencesTab = newValue }
+    }
+
+    var atlasSetupStatus: AtlasSetupStatus {
+        #if os(iOS)
+        switch connectionStore?.selectedExecutionMode ?? .remote {
+            case .local:
+                return localAtlasSetupStatus()
+            case .remote:
+                return remoteAtlasSetupStatus()
+            case .unavailable:
+                return remoteAtlasSetupStatus()
+        }
+        #else
+        return localAtlasSetupStatus()
         #endif
     }
 
@@ -457,6 +475,13 @@ final class AppState {
 
     func reinitializeAtlas() async {
         await session.reinitializeAtlas()
+    }
+
+    func retryAtlasSetup() async {
+        await session.reinitializeAtlas()
+        #if os(iOS)
+        await refreshLocalRuntimeStatus()
+        #endif
     }
 
     func closeCollection() async {
@@ -591,12 +616,17 @@ final class AppState {
     }
     #endif
 
-    func showPreferences() {
+    func showPreferences(tab: PreferencesTab = .general) {
+        navigation.selectedPreferencesTab = tab
         #if os(macOS)
         NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
         #else
         navigation.isShowingPreferencesSheet = true
         #endif
+    }
+
+    func showAtlasSettings() {
+        showPreferences(tab: .atlas)
     }
 
     func openExternalURL(_ url: URL) {
@@ -623,6 +653,83 @@ final class AppState {
             return .unavailable
         }
         return .local
+    }
+
+    private func localAtlasSetupStatus() -> AtlasSetupStatus {
+        let config = AtlasConfig.fromStoredSettings()
+        let checklist = config.localSetupChecklist
+        let localRuntimeStatus = connectionStore?.localRuntimeStatus
+        let atlasAvailable = session.isAtlasAvailable || localRuntimeStatus?.atlasAvailability == .available
+        let atlasMessage = localRuntimeStatus?.atlasMessage
+        let detailMessage = localRuntimeStatus?.detailMessage
+
+        if atlasAvailable {
+            return AtlasSetupStatus(
+                kind: .ready,
+                title: "Local Atlas Ready",
+                summary: atlasMessage
+                    ?? "Atlas is running on this device. Search, analytics, and graph features are available.",
+                guidance: "If Atlas stops responding, reopen the Atlas tab in Preferences and restart the local runtime.",
+                checklist: checklist,
+                showsRetryAction: true
+            )
+        }
+
+        if !config.localSetupIsComplete || localRuntimeStatus?.atlasAvailability == .configurationMissing {
+            return AtlasSetupStatus(
+                kind: .needsConfiguration,
+                title: "Finish Local Atlas Setup",
+                summary: atlasMessage
+                    ?? "Local Atlas needs PostgreSQL and embedding settings before smart search, analytics, and graph tools can start.",
+                guidance: "Open the Atlas tab in Preferences, fill the missing items below, then restart Atlas.",
+                checklist: checklist,
+                showsRetryAction: false
+            )
+        }
+
+        return AtlasSetupStatus(
+            kind: .unavailable,
+            title: "Local Atlas Could Not Start",
+            summary: atlasMessage
+                ?? "Atlas settings are present, but the local runtime could not be created.",
+            guidance: detailMessage
+                ?? "Check the PostgreSQL URL, provider credentials, and network access, then retry the local Atlas startup.",
+            checklist: checklist,
+            showsRetryAction: true
+        )
+    }
+
+    private func remoteAtlasSetupStatus() -> AtlasSetupStatus {
+        if connectionStore?.supportsAtlas == true {
+            return AtlasSetupStatus(
+                kind: .ready,
+                title: "Remote Atlas Ready",
+                summary: "The connected companion or cloud backend exposes Atlas features.",
+                guidance: "Open any Atlas screen to use smart search, analytics, or the knowledge graph.",
+                checklist: [],
+                showsRetryAction: false
+            )
+        }
+
+        if connectionStore?.isConnected == true {
+            return AtlasSetupStatus(
+                kind: .unavailable,
+                title: "Remote Atlas Not Enabled",
+                summary: "This backend is connected, but it is not currently advertising Atlas support.",
+                guidance: "Enable Atlas on the companion or cloud host, then refresh the backend status.",
+                checklist: [],
+                showsRetryAction: false
+            )
+        }
+
+        return AtlasSetupStatus(
+            kind: .unavailable,
+            title: "Remote Atlas Needs a Backend",
+            summary: "Connect to a companion or cloud backend that exposes Atlas features.",
+            guidance: "Finish pairing with a backend, then refresh the connection status.",
+            checklist: [],
+            showsRetryAction: false
+        )
     }
 
     #if os(iOS)

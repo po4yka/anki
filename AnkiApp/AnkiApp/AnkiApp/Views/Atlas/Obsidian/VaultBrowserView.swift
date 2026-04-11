@@ -9,10 +9,9 @@ struct VaultBrowserView: View {
 
     var body: some View {
         guard let atlas = appState.atlasService else {
-            return AnyView(ContentUnavailableView(
-                "Atlas Not Configured",
-                systemImage: "folder.badge.questionmark",
-                description: Text("Configure Atlas in Settings to use Obsidian integration.")
+            return AnyView(AtlasUnavailableView(
+                featureName: "Obsidian Integration",
+                systemImage: "folder.badge.questionmark"
             ))
         }
         let obsidianModel = model ?? ObsidianModel(atlas: atlas)

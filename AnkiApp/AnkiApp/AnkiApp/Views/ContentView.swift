@@ -321,13 +321,29 @@ private struct IOSBackendOnboardingView: View {
                 detail: atlasDetail(from: connectionStore.localRuntimeStatus)
             )
 
-            Button("Probe Local Runtime") {
-                Task {
-                    await appState.refreshLocalRuntimeStatus()
-                    await appState.selectExecutionMode(.local)
+            AtlasSetupStatusPanel(status: appState.atlasSetupStatus)
+
+            HStack {
+                Button("Open Atlas Settings") {
+                    appState.showAtlasSettings()
                 }
+                .buttonStyle(.borderedProminent)
+
+                if appState.atlasSetupStatus.showsRetryAction {
+                    Button("Retry Atlas Startup") {
+                        Task { await appState.retryAtlasSetup() }
+                    }
+                    .buttonStyle(.bordered)
+                }
+
+                Button("Probe Local Runtime") {
+                    Task {
+                        await appState.refreshLocalRuntimeStatus()
+                        await appState.selectExecutionMode(.local)
+                    }
+                }
+                .buttonStyle(.bordered)
             }
-            .buttonStyle(.borderedProminent)
         }
     }
 
@@ -436,8 +452,12 @@ private struct IOSBackendOnboardingView: View {
             .buttonStyle(.bordered)
 
             if appState.hasBackendService {
-                Button("Open Preferences") {
-                    appState.showPreferences()
+                Button(connectionStore.selectedExecutionMode == .local ? "Open Atlas Settings" : "Open Preferences") {
+                    if connectionStore.selectedExecutionMode == .local {
+                        appState.showAtlasSettings()
+                    } else {
+                        appState.showPreferences()
+                    }
                 }
                 .buttonStyle(.borderedProminent)
             }

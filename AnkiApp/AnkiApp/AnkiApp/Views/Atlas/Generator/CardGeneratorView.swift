@@ -8,11 +8,7 @@ struct CardGeneratorView: View {
 
     var body: some View {
         guard let atlas = appState.atlasService else {
-            return AnyView(ContentUnavailableView(
-                "Atlas Not Configured",
-                systemImage: "sparkles",
-                description: Text("Configure Atlas in Settings to use Card Generator.")
-            ))
+            return AnyView(AtlasUnavailableView(featureName: "Card Generator", systemImage: "sparkles"))
         }
         let generatorModel = model ?? CardGeneratorModel(atlas: atlas)
         return AnyView(GeneratorContentView(model: generatorModel)

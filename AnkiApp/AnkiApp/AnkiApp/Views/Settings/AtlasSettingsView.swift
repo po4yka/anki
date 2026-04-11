@@ -21,8 +21,22 @@ struct AtlasSettingsView: View {
         provider == "openai" || provider == "google"
     }
 
+    private var primaryActionTitle: String {
+        #if os(iOS)
+        appState.connectionStore?.selectedExecutionMode == .local ? "Save & Start Atlas" : "Save Atlas Settings"
+        #else
+        "Save & Start Atlas"
+        #endif
+    }
+
     var body: some View {
         Form {
+            Section {
+                AtlasSetupStatusPanel(status: appState.atlasSetupStatus)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+            }
+
             Section("Embedding Provider") {
                 Picker("Provider", selection: $provider) {
                     Text("OpenAI").tag("openai")
@@ -70,7 +84,7 @@ struct AtlasSettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Button("Save & Reinitialize") {
+                    Button(primaryActionTitle) {
                         Task { await save() }
                     }
                 }
@@ -90,8 +104,8 @@ struct AtlasSettingsView: View {
         KeychainHelper.saveAtlasApiKey(apiKey)
         KeychainHelper.saveAtlasPostgresUrl(postgresUrl)
         statusMessage = "Reinitializing Atlas..."
-        await appState.reinitializeAtlas()
-        statusMessage = appState.isAtlasAvailable ? "Atlas initialized" : "Atlas unavailable"
+        await appState.retryAtlasSetup()
+        statusMessage = appState.atlasSetupStatus.summary
     }
 
     private func applyProviderDefaults(_ newProvider: String) {

@@ -8,11 +8,7 @@ struct AtlasSearchView: View {
 
     var body: some View {
         guard let atlas = appState.atlasService else {
-            return AnyView(ContentUnavailableView(
-                "Atlas Not Configured",
-                systemImage: "magnifyingglass",
-                description: Text("Configure Atlas in Settings to use Smart Search.")
-            ))
+            return AnyView(AtlasUnavailableView(featureName: "Smart Search", systemImage: "magnifyingglass"))
         }
         return AnyView(SearchContentView(model: model ?? AtlasSearchModel(atlas: atlas))
             .onAppear {

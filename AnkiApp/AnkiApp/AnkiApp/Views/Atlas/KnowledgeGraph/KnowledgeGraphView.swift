@@ -14,10 +14,9 @@ struct KnowledgeGraphView: View {
 
     var body: some View {
         guard let atlas = appState.atlasService else {
-            return AnyView(ContentUnavailableView(
-                "Atlas Not Configured",
-                systemImage: "point.3.connected.trianglepath.dotted",
-                description: Text("Configure Atlas in Settings to use the Knowledge Graph.")
+            return AnyView(AtlasUnavailableView(
+                featureName: "Knowledge Graph",
+                systemImage: "point.3.connected.trianglepath.dotted"
             ))
         }
 
@@ -54,11 +53,10 @@ private struct KnowledgeGraphContentView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         headerCard
 
-                        if let error = model.error, !model.isAtlasConfigured {
-                            ContentUnavailableView(
-                                "Atlas Not Configured",
-                                systemImage: "point.3.connected.trianglepath.dotted",
-                                description: Text(error)
+                        if model.error != nil, !model.isAtlasConfigured {
+                            AtlasUnavailableView(
+                                featureName: "Knowledge Graph",
+                                systemImage: "point.3.connected.trianglepath.dotted"
                             )
                         } else if model.isLoading {
                             ProgressView("Loading knowledge graph...")
@@ -112,11 +110,10 @@ private struct KnowledgeGraphContentView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         headerCard
 
-                        if let error = model.error, !model.isAtlasConfigured {
-                            ContentUnavailableView(
-                                "Atlas Not Configured",
-                                systemImage: "point.3.connected.trianglepath.dotted",
-                                description: Text(error)
+                        if model.error != nil, !model.isAtlasConfigured {
+                            AtlasUnavailableView(
+                                featureName: "Knowledge Graph",
+                                systemImage: "point.3.connected.trianglepath.dotted"
                             )
                         } else if model.isLoading {
                             ProgressView("Loading knowledge graph...")
