@@ -185,6 +185,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 0CFE7C062F8248B5006E3286 /* Build configuration list for PBXNativeTarget "AnkiApp" */;
 			buildPhases = (
+				C10000012F830001006E3286 /* Build Rust Bridges */,
 				0CFE7BDF2F8248B1006E3286 /* Sources */,
 				0CFE7BE02F8248B1006E3286 /* Frameworks */,
 				0CFE7BE12F8248B1006E3286 /* Resources */,
@@ -261,6 +262,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = A1B2C30A2F830001006E3286 /* Build configuration list for PBXNativeTarget "AnkiIOSApp" */;
 			buildPhases = (
+				C10000022F830001006E3286 /* Build Rust Bridges */,
 				A1B2C3062F830001006E3286 /* Sources */,
 				A1B2C3072F830001006E3286 /* Frameworks */,
 				A1B2C3082F830001006E3286 /* Resources */,
@@ -417,6 +419,47 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		C10000012F830001006E3286 /* Build Rust Bridges */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Build Rust Bridges";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/../../target/.bridge-stamps/$(PLATFORM_NAME)-$(CONFIGURATION)-$(NATIVE_ARCH_ACTUAL)",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\n\"${SRCROOT}/../../scripts/build_apple_bridges.sh\"\n";
+		};
+		C10000022F830001006E3286 /* Build Rust Bridges */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Build Rust Bridges";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/../../target/.bridge-stamps/$(PLATFORM_NAME)-$(CONFIGURATION)-$(NATIVE_ARCH_ACTUAL)",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\n\"${SRCROOT}/../../scripts/build_apple_bridges.sh\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		0CFE7BDF2F8248B1006E3286 /* Sources */ = {
@@ -628,6 +671,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
@@ -637,9 +681,13 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				LIBRARY_SEARCH_PATHS = (
+				"LIBRARY_SEARCH_PATHS[arch=arm64]" = (
 					"$(inherited)",
-					"$(SRCROOT)/../../target/debug",
+					"$(SRCROOT)/../../target/aarch64-apple-darwin/debug",
+				);
+				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = (
+					"$(inherited)",
+					"$(SRCROOT)/../../target/x86_64-apple-darwin/debug",
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
@@ -669,6 +717,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
@@ -678,9 +727,13 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				LIBRARY_SEARCH_PATHS = (
+				"LIBRARY_SEARCH_PATHS[arch=arm64]" = (
 					"$(inherited)",
-					"$(SRCROOT)/../../target/release",
+					"$(SRCROOT)/../../target/aarch64-apple-darwin/release",
+				);
+				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = (
+					"$(inherited)",
+					"$(SRCROOT)/../../target/x86_64-apple-darwin/release",
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
@@ -709,13 +762,30 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				"LIBRARY_SEARCH_PATHS[sdk=iphoneos*]" = (
+					"$(inherited)",
+					"$(SRCROOT)/../../target/aarch64-apple-ios/debug",
+				);
+				"LIBRARY_SEARCH_PATHS[sdk=iphonesimulator*]" = (
+					"$(inherited)",
+					"$(SRCROOT)/../../target/aarch64-apple-ios-sim/debug",
+					"$(SRCROOT)/../../target/x86_64-apple-ios/debug",
+				);
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-lanki_bridge",
+					"-latlas_bridge",
+					"-lresolv",
+					"-framework",
+					SystemConfiguration,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = po4yka.AnkiIOSApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -737,13 +807,30 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				"LIBRARY_SEARCH_PATHS[sdk=iphoneos*]" = (
+					"$(inherited)",
+					"$(SRCROOT)/../../target/aarch64-apple-ios/release",
+				);
+				"LIBRARY_SEARCH_PATHS[sdk=iphonesimulator*]" = (
+					"$(inherited)",
+					"$(SRCROOT)/../../target/aarch64-apple-ios-sim/release",
+					"$(SRCROOT)/../../target/x86_64-apple-ios/release",
+				);
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-lanki_bridge",
+					"-latlas_bridge",
+					"-lresolv",
+					"-framework",
+					SystemConfiguration,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = po4yka.AnkiIOSApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;

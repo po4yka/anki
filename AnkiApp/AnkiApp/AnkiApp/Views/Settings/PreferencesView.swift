@@ -191,7 +191,7 @@ struct ProfilesSettingsView: View {
 
     var body: some View {
         Form {
-            Section("Profiles") {
+            Section(isLocalIOSMode ? "Local Profiles" : "Profiles") {
                 if profileManager.profiles.isEmpty {
                     Text("No profiles configured")
                         .foregroundStyle(.secondary)
@@ -201,13 +201,13 @@ struct ProfilesSettingsView: View {
                             HStack {
                                 VStack(alignment: .leading) {
                                     Text(profile.name)
-                                        .fontWeight(profile.path == profileManager.activeProfilePath ? .bold : .regular)
-                                    Text(profile.path)
+                                        .fontWeight(profile.id == profileManager.activeProfileID ? .bold : .regular)
+                                    Text(profile.displayPath)
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
                                 Spacer()
-                                if profile.path == profileManager.activeProfilePath {
+                                if profile.id == profileManager.activeProfileID {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.green)
                                 } else {
@@ -227,21 +227,31 @@ struct ProfilesSettingsView: View {
                 }
             }
 
-            Section("Add Profile") {
-                TextField("Profile Name", text: $newProfileName)
-                    .textFieldStyle(.roundedBorder)
-                HStack {
-                    TextField("Collection Path", text: $newProfilePath)
+            if isLocalIOSMode {
+                Section("Import Local Profile") {
+                    TextField("Profile Name", text: $newProfileName)
                         .textFieldStyle(.roundedBorder)
-                    Button("Browse...") { chooseProfilePath() }
+                    Button("Import Collection") {
+                        chooseProfilePath()
+                    }
                 }
-                Button("Add Profile") {
-                    guard !newProfileName.isEmpty, !newProfilePath.isEmpty else { return }
-                    profileManager.addProfile(name: newProfileName, path: newProfilePath)
-                    newProfileName = ""
-                    newProfilePath = ""
+            } else {
+                Section("Add Profile") {
+                    TextField("Profile Name", text: $newProfileName)
+                        .textFieldStyle(.roundedBorder)
+                    HStack {
+                        TextField("Collection Path", text: $newProfilePath)
+                            .textFieldStyle(.roundedBorder)
+                        Button("Browse...") { chooseProfilePath() }
+                    }
+                    Button("Add Profile") {
+                        guard !newProfileName.isEmpty, !newProfilePath.isEmpty else { return }
+                        profileManager.addProfile(name: newProfileName, path: newProfilePath)
+                        newProfileName = ""
+                        newProfilePath = ""
+                    }
+                    .disabled(newProfileName.isEmpty || newProfilePath.isEmpty)
                 }
-                .disabled(newProfileName.isEmpty || newProfilePath.isEmpty)
             }
         }
         .formStyle(.grouped)
@@ -255,8 +265,30 @@ struct ProfilesSettingsView: View {
             guard case let .success(urls) = result, let url = urls.first else {
                 return
             }
-            newProfilePath = url.path
+            if isLocalIOSMode {
+                do {
+                    let trimmedName = newProfileName.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let profile = try profileManager.importLocalProfile(
+                        from: url,
+                        name: trimmedName.isEmpty ? nil : trimmedName
+                    )
+                    profileManager.setActive(profileID: profile.id)
+                    newProfileName = ""
+                } catch {
+                    appState.error = .message("Failed to import local profile: \(error.localizedDescription)")
+                }
+            } else {
+                newProfilePath = url.path
+            }
         }
+    }
+
+    private var isLocalIOSMode: Bool {
+        #if os(iOS)
+        appState.connectionStore?.selectedExecutionMode == .local
+        #else
+        false
+        #endif
     }
 
     private func chooseProfilePath() {

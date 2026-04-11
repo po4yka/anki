@@ -7,6 +7,7 @@ import Observation
 public final class BackendConnectionStore {
     private static let endpointDefaultsKey = "remoteBackendEndpoint"
     private static let executionPolicyDefaultsKey = "remoteBackendExecutionPolicy"
+    private static let selectedExecutionModeDefaultsKey = "selectedBackendExecutionMode"
 
     public var endpointURLString: String
     public var deploymentKind: BackendDeploymentKind
@@ -15,15 +16,16 @@ public final class BackendConnectionStore {
     public var connectionState: BackendConnectionState = .disconnected
     public var capabilities: BackendCapabilities?
     public var executionMode: BackendExecutionMode = .unavailable
+    public var selectedExecutionMode: BackendExecutionMode
     public var canServeBackend: Bool = false
     public var runtimeStatusMessage: String?
+    public var localRuntimeStatus: LocalRuntimeStatus
     public var lastVerifiedEndpoint: BackendEndpoint?
     public var lastErrorMessage: String?
     public var executionPolicy: ExecutionPolicy {
         didSet {
             guard executionPolicy != oldValue else { return }
             persistExecutionPolicy()
-            Task { await reevaluateAvailability() }
         }
     }
 
@@ -31,23 +33,22 @@ public final class BackendConnectionStore {
 
     private let sessionProvider: any RemoteSessionManaging
     private let endpointDiscoverer: any BackendEndpointDiscovering
-    private let localReplicaAvailability: @Sendable () async -> Bool
-    private let supportsLocalReplicaTransport: Bool
+    private let localRuntimeProbe: @Sendable () async -> LocalRuntimeStatus
     private let defaults: UserDefaults
 
     public init(
         sessionProvider: any RemoteSessionManaging,
         failoverCoordinator: FailoverCoordinator = FailoverCoordinator(),
         endpointDiscoverer: any BackendEndpointDiscovering = DefaultBackendEndpointDiscoverer(),
-        localReplicaAvailability: @escaping @Sendable () async -> Bool = { false },
-        supportsLocalReplicaTransport: Bool = false,
+        localRuntimeProbe: @escaping @Sendable () async -> LocalRuntimeStatus = {
+            .unavailable(message: "Local iOS bridge support is not configured for this build.")
+        },
         defaults: UserDefaults = .standard
     ) {
         self.sessionProvider = sessionProvider
         self.failoverCoordinator = failoverCoordinator
         self.endpointDiscoverer = endpointDiscoverer
-        self.localReplicaAvailability = localReplicaAvailability
-        self.supportsLocalReplicaTransport = supportsLocalReplicaTransport
+        self.localRuntimeProbe = localRuntimeProbe
         self.defaults = defaults
 
         if let endpoint = defaults.data(forKey: Self.endpointDefaultsKey),
@@ -65,6 +66,16 @@ public final class BackendConnectionStore {
         } else {
             executionPolicy = failoverCoordinator.executionPolicy
         }
+
+        if let rawMode = defaults.string(forKey: Self.selectedExecutionModeDefaultsKey),
+           let decodedMode = BackendExecutionMode(rawValue: rawMode),
+           decodedMode != .unavailable {
+            selectedExecutionMode = decodedMode
+        } else {
+            selectedExecutionMode = .remote
+        }
+
+        localRuntimeStatus = .unavailable(message: "Local iOS backend has not been probed yet.")
         self.failoverCoordinator.executionPolicy = executionPolicy
     }
 
@@ -76,7 +87,23 @@ public final class BackendConnectionStore {
     }
 
     public var supportsAtlas: Bool {
-        capabilities?.supportsAtlas == true && canServeBackend && executionMode == .remote
+        guard canServeBackend else { return false }
+        return switch executionMode {
+            case .remote:
+                capabilities?.supportsAtlas == true
+            case .local:
+                localRuntimeStatus.atlasAvailability == .available
+            case .unavailable:
+                false
+        }
+    }
+
+    public var remoteBackendReady: Bool {
+        isConnected && capabilities?.supportsRemoteAnki == true
+    }
+
+    public var localBackendReady: Bool {
+        localRuntimeStatus.ankiAvailable
     }
 
     public func restore() async {
@@ -99,6 +126,18 @@ public final class BackendConnectionStore {
             capabilities = nil
             lastErrorMessage = nil
         }
+        await refreshLocalRuntimeStatus()
+        await reevaluateAvailability()
+    }
+
+    public func refreshLocalRuntimeStatus() async {
+        localRuntimeStatus = await localRuntimeProbe()
+    }
+
+    public func selectExecutionMode(_ mode: BackendExecutionMode) async {
+        guard mode != .unavailable else { return }
+        selectedExecutionMode = mode
+        defaults.set(mode.rawValue, forKey: Self.selectedExecutionModeDefaultsKey)
         await reevaluateAvailability()
     }
 
@@ -110,6 +149,7 @@ public final class BackendConnectionStore {
         } catch {
             lastErrorMessage = error.localizedDescription
         }
+        await reevaluateAvailability()
     }
 
     public func verifyConnection() async {
@@ -129,6 +169,7 @@ public final class BackendConnectionStore {
             connectionState = .error(error.localizedDescription)
             lastErrorMessage = error.localizedDescription
         }
+        await reevaluateAvailability()
     }
 
     public func discoverCompanion() async {
@@ -152,6 +193,7 @@ public final class BackendConnectionStore {
             connectionState = .error(error.localizedDescription)
             lastErrorMessage = error.localizedDescription
         }
+        await reevaluateAvailability()
     }
 
     public func refreshStatus() async {
@@ -162,11 +204,13 @@ public final class BackendConnectionStore {
             } catch {
                 lastErrorMessage = error.localizedDescription
             }
+            await refreshLocalRuntimeStatus()
             await reevaluateAvailability()
             return
         }
 
         await verifyConnection()
+        await refreshLocalRuntimeStatus()
     }
 
     public func connect() async {
@@ -182,7 +226,6 @@ public final class BackendConnectionStore {
                 )
             )
             lastErrorMessage = nil
-            await reevaluateAvailability()
         } catch {
             capabilities = nil
             executionMode = .unavailable
@@ -191,6 +234,7 @@ public final class BackendConnectionStore {
             connectionState = .error(error.localizedDescription)
             lastErrorMessage = error.localizedDescription
         }
+        await reevaluateAvailability()
     }
 
     public func requestPairingCode() async {
@@ -212,19 +256,22 @@ public final class BackendConnectionStore {
             connectionState = .error(error.localizedDescription)
             lastErrorMessage = error.localizedDescription
         }
+        await reevaluateAvailability()
     }
 
     public func signOut() async {
         await sessionProvider.signOut()
         capabilities = nil
-        executionMode = .unavailable
-        canServeBackend = false
+        if selectedExecutionMode == .remote {
+            executionMode = .unavailable
+            canServeBackend = false
+        }
         connectionState = .disconnected
         pairingCode = ""
         issuedPairingCode = nil
-        runtimeStatusMessage = nil
         lastErrorMessage = nil
         lastVerifiedEndpoint = nil
+        await reevaluateAvailability()
     }
 
     private var connectedAccount: BackendConnectionAccount? {
@@ -255,33 +302,48 @@ public final class BackendConnectionStore {
     }
 
     private func reevaluateAvailability() async {
-        let remoteSession = await sessionProvider.currentAuthSession()
         let remoteCapabilities: BackendCapabilities?
         if let capabilities {
             remoteCapabilities = capabilities
         } else {
             remoteCapabilities = await sessionProvider.currentCapabilities()
         }
-        let localReplicaAvailable = await localReplicaAvailability()
-        let decision = failoverCoordinator.resolveDecision(
-            remoteCapabilities: remoteCapabilities,
-            isRemoteConnected: remoteSession != nil,
-            localReplicaAvailable: localReplicaAvailable
-        )
-
         capabilities = remoteCapabilities
-        runtimeStatusMessage = decision.message
 
-        if decision.executionMode == .local && !supportsLocalReplicaTransport {
-            executionMode = .unavailable
-            canServeBackend = false
-            runtimeStatusMessage =
-                "A local replica is selected by policy, but this build does not include the local iOS backend transport yet."
-            return
+        switch selectedExecutionMode {
+            case .remote:
+                if remoteBackendReady {
+                    executionMode = .remote
+                    canServeBackend = true
+                    runtimeStatusMessage = runtimeStatusMessage ?? "Remote backend ready."
+                } else {
+                    executionMode = .unavailable
+                    canServeBackend = false
+                    runtimeStatusMessage =
+                        lastErrorMessage
+                        ?? runtimeStatusMessage
+                        ?? "Enter a backend URL, pair with the companion or cloud deployment, and then switch back to Remote mode."
+                }
+            case .local:
+                if localBackendReady {
+                    executionMode = .local
+                    canServeBackend = true
+                    runtimeStatusMessage =
+                        localRuntimeStatus.detailMessage
+                        ?? runtimeStatusMessage
+                        ?? "Local iOS backend ready."
+                } else {
+                    executionMode = .unavailable
+                    canServeBackend = false
+                    runtimeStatusMessage =
+                        localRuntimeStatus.detailMessage
+                        ?? "Import a local collection after the iOS backend runtime becomes available."
+                }
+            case .unavailable:
+                executionMode = .unavailable
+                canServeBackend = false
+                runtimeStatusMessage = "Select either Local or Remote execution."
         }
-
-        executionMode = decision.executionMode
-        canServeBackend = decision.isBackendReachable && decision.executionMode == .remote
     }
 }
 // swiftlint:enable type_body_length

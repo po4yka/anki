@@ -23,7 +23,6 @@ extension AnkiError: LocalizedError {
     }
 }
 
-#if os(macOS)
 public class AnkiBackend {
     private let ptr: UnsafeMutableRawPointer
 
@@ -85,4 +84,15 @@ extension AnkiBackend: BackendCommandTransport {
         try sendSync(service: service, method: method, payload: payload)
     }
 }
-#endif
+
+public actor LocalBackendCommandTransport: BackendCommandTransport {
+    private let backend: AnkiBackend
+
+    public init(backend: AnkiBackend) {
+        self.backend = backend
+    }
+
+    public func send(service: UInt32, method: UInt32, payload: Data) async throws -> BackendCommandResponse {
+        try await backend.send(service: service, method: method, payload: payload)
+    }
+}

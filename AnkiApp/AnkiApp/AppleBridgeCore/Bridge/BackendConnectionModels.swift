@@ -11,6 +11,52 @@ public enum BackendExecutionMode: String, Codable, Sendable {
     case unavailable
 }
 
+public enum LocalAtlasAvailability: String, Codable, Sendable {
+    case available
+    case configurationMissing
+    case unavailable
+}
+
+public struct LocalRuntimeStatus: Codable, Equatable, Sendable {
+    public var bridgeAvailable: Bool
+    public var ankiAvailable: Bool
+    public var atlasAvailability: LocalAtlasAvailability
+    public var detailMessage: String?
+    public var atlasMessage: String?
+
+    public init(
+        bridgeAvailable: Bool,
+        ankiAvailable: Bool,
+        atlasAvailability: LocalAtlasAvailability,
+        detailMessage: String? = nil,
+        atlasMessage: String? = nil
+    ) {
+        self.bridgeAvailable = bridgeAvailable
+        self.ankiAvailable = ankiAvailable
+        self.atlasAvailability = atlasAvailability
+        self.detailMessage = detailMessage
+        self.atlasMessage = atlasMessage
+    }
+
+    public static func unavailable(message: String) -> LocalRuntimeStatus {
+        LocalRuntimeStatus(
+            bridgeAvailable: false,
+            ankiAvailable: false,
+            atlasAvailability: .unavailable,
+            detailMessage: message
+        )
+    }
+
+    public static func ready(atlasAvailability: LocalAtlasAvailability, atlasMessage: String? = nil) -> LocalRuntimeStatus {
+        LocalRuntimeStatus(
+            bridgeAvailable: true,
+            ankiAvailable: true,
+            atlasAvailability: atlasAvailability,
+            atlasMessage: atlasMessage
+        )
+    }
+}
+
 public enum ExecutionPolicy: String, Codable, Sendable, CaseIterable {
     case preferRemote
     case preferLocal

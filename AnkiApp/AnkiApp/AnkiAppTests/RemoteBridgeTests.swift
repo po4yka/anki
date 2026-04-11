@@ -61,6 +61,7 @@ struct RemoteBridgeTests {
     }
 
     @Test
+    // swiftlint:disable function_body_length
     func sessionProviderRefreshesExpiredTokensAndCapabilities() async throws {
         try await withRemoteSessionProvider(
             preferredLanguages: ["en"],
@@ -117,6 +118,7 @@ struct RemoteBridgeTests {
             #expect(capabilitiesRequest.value(forHTTPHeaderField: "Authorization") == "Bearer fresh-access")
         }
     }
+    // swiftlint:enable function_body_length
 
     @Test
     func remoteTransportEncodesRpcRequestsAndDecodesResponses() async throws {
@@ -208,17 +210,14 @@ struct RemoteBridgeTests {
     }
 }
 
-// swiftlint:disable:next function_body_length
 private func withRemoteSessionProvider(
     preferredLanguages: [String],
     deploymentKind: BackendDeploymentKind,
     _ body: (URLSession, URL, RemoteSessionProvider, RemoteSessionPersistence) async throws -> Void
 ) async throws {
-    clearRemoteBridgeArtifacts()
     RemoteBridgeURLProtocol.reset()
     defer {
         RemoteBridgeURLProtocol.reset()
-        clearRemoteBridgeArtifacts()
     }
 
     let endpoint = try #require(URL(string: "http://remote.test/"))

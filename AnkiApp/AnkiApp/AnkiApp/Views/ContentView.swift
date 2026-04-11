@@ -1,3 +1,4 @@
+// swiftlint:disable file_length
 import SwiftUI
 import AppleBridgeCore
 import AppleSharedUI
@@ -60,7 +61,7 @@ struct ContentView: View {
     private var iosContent: some View {
         Group {
             if appState.requiresBackendIntegration {
-                IOSRemoteBackendOnboardingView()
+                IOSBackendOnboardingView()
             } else {
                 TabView(selection: Binding(
                     get: { appState.selectedMobileTab },
@@ -111,16 +112,16 @@ struct ContentView: View {
     }
 }
 
-private struct IOSRemoteBackendOnboardingView: View {
+private struct IOSBackendOnboardingView: View {
     @Environment(AppState.self) private var appState
 
     var body: some View {
         guard let connectionStore = appState.connectionStore else {
             return AnyView(
                 ContentUnavailableView(
-                    "Remote Backend Unavailable",
+                    "Backend Unavailable",
                     systemImage: "wifi.slash",
-                    description: Text("The app could not create a remote backend connection store.")
+                    description: Text("The app could not create a backend connection store.")
                 )
             )
         }
@@ -134,9 +135,13 @@ private struct IOSRemoteBackendOnboardingView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     statusHeader
-                    connectionSection(connectionStore: connectionStore)
                     executionSection(connectionStore: connectionStore)
-                    pairingSection(connectionStore: connectionStore)
+                    if connectionStore.selectedExecutionMode == .remote {
+                        connectionSection(connectionStore: connectionStore)
+                        pairingSection(connectionStore: connectionStore)
+                    } else {
+                        localSection(connectionStore: connectionStore)
+                    }
                     statusSection(connectionStore: connectionStore)
                 }
                 .padding()
@@ -154,9 +159,37 @@ private struct IOSRemoteBackendOnboardingView: View {
         )
     }
 
+    private func executionSection(connectionStore: BackendConnectionStore) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Execution")
+                .font(.headline)
+
+            Picker(
+                "Execution Mode",
+                selection: Binding(
+                    get: { connectionStore.selectedExecutionMode },
+                    set: { newMode in
+                        Task { await appState.selectExecutionMode(newMode) }
+                    }
+                )
+            ) {
+                Text("Remote").tag(BackendExecutionMode.remote)
+                Text("Local").tag(BackendExecutionMode.local)
+            }
+            .pickerStyle(.segmented)
+
+            Text(
+                connectionStore.runtimeStatusMessage
+                    ?? "Choose whether iOS should run against the remote backend or the local on-device runtime."
+            )
+            .font(.callout)
+            .foregroundStyle(.secondary)
+        }
+    }
+
     private func connectionSection(connectionStore: BackendConnectionStore) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Connection")
+            Text("Remote Connection")
                 .font(.headline)
             TextField("Backend URL", text: Bindable(connectionStore).endpointURLString)
                 .textFieldStyle(.roundedBorder)
@@ -195,21 +228,31 @@ private struct IOSRemoteBackendOnboardingView: View {
         }
     }
 
-    private func executionSection(connectionStore: BackendConnectionStore) -> some View {
+    private func localSection(connectionStore: BackendConnectionStore) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Execution")
+            Text("Local Runtime")
                 .font(.headline)
 
-            Picker("Execution Policy", selection: Bindable(connectionStore).executionPolicy) {
-                ForEach(ExecutionPolicy.allCases, id: \.self) { policy in
-                    Text(policy.displayName).tag(policy)
+            statusRow(
+                title: "Bridge",
+                detail: connectionStore.localRuntimeStatus.bridgeAvailable ? "Available" : "Unavailable"
+            )
+            statusRow(
+                title: "Anki Runtime",
+                detail: connectionStore.localRuntimeStatus.ankiAvailable ? "Ready" : "Not Ready"
+            )
+            statusRow(
+                title: "Atlas",
+                detail: atlasDetail(from: connectionStore.localRuntimeStatus)
+            )
+
+            Button("Probe Local Runtime") {
+                Task {
+                    await connectionStore.refreshLocalRuntimeStatus()
+                    await appState.selectExecutionMode(.local)
                 }
             }
-            .pickerStyle(.menu)
-
-            Text(connectionStore.runtimeStatusMessage ?? "Choose how the app should prefer remote and future local backends.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
+            .buttonStyle(.borderedProminent)
         }
     }
 
@@ -236,7 +279,10 @@ private struct IOSRemoteBackendOnboardingView: View {
                 .pairingCodeFieldStyle()
 
             Button("Connect") {
-                Task { await connectionStore.connect() }
+                Task {
+                    await connectionStore.connect()
+                    await appState.selectExecutionMode(.remote)
+                }
             }
             .buttonStyle(.borderedProminent)
             .disabled(connectionStore.pairingCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -248,32 +294,50 @@ private struct IOSRemoteBackendOnboardingView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Status")
                 .font(.headline)
-            statusRow(title: "Execution Mode", detail: appState.backendExecutionMode.rawValue.capitalized)
-            statusRow(title: "Execution Policy", detail: connectionStore.executionPolicy.displayName)
+            statusRow(title: "Selected Mode", detail: connectionStore.selectedExecutionMode.displayName)
+            statusRow(title: "Active Mode", detail: appState.backendExecutionMode.displayName)
             if let endpoint = connectionStore.lastVerifiedEndpoint {
                 statusRow(title: "Verified Endpoint", detail: endpoint.baseURL.absoluteString)
             }
-            statusRow(
-                title: "Atlas",
-                detail: connectionStore.supportsAtlas ? "Available" : "Unavailable until the connection is established."
-            )
+            if connectionStore.selectedExecutionMode == .remote {
+                statusRow(
+                    title: "Atlas",
+                    detail: connectionStore.supportsAtlas ? "Available" : "Unavailable until the connection is established."
+                )
+            }
 
-            if connectionStore.isConnected {
-                Button("Refresh Status") {
-                    Task { await connectionStore.refreshStatus() }
+            Button("Refresh Status") {
+                Task {
+                    await connectionStore.refreshStatus()
+                    await appState.selectExecutionMode(connectionStore.selectedExecutionMode)
                 }
-                .buttonStyle(.bordered)
+            }
+            .buttonStyle(.bordered)
 
+            if appState.hasBackendService {
                 Button("Open Preferences") {
                     appState.showPreferences()
                 }
                 .buttonStyle(.borderedProminent)
+            }
 
+            if connectionStore.isConnected {
                 Button("Sign Out") {
-                    Task { await connectionStore.signOut() }
+                    Task { await appState.signOutRemoteBackend() }
                 }
                 .buttonStyle(.bordered)
             }
+        }
+    }
+
+    private func atlasDetail(from localRuntimeStatus: LocalRuntimeStatus) -> String {
+        switch localRuntimeStatus.atlasAvailability {
+            case .available:
+                return localRuntimeStatus.atlasMessage ?? "Available"
+            case .configurationMissing:
+                return localRuntimeStatus.atlasMessage ?? "Configuration Missing"
+            case .unavailable:
+                return localRuntimeStatus.atlasMessage ?? "Unavailable"
         }
     }
 
@@ -288,17 +352,15 @@ private struct IOSRemoteBackendOnboardingView: View {
     }
 }
 
-private extension ExecutionPolicy {
+private extension BackendExecutionMode {
     var displayName: String {
         switch self {
-            case .preferRemote:
-                "Prefer Remote"
-            case .preferLocal:
-                "Prefer Local"
-            case .remoteOnly:
-                "Remote Only"
-            case .localOnly:
-                "Local Only"
+            case .local:
+                "Local"
+            case .remote:
+                "Remote"
+            case .unavailable:
+                "Unavailable"
         }
     }
 }
@@ -360,7 +422,7 @@ private struct MobileMoreView: View {
                 }
                 if appState.connectionStore?.isConnected == true {
                     Button("Sign Out") {
-                        Task { await appState.connectionStore?.signOut() }
+                        Task { await appState.signOutRemoteBackend() }
                     }
                 }
             }
@@ -393,3 +455,4 @@ private struct MobileMoreView: View {
     ContentView()
         .environment(AppState())
 }
+// swiftlint:enable file_length

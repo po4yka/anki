@@ -50,10 +50,11 @@ final class SessionStore {
     var undoStatus: Anki_Collection_UndoStatus?
     var reviewPreferences = ReviewRuntimePreferences()
 
-    let service: any AnkiServiceProtocol
+    var service: any AnkiServiceProtocol
     let ttsSettings = TTSSettings()
-    let syncModel: SyncModel
+    var syncModel: SyncModel
     var atlasService: (any AtlasServiceProtocol)?
+    var atlasServiceFactory: (() -> (any AtlasServiceProtocol)?)?
 
     var isAtlasAvailable: Bool {
         atlasService != nil
@@ -61,10 +62,15 @@ final class SessionStore {
 
     @ObservationIgnored private var autoSyncTask: Task<Void, Never>?
 
-    init(service: any AnkiServiceProtocol, atlasService: (any AtlasServiceProtocol)? = nil) {
+    init(
+        service: any AnkiServiceProtocol,
+        atlasService: (any AtlasServiceProtocol)? = nil,
+        atlasServiceFactory: (() -> (any AtlasServiceProtocol)?)? = nil
+    ) {
         self.service = service
         syncModel = SyncModel(service: service)
         self.atlasService = atlasService
+        self.atlasServiceFactory = atlasServiceFactory
     }
 
     func openCollection(path: String) async {
@@ -99,7 +105,18 @@ final class SessionStore {
     }
 
     func reinitializeAtlas() async {
-        atlasService = Self.makeAtlasService()
+        atlasService = atlasServiceFactory?()
+    }
+
+    func updateServices(
+        service: any AnkiServiceProtocol,
+        atlasService: (any AtlasServiceProtocol)?,
+        atlasServiceFactory: (() -> (any AtlasServiceProtocol)?)?
+    ) {
+        self.service = service
+        syncModel = SyncModel(service: service)
+        self.atlasService = atlasService
+        self.atlasServiceFactory = atlasServiceFactory
     }
 
     func closeCollection() async {
@@ -160,15 +177,11 @@ final class SessionStore {
     }
 
     static func makeAtlasService() -> (any AtlasServiceProtocol)? {
-        #if os(macOS)
         do {
             return try AtlasService(config: AtlasConfig.fromStoredSettings())
         } catch {
             return nil
         }
-        #else
-        return nil
-        #endif
     }
 }
 
@@ -183,32 +196,56 @@ final class NavigationStore {
 
 @Observable
 @MainActor
+// swiftlint:disable type_body_length
 final class AppState {
     let session: SessionStore
     let navigation = NavigationStore()
     let connectionStore: BackendConnectionStore?
+    private let remoteSessionProvider: RemoteSessionProvider?
+    private let preferredLanguages: [String]
 
     init(
         service: any AnkiServiceProtocol,
         atlasService: (any AtlasServiceProtocol)? = nil,
-        connectionStore: BackendConnectionStore? = nil
+        atlasServiceFactory: (() -> (any AtlasServiceProtocol)?)? = nil,
+        connectionStore: BackendConnectionStore? = nil,
+        remoteSessionProvider: RemoteSessionProvider? = nil,
+        preferredLanguages: [String]
     ) {
-        session = SessionStore(service: service, atlasService: atlasService)
+        session = SessionStore(
+            service: service,
+            atlasService: atlasService,
+            atlasServiceFactory: atlasServiceFactory
+        )
         self.connectionStore = connectionStore
+        self.remoteSessionProvider = remoteSessionProvider
+        self.preferredLanguages = preferredLanguages
     }
 
     convenience init() {
         #if os(iOS)
-        let sessionProvider = RemoteSessionProvider(preferredLanguages: Self.preferredLanguages())
-        let connectionStore = BackendConnectionStore(sessionProvider: sessionProvider)
+        let preferredLanguages = Self.preferredLanguages()
+        let sessionProvider = RemoteSessionProvider(preferredLanguages: preferredLanguages)
+        let connectionStore = BackendConnectionStore(
+            sessionProvider: sessionProvider,
+            localRuntimeProbe: { await Self.probeLocalRuntime(langs: preferredLanguages) }
+        )
         self.init(
-            service: RemoteAnkiService(sessionProvider: sessionProvider),
-            atlasService: RemoteAtlasService(sessionProvider: sessionProvider),
-            connectionStore: connectionStore
+            service: UnavailableAnkiService(),
+            atlasService: nil,
+            atlasServiceFactory: nil,
+            connectionStore: connectionStore,
+            remoteSessionProvider: sessionProvider,
+            preferredLanguages: preferredLanguages
         )
         #else
         let service = Self.makeService()
-        self.init(service: service, atlasService: SessionStore.makeAtlasService())
+        self.init(
+            service: service,
+            atlasService: SessionStore.makeAtlasService(),
+            atlasServiceFactory: { SessionStore.makeAtlasService() },
+            preferredLanguages: Self.preferredLanguages()
+        )
         #endif
     }
 
@@ -260,17 +297,31 @@ final class AppState {
     var backendStatusTitle: String {
         #if os(iOS)
         if hasBackendService {
-            return "Remote Backend Connected"
+            switch backendExecutionMode {
+                case .local:
+                    return "Local Backend Ready"
+                case .remote:
+                    return "Remote Backend Connected"
+                case .unavailable:
+                    return "Backend Ready"
+            }
         }
-        switch connectionStore?.connectionState ?? .disconnected {
-            case .connecting:
-                return "Connecting to Backend"
-            case let .error(message):
-                return message.isEmpty ? "Connection Failed" : "Connection Failed"
-            case .disconnected:
-                return "Remote Backend Required"
-            case .connected:
-                return "Backend Policy Requires Another Mode"
+        switch connectionStore?.selectedExecutionMode ?? .remote {
+            case .local:
+                return "Local Backend Unavailable"
+            case .remote:
+                switch connectionStore?.connectionState ?? .disconnected {
+                    case .connecting:
+                        return "Connecting to Backend"
+                    case .error:
+                        return "Connection Failed"
+                    case .disconnected:
+                        return "Remote Backend Required"
+                    case .connected:
+                        return "Remote Backend Unavailable"
+                }
+            case .unavailable:
+                return "Backend Selection Required"
         }
         #else
         return hasBackendService ? "Backend Ready" : "Backend Integration Required"
@@ -280,16 +331,29 @@ final class AppState {
     var backendStatusMessage: String {
         if hasBackendService {
             #if os(iOS)
-            return "This iOS build is connected to a remote Anki backend. Open Preferences to select a collection path on the companion or cloud host."
+            switch backendExecutionMode {
+                case .local:
+                    return connectionStore?.localRuntimeStatus.atlasMessage
+                        ?? "This iOS build is running the local backend. Open Preferences to import or switch sandbox-managed collections."
+                case .remote:
+                    return "This iOS build is connected to a remote Anki backend. Open Preferences to select a collection path on the companion or cloud host."
+                case .unavailable:
+                    return "Backend ready."
+            }
             #else
             return "This app target has access to the Anki backend."
             #endif
         }
 
         #if os(iOS)
+        if connectionStore?.selectedExecutionMode == .local {
+            return connectionStore?.localRuntimeStatus.detailMessage
+                ?? connectionStore?.runtimeStatusMessage
+                ?? "Switch to Local mode, then import an Anki collection into on-device storage."
+        }
         return connectionStore?.lastErrorMessage
             ?? connectionStore?.runtimeStatusMessage
-            ?? "Enter a backend URL, pair with the companion or cloud deployment, and then open a remote collection from Preferences."
+            ?? "Enter a backend URL, pair with the companion or cloud deployment, and then switch back to Remote mode."
         #else
         return Self.unavailableBackendMessage
         #endif
@@ -310,7 +374,11 @@ final class AppState {
 
     var isAtlasAvailable: Bool {
         #if os(iOS)
-        connectionStore?.supportsAtlas ?? false
+        if backendExecutionMode == .local {
+            session.isAtlasAvailable
+        } else {
+            connectionStore?.supportsAtlas ?? false
+        }
         #else
         session.isAtlasAvailable
         #endif
@@ -389,6 +457,33 @@ final class AppState {
         navigation.presentedSheet = nil
     }
 
+    func restoreBackendState() async {
+        #if os(iOS)
+        await connectionStore?.restore()
+        await refreshServiceBindings(closeCollectionIfNeeded: false)
+        #endif
+    }
+
+    func selectExecutionMode(_ mode: BackendExecutionMode) async {
+        #if os(iOS)
+        if isCollectionOpen {
+            await closeCollection()
+        }
+        await connectionStore?.selectExecutionMode(mode)
+        await refreshServiceBindings(closeCollectionIfNeeded: false)
+        #endif
+    }
+
+    func signOutRemoteBackend() async {
+        #if os(iOS)
+        if isCollectionOpen, connectionStore?.selectedExecutionMode == .remote {
+            await closeCollection()
+        }
+        await connectionStore?.signOut()
+        await refreshServiceBindings(closeCollectionIfNeeded: false)
+        #endif
+    }
+
     func presentAddNote() {
         guard isCollectionOpen else {
             error = .message("Open a collection before adding notes.")
@@ -444,16 +539,123 @@ final class AppState {
     }
 
     private static func makeService() -> any AnkiServiceProtocol {
-        #if os(macOS)
         do {
             return try AnkiService(langs: preferredLanguages())
         } catch {
             return UnavailableAnkiService()
         }
-        #else
-        return UnavailableAnkiService()
-        #endif
     }
+
+    #if os(iOS)
+    private func refreshServiceBindings(closeCollectionIfNeeded: Bool) async {
+        if closeCollectionIfNeeded, isCollectionOpen {
+            await closeCollection()
+        }
+
+        let bindings = resolveIOSServices()
+        session.updateServices(
+            service: bindings.service,
+            atlasService: bindings.atlasService,
+            atlasServiceFactory: bindings.atlasServiceFactory
+        )
+        await refreshReviewPreferences()
+    }
+
+    private struct IOSServiceBindings {
+        let service: any AnkiServiceProtocol
+        let atlasService: (any AtlasServiceProtocol)?
+        let atlasServiceFactory: (() -> (any AtlasServiceProtocol)?)?
+    }
+
+    // swiftlint:disable function_body_length
+    private func resolveIOSServices() -> IOSServiceBindings {
+        guard let connectionStore else {
+            return IOSServiceBindings(
+                service: UnavailableAnkiService(),
+                atlasService: nil,
+                atlasServiceFactory: nil
+            )
+        }
+
+        switch connectionStore.selectedExecutionMode {
+            case .remote:
+                guard connectionStore.remoteBackendReady, let remoteSessionProvider else {
+                    return IOSServiceBindings(
+                        service: UnavailableAnkiService(),
+                        atlasService: nil,
+                        atlasServiceFactory: nil
+                    )
+                }
+                let atlasFactory = {
+                    RemoteAtlasService(sessionProvider: remoteSessionProvider) as any AtlasServiceProtocol
+                }
+                return IOSServiceBindings(
+                    service: RemoteAnkiService(sessionProvider: remoteSessionProvider),
+                    atlasService: atlasFactory(),
+                    atlasServiceFactory: atlasFactory
+                )
+            case .local:
+                guard connectionStore.localBackendReady else {
+                    return IOSServiceBindings(
+                        service: UnavailableAnkiService(),
+                        atlasService: nil,
+                        atlasServiceFactory: nil
+                    )
+                }
+                let localService: any AnkiServiceProtocol
+                if let service = try? AnkiService(langs: preferredLanguages) {
+                    localService = service
+                } else {
+                    localService = UnavailableAnkiService()
+                }
+                let atlasFactory = { SessionStore.makeAtlasService() }
+                return IOSServiceBindings(
+                    service: localService,
+                    atlasService: atlasFactory(),
+                    atlasServiceFactory: atlasFactory
+                )
+            case .unavailable:
+                return IOSServiceBindings(
+                    service: UnavailableAnkiService(),
+                    atlasService: nil,
+                    atlasServiceFactory: nil
+                )
+        }
+    }
+    // swiftlint:enable function_body_length
+
+    private static func probeLocalRuntime(langs: [String]) async -> LocalRuntimeStatus {
+        do {
+            _ = try AnkiService(langs: langs)
+        } catch {
+            return .unavailable(message: "Local iOS backend could not start: \(error.localizedDescription)")
+        }
+
+        let atlasConfig = AtlasConfig.fromStoredSettings()
+        let hasAtlasConfig =
+            [atlasConfig.postgresUrl, atlasConfig.embeddingProvider, atlasConfig.embeddingModel]
+            .allSatisfy { value in
+                guard let value else { return false }
+                return !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }
+
+        if hasAtlasConfig {
+            if let atlasService = SessionStore.makeAtlasService() {
+                _ = atlasService
+                return .ready(atlasAvailability: .available)
+            }
+            return .ready(
+                atlasAvailability: .unavailable,
+                atlasMessage: "Atlas settings are present, but the local Atlas runtime could not be created."
+            )
+        }
+
+        return .ready(
+            atlasAvailability: .configurationMissing,
+            atlasMessage: "Atlas is available in local mode after you provide PostgreSQL and embedding settings."
+        )
+    }
+    #endif
 
     private static func preferredLanguages() -> [String] {
         let storedLanguage = UserDefaults.standard.string(forKey: "language")?
@@ -471,4 +673,5 @@ final class AppState {
         return languages.isEmpty ? ["en"] : languages
     }
 }
+// swiftlint:enable type_body_length
 // swiftlint:enable file_length

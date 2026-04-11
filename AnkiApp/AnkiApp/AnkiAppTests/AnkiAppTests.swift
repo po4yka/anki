@@ -123,7 +123,7 @@ struct AnkiAppTests {
 
     @Test @MainActor
     func appStateRequiresAnOpenCollectionBeforePresentingAddNote() {
-        let state = AppState(service: TestAnkiService())
+        let state = AppState(service: TestAnkiService(), preferredLanguages: ["en"])
 
         state.presentAddNote()
 
@@ -134,7 +134,7 @@ struct AnkiAppTests {
     @Test @MainActor
     func appStateStartsDeckScopedReviewWhenCollectionIsOpen() async {
         let service = TestAnkiService()
-        let state = AppState(service: service)
+        let state = AppState(service: service, preferredLanguages: ["en"])
         state.session.isCollectionOpen = true
 
         await state.startReview(deckId: 42)

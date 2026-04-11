@@ -27,7 +27,7 @@ struct AnkiApp: App {
                 .preferredColorScheme(colorScheme)
                 .task {
                     #if os(iOS)
-                    await appState.connectionStore?.restore()
+                    await appState.restoreBackendState()
                     #endif
                 }
         }
