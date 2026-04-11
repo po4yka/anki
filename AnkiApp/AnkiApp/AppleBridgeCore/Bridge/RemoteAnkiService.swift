@@ -2,7 +2,7 @@ import Foundation
 import SwiftProtobuf
 
 public actor RemoteAnkiService: AnkiServiceProtocol {
-    private let transport: any BackendCommandTransport
+    let transport: any BackendCommandTransport
 
     public init(
         sessionProvider: any RemoteSessionProviding,
@@ -15,58 +15,12 @@ public actor RemoteAnkiService: AnkiServiceProtocol {
         self.transport = transport
     }
 
-    private func command<Output: SwiftProtobuf.Message>(
+    func command<Output: SwiftProtobuf.Message>(
         service: UInt32,
         method: UInt32,
         input: some SwiftProtobuf.Message
     ) async throws -> Output {
         try await transport.sendCommand(service: service, method: method, input: input)
-    }
-
-    public func openCollection(path: String, mediaFolder: String, mediaDb: String) async throws {
-        var req = Anki_Collection_OpenCollectionRequest()
-        req.collectionPath = path
-        req.mediaFolderPath = mediaFolder
-        req.mediaDbPath = mediaDb
-        let _: Anki_Generic_Empty = try await command(
-            service: ServiceIndex.collection,
-            method: CollectionMethod.openCollection,
-            input: req
-        )
-    }
-
-    public func closeCollection(downgrade: Bool) async throws {
-        var req = Anki_Collection_CloseCollectionRequest()
-        req.downgradeToSchema11 = downgrade
-        let _: Anki_Generic_Empty = try await command(
-            service: ServiceIndex.collection,
-            method: CollectionMethod.closeCollection,
-            input: req
-        )
-    }
-
-    public func getUndoStatus() async throws -> Anki_Collection_UndoStatus {
-        try await command(
-            service: ServiceIndex.collection,
-            method: CollectionMethod.getUndoStatus,
-            input: Anki_Generic_Empty()
-        )
-    }
-
-    public func undo() async throws -> Anki_Collection_OpChangesAfterUndo {
-        try await command(
-            service: ServiceIndex.collection,
-            method: CollectionMethod.undo,
-            input: Anki_Generic_Empty()
-        )
-    }
-
-    public func redo() async throws -> Anki_Collection_OpChangesAfterUndo {
-        try await command(
-            service: ServiceIndex.collection,
-            method: CollectionMethod.redo,
-            input: Anki_Generic_Empty()
-        )
     }
 
     public func getDeckTree(now: Int64) async throws -> Anki_Decks_DeckTreeNode {
@@ -136,6 +90,8 @@ public actor RemoteAnkiService: AnkiServiceProtocol {
         )
     }
 
+    // Stable bridge signature; wrapping this in a parameter object would not simplify the call sites.
+    // swiftlint:disable:next function_parameter_count
     public func answerCard(
         cardId: Int64,
         rating: Anki_Scheduler_CardAnswer.Rating,
@@ -222,46 +178,6 @@ public actor RemoteAnkiService: AnkiServiceProtocol {
         return response.val
     }
 
-    public func searchCards(search: String, order: Anki_Search_SortOrder) async throws -> Anki_Search_SearchResponse {
-        var req = Anki_Search_SearchRequest()
-        req.search = search
-        req.order = order
-        return try await command(
-            service: ServiceIndex.search,
-            method: SearchMethod.searchCards,
-            input: req
-        )
-    }
-
-    public func searchNotes(search: String, order: Anki_Search_SortOrder) async throws -> Anki_Search_SearchResponse {
-        var req = Anki_Search_SearchRequest()
-        req.search = search
-        req.order = order
-        return try await command(
-            service: ServiceIndex.search,
-            method: SearchMethod.searchNotes,
-            input: req
-        )
-    }
-
-    public func allBrowserColumns() async throws -> Anki_Search_BrowserColumns {
-        try await command(
-            service: ServiceIndex.search,
-            method: SearchMethod.allBrowserColumns,
-            input: Anki_Generic_Empty()
-        )
-    }
-
-    public func browserRowForId(id: Int64) async throws -> Anki_Search_BrowserRow {
-        var req = Anki_Generic_Int64()
-        req.val = id
-        return try await command(
-            service: ServiceIndex.search,
-            method: SearchMethod.browserRowForId,
-            input: req
-        )
-    }
-
     public func removeNotes(noteIds: [Int64], cardIds: [Int64]) async throws -> Anki_Collection_OpChangesWithCount {
         var req = Anki_Notes_RemoveNotesRequest()
         req.noteIds = noteIds
@@ -269,49 +185,6 @@ public actor RemoteAnkiService: AnkiServiceProtocol {
         return try await command(
             service: ServiceIndex.notes,
             method: NotesMethod.removeNotes,
-            input: req
-        )
-    }
-
-    public func findAndReplace(
-        nids: [Int64],
-        search: String,
-        replacement: String,
-        regex: Bool,
-        matchCase: Bool,
-        fieldName: String
-    ) async throws -> Anki_Collection_OpChangesWithCount {
-        var req = Anki_Search_FindAndReplaceRequest()
-        req.nids = nids
-        req.search = search
-        req.replacement = replacement
-        req.regex = regex
-        req.matchCase = matchCase
-        req.fieldName = fieldName
-        return try await command(
-            service: ServiceIndex.search,
-            method: SearchMethod.findAndReplace,
-            input: req
-        )
-    }
-
-    public func setActiveBrowserColumns(columns: [String]) async throws {
-        var req = Anki_Generic_StringList()
-        req.vals = columns
-        let _: Anki_Generic_Empty = try await command(
-            service: ServiceIndex.search,
-            method: SearchMethod.setActiveBrowserColumns,
-            input: req
-        )
-    }
-
-    public func getGraphs(search: String, days: UInt32) async throws -> Anki_Stats_GraphsResponse {
-        var req = Anki_Stats_GraphsRequest()
-        req.search = search
-        req.days = days
-        return try await command(
-            service: ServiceIndex.stats,
-            method: StatsMethod.graphs,
             input: req
         )
     }
@@ -376,96 +249,6 @@ public actor RemoteAnkiService: AnkiServiceProtocol {
         return try await command(
             service: ServiceIndex.deckConfig,
             method: DeckConfigMethod.getDeckConfigsForUpdate,
-            input: req
-        )
-    }
-
-    public func syncLogin(username: String, password: String) async throws -> Anki_Sync_SyncAuth {
-        var req = Anki_Sync_SyncLoginRequest()
-        req.username = username
-        req.password = password
-        return try await command(
-            service: ServiceIndex.sync,
-            method: SyncMethod.syncLogin,
-            input: req
-        )
-    }
-
-    public func syncStatus(auth: Anki_Sync_SyncAuth) async throws -> Anki_Sync_SyncStatusResponse {
-        try await command(
-            service: ServiceIndex.sync,
-            method: SyncMethod.syncStatus,
-            input: auth
-        )
-    }
-
-    public func syncCollection(auth: Anki_Sync_SyncAuth, syncMedia: Bool) async throws -> Anki_Sync_SyncCollectionResponse {
-        var req = Anki_Sync_SyncCollectionRequest()
-        req.auth = auth
-        req.syncMedia = syncMedia
-        return try await command(
-            service: ServiceIndex.sync,
-            method: SyncMethod.syncCollection,
-            input: req
-        )
-    }
-
-    public func fullUploadOrDownload(auth: Anki_Sync_SyncAuth, upload: Bool, serverUsn: Int32?) async throws {
-        var req = Anki_Sync_FullUploadOrDownloadRequest()
-        req.auth = auth
-        req.upload = upload
-        if let serverUsn {
-            req.serverUsn = serverUsn
-        }
-        let _: Anki_Generic_Empty = try await command(
-            service: ServiceIndex.sync,
-            method: SyncMethod.fullUploadOrDownload,
-            input: req
-        )
-    }
-
-    public func syncMedia(auth: Anki_Sync_SyncAuth) async throws {
-        let _: Anki_Generic_Empty = try await command(
-            service: ServiceIndex.sync,
-            method: SyncMethod.syncMedia,
-            input: auth
-        )
-    }
-
-    public func setBrowserTableNotesMode(_ enabled: Bool) async throws {
-        var req = Anki_Config_SetConfigBoolRequest()
-        req.key = .browserTableShowNotesMode
-        req.value = enabled
-        req.undoable = false
-        let _: Anki_Collection_OpChanges = try await command(
-            service: ServiceIndex.config,
-            method: ConfigMethod.setConfigBool,
-            input: req
-        )
-    }
-
-    public func getPreferences() async throws -> Anki_Config_Preferences {
-        try await command(
-            service: ServiceIndex.config,
-            method: ConfigMethod.getPreferences,
-            input: Anki_Generic_Empty()
-        )
-    }
-
-    public func setPreferences(prefs: Anki_Config_Preferences) async throws {
-        let _: Anki_Generic_Empty = try await command(
-            service: ServiceIndex.config,
-            method: ConfigMethod.setPreferences,
-            input: prefs
-        )
-    }
-
-    public func getCardStats(cardId: Int64) async throws -> Anki_Stats_CardStatsResponse {
-        var req = Anki_Cards_CardId()
-        req.cid = cardId
-        return try await command(
-            service: ServiceIndex.stats,
-            method: StatsMethod.cardStats,
             input: req
         )
     }

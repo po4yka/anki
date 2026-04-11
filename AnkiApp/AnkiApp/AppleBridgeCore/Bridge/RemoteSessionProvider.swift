@@ -1,6 +1,52 @@
 import Foundation
 import SwiftProtobuf
 
+public struct RemoteSessionPersistence: Sendable {
+    public var saveEndpoint: @Sendable (BackendEndpoint) -> Void
+    public var loadEndpoint: @Sendable () -> BackendEndpoint?
+    public var saveAuthSessionJSON: @Sendable (String) -> Void
+    public var loadAuthSessionJSON: @Sendable () -> String?
+    public var deleteAuthSession: @Sendable () -> Void
+
+    public init(
+        saveEndpoint: @escaping @Sendable (BackendEndpoint) -> Void,
+        loadEndpoint: @escaping @Sendable () -> BackendEndpoint?,
+        saveAuthSessionJSON: @escaping @Sendable (String) -> Void,
+        loadAuthSessionJSON: @escaping @Sendable () -> String?,
+        deleteAuthSession: @escaping @Sendable () -> Void
+    ) {
+        self.saveEndpoint = saveEndpoint
+        self.loadEndpoint = loadEndpoint
+        self.saveAuthSessionJSON = saveAuthSessionJSON
+        self.loadAuthSessionJSON = loadAuthSessionJSON
+        self.deleteAuthSession = deleteAuthSession
+    }
+
+    public static let live = RemoteSessionPersistence(
+        saveEndpoint: { endpoint in
+            let encoder = JSONEncoder()
+            guard let data = try? encoder.encode(endpoint) else { return }
+            UserDefaults.standard.set(data, forKey: "remoteBackendEndpoint")
+        },
+        loadEndpoint: {
+            let decoder = JSONDecoder()
+            guard let data = UserDefaults.standard.data(forKey: "remoteBackendEndpoint") else {
+                return nil
+            }
+            return try? decoder.decode(BackendEndpoint.self, from: data)
+        },
+        saveAuthSessionJSON: { json in
+            KeychainHelper.saveRemoteAuthSessionJSON(json)
+        },
+        loadAuthSessionJSON: {
+            KeychainHelper.loadRemoteAuthSessionJSON()
+        },
+        deleteAuthSession: {
+            KeychainHelper.deleteRemoteAuthSession()
+        }
+    )
+}
+
 public protocol RemoteSessionProviding: Sendable {
     func endpoint() async throws -> BackendEndpoint
     func authorizedAccessToken() async throws -> String
@@ -9,7 +55,17 @@ public protocol RemoteSessionProviding: Sendable {
     func invalidateBackendSession() async
 }
 
-public actor RemoteSessionProvider: RemoteSessionProviding {
+public protocol RemoteSessionManaging: RemoteSessionProviding {
+    func updateEndpoint(_ endpoint: BackendEndpoint) async
+    func currentAuthSession() async -> RemoteAuthSession?
+    func currentCapabilities() async -> BackendCapabilities?
+    func issuePairingCode(deviceName: String?) async throws -> PairingCodeResponse
+    func exchangePairingCode(_ code: String) async throws -> RemoteAuthSession
+    func refreshCapabilities() async throws -> BackendCapabilities
+    func signOut() async
+}
+
+public actor RemoteSessionProvider: RemoteSessionManaging {
     private static let endpointDefaultsKey = "remoteBackendEndpoint"
     private static let endpointEncoder = JSONEncoder()
     private static let endpointDecoder = JSONDecoder()
@@ -26,6 +82,7 @@ public actor RemoteSessionProvider: RemoteSessionProviding {
 
     private let session: URLSession
     private let preferredLanguages: [String]
+    private let persistence: RemoteSessionPersistence
 
     private var storedEndpoint: BackendEndpoint?
     private var authSession: RemoteAuthSession?
@@ -33,12 +90,14 @@ public actor RemoteSessionProvider: RemoteSessionProviding {
 
     public init(
         session: URLSession = .shared,
-        preferredLanguages: [String] = Locale.preferredLanguages.isEmpty ? ["en"] : Locale.preferredLanguages
+        preferredLanguages: [String] = Locale.preferredLanguages.isEmpty ? ["en"] : Locale.preferredLanguages,
+        persistence: RemoteSessionPersistence = .live
     ) {
         self.session = session
         self.preferredLanguages = preferredLanguages
-        storedEndpoint = Self.loadEndpoint()
-        authSession = Self.loadAuthSession()
+        self.persistence = persistence
+        storedEndpoint = persistence.loadEndpoint()
+        authSession = Self.loadAuthSession(using: persistence)
     }
 
     public func endpoint() async throws -> BackendEndpoint {
@@ -50,7 +109,7 @@ public actor RemoteSessionProvider: RemoteSessionProviding {
 
     public func updateEndpoint(_ endpoint: BackendEndpoint) async {
         storedEndpoint = endpoint
-        Self.saveEndpoint(endpoint)
+        persistence.saveEndpoint(endpoint)
         backendSessionID = nil
     }
 
@@ -206,29 +265,17 @@ public actor RemoteSessionProvider: RemoteSessionProviding {
               let json = String(data: data, encoding: .utf8) else {
             return
         }
-        KeychainHelper.saveRemoteAuthSessionJSON(json)
+        persistence.saveAuthSessionJSON(json)
     }
 
     private func clearAuthState() {
         authSession = nil
         backendSessionID = nil
-        KeychainHelper.deleteRemoteAuthSession()
+        persistence.deleteAuthSession()
     }
 
-    private static func saveEndpoint(_ endpoint: BackendEndpoint) {
-        guard let data = try? endpointEncoder.encode(endpoint) else { return }
-        UserDefaults.standard.set(data, forKey: endpointDefaultsKey)
-    }
-
-    private static func loadEndpoint() -> BackendEndpoint? {
-        guard let data = UserDefaults.standard.data(forKey: endpointDefaultsKey) else {
-            return nil
-        }
-        return try? endpointDecoder.decode(BackendEndpoint.self, from: data)
-    }
-
-    private static func loadAuthSession() -> RemoteAuthSession? {
-        guard let json = KeychainHelper.loadRemoteAuthSessionJSON(),
+    private static func loadAuthSession(using persistence: RemoteSessionPersistence) -> RemoteAuthSession? {
+        guard let json = persistence.loadAuthSessionJSON(),
               let data = json.data(using: .utf8) else {
             return nil
         }

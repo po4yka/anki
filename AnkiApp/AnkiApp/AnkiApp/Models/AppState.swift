@@ -247,7 +247,7 @@ final class AppState {
 
     var hasBackendService: Bool {
         #if os(iOS)
-        connectionStore?.isConnected ?? false
+        connectionStore?.canServeBackend ?? false
         #else
         !(session.service is UnavailableAnkiService)
         #endif
@@ -270,7 +270,7 @@ final class AppState {
             case .disconnected:
                 return "Remote Backend Required"
             case .connected:
-                return "Remote Backend Connected"
+                return "Backend Policy Requires Another Mode"
         }
         #else
         return hasBackendService ? "Backend Ready" : "Backend Integration Required"
@@ -288,6 +288,7 @@ final class AppState {
 
         #if os(iOS)
         return connectionStore?.lastErrorMessage
+            ?? connectionStore?.runtimeStatusMessage
             ?? "Enter a backend URL, pair with the companion or cloud deployment, and then open a remote collection from Preferences."
         #else
         return Self.unavailableBackendMessage
@@ -325,7 +326,7 @@ final class AppState {
 
     var canEditNotes: Bool {
         #if os(iOS)
-        backendExecutionMode != .remote
+        hasBackendService
         #else
         true
         #endif
@@ -391,10 +392,6 @@ final class AppState {
     func presentAddNote() {
         guard isCollectionOpen else {
             error = .message("Open a collection before adding notes.")
-            return
-        }
-        guard canEditNotes else {
-            error = .message("Adding notes is not enabled for the remote iOS backend yet.")
             return
         }
         navigation.presentedSheet = .addNote

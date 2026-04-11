@@ -123,10 +123,113 @@ public enum BackendConnectionState: Equatable, Sendable {
     case error(String)
 }
 
+public struct FailoverDecision: Equatable, Sendable {
+    public var executionMode: BackendExecutionMode
+    public var isBackendReachable: Bool
+    public var message: String?
+
+    public init(
+        executionMode: BackendExecutionMode,
+        isBackendReachable: Bool,
+        message: String?
+    ) {
+        self.executionMode = executionMode
+        self.isBackendReachable = isBackendReachable
+        self.message = message
+    }
+}
+
 public final class FailoverCoordinator: @unchecked Sendable {
     public var executionPolicy: ExecutionPolicy
 
     public init(executionPolicy: ExecutionPolicy = .preferRemote) {
         self.executionPolicy = executionPolicy
+    }
+
+    public func resolveDecision(
+        remoteCapabilities: BackendCapabilities?,
+        isRemoteConnected: Bool,
+        localReplicaAvailable: Bool
+    ) -> FailoverDecision {
+        let remoteAvailable = isRemoteConnected && remoteCapabilities?.supportsRemoteAnki == true
+
+        switch executionPolicy {
+            case .preferRemote:
+                return preferRemoteDecision(
+                    remoteAvailable: remoteAvailable,
+                    localReplicaAvailable: localReplicaAvailable
+                )
+            case .preferLocal:
+                return preferLocalDecision(
+                    remoteAvailable: remoteAvailable,
+                    localReplicaAvailable: localReplicaAvailable
+                )
+            case .remoteOnly:
+                return remoteOnlyDecision(remoteAvailable: remoteAvailable)
+            case .localOnly:
+                return localOnlyDecision(localReplicaAvailable: localReplicaAvailable)
+        }
+    }
+
+    private func preferRemoteDecision(
+        remoteAvailable: Bool,
+        localReplicaAvailable: Bool
+    ) -> FailoverDecision {
+        if remoteAvailable {
+            return FailoverDecision(executionMode: .remote, isBackendReachable: true, message: nil)
+        }
+        if localReplicaAvailable {
+            return FailoverDecision(
+                executionMode: .local,
+                isBackendReachable: true,
+                message: "Remote backend unavailable; falling back to the local replica."
+            )
+        }
+        return FailoverDecision(
+            executionMode: .unavailable,
+            isBackendReachable: false,
+            message: "No remote backend connection is active, and no local replica is available."
+        )
+    }
+
+    private func preferLocalDecision(
+        remoteAvailable: Bool,
+        localReplicaAvailable: Bool
+    ) -> FailoverDecision {
+        if localReplicaAvailable {
+            return FailoverDecision(
+                executionMode: .local,
+                isBackendReachable: true,
+                message: remoteAvailable ? "Local replica preferred; remote backend kept available as fallback." : nil
+            )
+        }
+        if remoteAvailable {
+            return FailoverDecision(
+                executionMode: .remote,
+                isBackendReachable: true,
+                message: "Local replica unavailable; continuing with the remote backend."
+            )
+        }
+        return FailoverDecision(
+            executionMode: .unavailable,
+            isBackendReachable: false,
+            message: "Neither a local replica nor a remote backend is available."
+        )
+    }
+
+    private func remoteOnlyDecision(remoteAvailable: Bool) -> FailoverDecision {
+        FailoverDecision(
+            executionMode: remoteAvailable ? .remote : .unavailable,
+            isBackendReachable: remoteAvailable,
+            message: remoteAvailable ? nil : "Execution policy requires a remote backend connection."
+        )
+    }
+
+    private func localOnlyDecision(localReplicaAvailable: Bool) -> FailoverDecision {
+        FailoverDecision(
+            executionMode: localReplicaAvailable ? .local : .unavailable,
+            isBackendReachable: localReplicaAvailable,
+            message: localReplicaAvailable ? nil : "Execution policy requires a local iOS replica."
+        )
     }
 }

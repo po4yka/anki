@@ -135,6 +135,7 @@ private struct IOSRemoteBackendOnboardingView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     statusHeader
                     connectionSection(connectionStore: connectionStore)
+                    executionSection(connectionStore: connectionStore)
                     pairingSection(connectionStore: connectionStore)
                     statusSection(connectionStore: connectionStore)
                 }
@@ -174,11 +175,41 @@ private struct IOSRemoteBackendOnboardingView: View {
                 }
                 .buttonStyle(.bordered)
 
+                Button("Test Connection") {
+                    Task { await connectionStore.verifyConnection() }
+                }
+                .buttonStyle(.bordered)
+
                 Button("Generate Pairing Code") {
                     Task { await connectionStore.requestPairingCode() }
                 }
                 .buttonStyle(.bordered)
             }
+
+            if connectionStore.deploymentKind == .companion {
+                Button("Discover Companion") {
+                    Task { await connectionStore.discoverCompanion() }
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+    }
+
+    private func executionSection(connectionStore: BackendConnectionStore) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Execution")
+                .font(.headline)
+
+            Picker("Execution Policy", selection: Bindable(connectionStore).executionPolicy) {
+                ForEach(ExecutionPolicy.allCases, id: \.self) { policy in
+                    Text(policy.displayName).tag(policy)
+                }
+            }
+            .pickerStyle(.menu)
+
+            Text(connectionStore.runtimeStatusMessage ?? "Choose how the app should prefer remote and future local backends.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -193,6 +224,11 @@ private struct IOSRemoteBackendOnboardingView: View {
                     title: "Issued Code",
                     detail: "\(issued.pairingCode) · expires \(issued.expiresAt.formatted(date: .omitted, time: .shortened))"
                 )
+
+                if let pairingURL = issued.pairingURL {
+                    Link("Open Pairing Link", destination: pairingURL)
+                        .font(.callout.weight(.semibold))
+                }
             }
 
             TextField("Pairing Code", text: Bindable(connectionStore).pairingCode)
@@ -213,12 +249,21 @@ private struct IOSRemoteBackendOnboardingView: View {
             Text("Status")
                 .font(.headline)
             statusRow(title: "Execution Mode", detail: appState.backendExecutionMode.rawValue.capitalized)
+            statusRow(title: "Execution Policy", detail: connectionStore.executionPolicy.displayName)
+            if let endpoint = connectionStore.lastVerifiedEndpoint {
+                statusRow(title: "Verified Endpoint", detail: endpoint.baseURL.absoluteString)
+            }
             statusRow(
                 title: "Atlas",
                 detail: connectionStore.supportsAtlas ? "Available" : "Unavailable until the connection is established."
             )
 
             if connectionStore.isConnected {
+                Button("Refresh Status") {
+                    Task { await connectionStore.refreshStatus() }
+                }
+                .buttonStyle(.bordered)
+
                 Button("Open Preferences") {
                     appState.showPreferences()
                 }
@@ -239,6 +284,21 @@ private struct IOSRemoteBackendOnboardingView: View {
             Text(detail)
                 .font(.callout)
                 .foregroundStyle(.secondary)
+        }
+    }
+}
+
+private extension ExecutionPolicy {
+    var displayName: String {
+        switch self {
+            case .preferRemote:
+                "Prefer Remote"
+            case .preferLocal:
+                "Prefer Local"
+            case .remoteOnly:
+                "Remote Only"
+            case .localOnly:
+                "Local Only"
         }
     }
 }
@@ -274,33 +334,23 @@ private struct MobileMoreView: View {
     var body: some View {
         List {
             Section("Editing") {
-                if appState.canEditNotes {
-                    NavigationLink("Note Types") {
-                        NotetypeListView()
-                    }
-                    NavigationLink("Image Occlusion") {
-                        ImageOcclusionView()
-                    }
-                } else {
-                    Text("Remote iOS backend currently ships study and browse only.")
-                        .foregroundStyle(.secondary)
+                NavigationLink("Note Types") {
+                    NotetypeListView()
+                }
+                NavigationLink("Image Occlusion") {
+                    ImageOcclusionView()
                 }
             }
 
             Section("Import / Export") {
-                if appState.canEditNotes {
-                    NavigationLink("Import Package") {
-                        ImportView()
-                    }
-                    NavigationLink("Import CSV") {
-                        CsvImportView()
-                    }
-                    NavigationLink("Export Package") {
-                        ExportView()
-                    }
-                } else {
-                    Text("Import and export stay disabled while the remote transport is being proven.")
-                        .foregroundStyle(.secondary)
+                NavigationLink("Import Package") {
+                    ImportView()
+                }
+                NavigationLink("Import CSV") {
+                    CsvImportView()
+                }
+                NavigationLink("Export Package") {
+                    ExportView()
                 }
             }
 

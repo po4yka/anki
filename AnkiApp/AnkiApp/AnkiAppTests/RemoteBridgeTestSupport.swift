@@ -1,7 +1,9 @@
 @testable import AppleBridgeCore
 import Foundation
+import SwiftProtobuf
 import Testing
 
+// swiftlint:disable file_length
 enum RemoteBridgeTestError: Error {
     case unexpectedRequest(String)
 }
@@ -114,14 +116,240 @@ actor StubRemoteSessionProvider: RemoteSessionProviding {
     }
 }
 
+actor RecordingBackendTransport: BackendCommandTransport {
+    struct Invocation: Sendable {
+        let service: UInt32
+        let method: UInt32
+        let payload: Data
+    }
+
+    private var invocations: [Invocation] = []
+    private var queuedResponses: [BackendCommandResponse] = []
+
+    func enqueueResponse<Message: SwiftProtobuf.Message>(
+        _ message: Message,
+        isBackendError: Bool = false
+    ) throws {
+        queuedResponses.append(
+            BackendCommandResponse(
+                payload: try message.serializedData(),
+                isBackendError: isBackendError
+            )
+        )
+    }
+
+    func send(service: UInt32, method: UInt32, payload: Data) async throws -> BackendCommandResponse {
+        invocations.append(Invocation(service: service, method: method, payload: payload))
+        guard !queuedResponses.isEmpty else {
+            throw AnkiError.message("No queued backend response for test transport.")
+        }
+        return queuedResponses.removeFirst()
+    }
+
+    func allInvocations() -> [Invocation] {
+        invocations
+    }
+}
+
+actor StubRemoteSessionManager: RemoteSessionManaging {
+    var endpointValue: BackendEndpoint
+    var accessTokenValue: String
+    var currentSessionValue: RemoteAuthSession?
+    var currentCapabilitiesValue: BackendCapabilities?
+    var issuedPairingCodeValue: PairingCodeResponse
+    var exchangedSessionValue: RemoteAuthSession
+    var refreshedCapabilitiesValue: BackendCapabilities
+    private(set) var endpointUpdates: [BackendEndpoint] = []
+    private(set) var signOutCallCount = 0
+
+    init(
+        endpoint: BackendEndpoint,
+        accessToken: String = "access-token",
+        currentSession: RemoteAuthSession? = nil,
+        currentCapabilities: BackendCapabilities? = nil,
+        issuedPairingCode: PairingCodeResponse? = nil,
+        exchangedSession: RemoteAuthSession? = nil,
+        refreshedCapabilities: BackendCapabilities? = nil
+    ) {
+        endpointValue = endpoint
+        accessTokenValue = accessToken
+        currentSessionValue = currentSession
+        currentCapabilitiesValue = currentCapabilities
+
+        let defaultCapabilities = refreshedCapabilities
+            ?? currentCapabilities
+            ?? BackendCapabilities(
+                supportsRemoteAnki: true,
+                supportsAtlas: true,
+                deploymentKind: endpoint.deploymentKind,
+                executionMode: .remote
+            )
+        let defaultSession = exchangedSession
+            ?? currentSession
+            ?? RemoteAuthSession(
+                accessToken: accessToken,
+                refreshToken: "refresh-token",
+                expiresAt: Date(timeIntervalSinceNow: 3600),
+                accountID: "acct-1",
+                accountDisplayName: "Test Account",
+                capabilities: defaultCapabilities
+            )
+
+        issuedPairingCodeValue = issuedPairingCode
+            ?? PairingCodeResponse(
+                pairingCode: "PAIR1234",
+                pairingURL: URL(string: "ankiapp://pair?code=PAIR1234"),
+                expiresAt: Date(timeIntervalSinceNow: 300)
+            )
+        exchangedSessionValue = defaultSession
+        refreshedCapabilitiesValue = defaultCapabilities
+    }
+
+    func endpoint() async throws -> BackendEndpoint {
+        endpointValue
+    }
+
+    func authorizedAccessToken() async throws -> String {
+        accessTokenValue
+    }
+
+    func ensureBackendSession() async throws -> String {
+        "backend-session"
+    }
+
+    func invalidateAuth() async {
+        currentSessionValue = nil
+    }
+
+    func invalidateBackendSession() async {}
+
+    func updateEndpoint(_ endpoint: BackendEndpoint) async {
+        endpointValue = endpoint
+        endpointUpdates.append(endpoint)
+    }
+
+    func currentAuthSession() async -> RemoteAuthSession? {
+        currentSessionValue
+    }
+
+    func currentCapabilities() async -> BackendCapabilities? {
+        currentCapabilitiesValue
+    }
+
+    func issuePairingCode(deviceName: String?) async throws -> PairingCodeResponse {
+        issuedPairingCodeValue
+    }
+
+    func exchangePairingCode(_ code: String) async throws -> RemoteAuthSession {
+        currentSessionValue = exchangedSessionValue
+        currentCapabilitiesValue = exchangedSessionValue.capabilities
+        return exchangedSessionValue
+    }
+
+    func refreshCapabilities() async throws -> BackendCapabilities {
+        currentCapabilitiesValue = refreshedCapabilitiesValue
+        return refreshedCapabilitiesValue
+    }
+
+    func signOut() async {
+        signOutCallCount += 1
+        currentSessionValue = nil
+        currentCapabilitiesValue = nil
+    }
+}
+
+actor StubEndpointDiscoverer: BackendEndpointDiscovering {
+    var verificationError: Error?
+    var discoveredEndpoint: BackendEndpoint?
+    private(set) var verifiedEndpoints: [BackendEndpoint] = []
+
+    func setDiscoveredEndpoint(_ endpoint: BackendEndpoint?) {
+        discoveredEndpoint = endpoint
+    }
+
+    func setVerificationError(_ error: Error?) {
+        verificationError = error
+    }
+
+    func verify(endpoint: BackendEndpoint) async throws {
+        verifiedEndpoints.append(endpoint)
+        if let verificationError {
+            throw verificationError
+        }
+    }
+
+    func discoverPreferredEndpoint(for deploymentKind: BackendDeploymentKind) async throws -> BackendEndpoint? {
+        discoveredEndpoint
+    }
+
+    func allVerifiedEndpoints() -> [BackendEndpoint] {
+        verifiedEndpoints
+    }
+}
+
 func makeRemoteBridgeURLSession() -> URLSession {
     let configuration = URLSessionConfiguration.ephemeral
     configuration.protocolClasses = [RemoteBridgeURLProtocol.self]
     return URLSession(configuration: configuration)
 }
 
+final class RemoteSessionPersistenceBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var endpoint: BackendEndpoint?
+    private var authSessionJSON: String?
+
+    func saveEndpoint(_ endpoint: BackendEndpoint) {
+        lock.lock()
+        self.endpoint = endpoint
+        lock.unlock()
+    }
+
+    func loadEndpoint() -> BackendEndpoint? {
+        lock.lock()
+        defer { lock.unlock() }
+        return endpoint
+    }
+
+    func saveAuthSessionJSON(_ json: String) {
+        lock.lock()
+        authSessionJSON = json
+        lock.unlock()
+    }
+
+    func loadAuthSessionJSON() -> String? {
+        lock.lock()
+        defer { lock.unlock() }
+        return authSessionJSON
+    }
+
+    func deleteAuthSession() {
+        lock.lock()
+        authSessionJSON = nil
+        lock.unlock()
+    }
+}
+
+func makeInMemoryRemoteSessionPersistence() -> RemoteSessionPersistence {
+    let box = RemoteSessionPersistenceBox()
+    return RemoteSessionPersistence(
+        saveEndpoint: { endpoint in box.saveEndpoint(endpoint) },
+        loadEndpoint: { box.loadEndpoint() },
+        saveAuthSessionJSON: { json in box.saveAuthSessionJSON(json) },
+        loadAuthSessionJSON: { box.loadAuthSessionJSON() },
+        deleteAuthSession: { box.deleteAuthSession() }
+    )
+}
+
+func makeIsolatedUserDefaults(suiteName: String = UUID().uuidString) -> UserDefaults {
+    let suiteName = "AnkiAppTests.\(suiteName)"
+    let defaults = UserDefaults(suiteName: suiteName) ?? .standard
+    defaults.removePersistentDomain(forName: suiteName)
+    return defaults
+}
+
 func clearRemoteBridgeArtifacts() {
     UserDefaults.standard.removeObject(forKey: "remoteBackendEndpoint")
+    UserDefaults.standard.removeObject(forKey: "remoteBackendExecutionPolicy")
     KeychainHelper.deleteRemoteAuthSession()
 }
 
@@ -202,3 +430,4 @@ func iso8601(_ date: Date) -> String {
     formatter.formatOptions = [.withInternetDateTime]
     return formatter.string(from: date)
 }
+// swiftlint:enable file_length

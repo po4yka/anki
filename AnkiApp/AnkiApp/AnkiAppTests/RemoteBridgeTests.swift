@@ -10,7 +10,7 @@ struct RemoteBridgeTests {
         try await withRemoteSessionProvider(
             preferredLanguages: ["fr", "en"],
             deploymentKind: .companion
-        ) { session, endpoint, provider in
+        ) { session, endpoint, provider, persistence in
             let exchangeExpiry = Date(timeIntervalSinceNow: 3600)
             RemoteBridgeURLProtocol.install { request in
                 switch request.url?.path {
@@ -40,7 +40,11 @@ struct RemoteBridgeTests {
             #expect(authSession.capabilities.supportsAtlas)
             #expect(await provider.currentAuthSession()?.accessToken == "access-1")
 
-            let restoredProvider = RemoteSessionProvider(session: session, preferredLanguages: ["fr", "en"])
+            let restoredProvider = RemoteSessionProvider(
+                session: session,
+                preferredLanguages: ["fr", "en"],
+                persistence: persistence
+            )
             #expect(try await restoredProvider.endpoint() == BackendEndpoint(baseURL: endpoint, deploymentKind: .companion))
             #expect(await restoredProvider.currentAuthSession()?.accessToken == "access-1")
 
@@ -58,7 +62,10 @@ struct RemoteBridgeTests {
 
     @Test
     func sessionProviderRefreshesExpiredTokensAndCapabilities() async throws {
-        try await withRemoteSessionProvider(preferredLanguages: ["en"], deploymentKind: .cloud) { _, _, provider in
+        try await withRemoteSessionProvider(
+            preferredLanguages: ["en"],
+            deploymentKind: .cloud
+        ) { _, _, provider, _ in
             RemoteBridgeURLProtocol.install { request in
                 switch request.url?.path {
                 case "/api/auth/pair/exchange":
@@ -201,10 +208,11 @@ struct RemoteBridgeTests {
     }
 }
 
+// swiftlint:disable:next function_body_length
 private func withRemoteSessionProvider(
     preferredLanguages: [String],
     deploymentKind: BackendDeploymentKind,
-    _ body: (URLSession, URL, RemoteSessionProvider) async throws -> Void
+    _ body: (URLSession, URL, RemoteSessionProvider, RemoteSessionPersistence) async throws -> Void
 ) async throws {
     clearRemoteBridgeArtifacts()
     RemoteBridgeURLProtocol.reset()
@@ -215,7 +223,12 @@ private func withRemoteSessionProvider(
 
     let endpoint = try #require(URL(string: "http://remote.test/"))
     let session = makeRemoteBridgeURLSession()
-    let provider = RemoteSessionProvider(session: session, preferredLanguages: preferredLanguages)
+    let persistence = makeInMemoryRemoteSessionPersistence()
+    let provider = RemoteSessionProvider(
+        session: session,
+        preferredLanguages: preferredLanguages,
+        persistence: persistence
+    )
     await provider.updateEndpoint(BackendEndpoint(baseURL: endpoint, deploymentKind: deploymentKind))
-    try await body(session, endpoint, provider)
+    try await body(session, endpoint, provider, persistence)
 }
