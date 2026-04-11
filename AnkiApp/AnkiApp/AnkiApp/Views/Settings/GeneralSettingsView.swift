@@ -5,6 +5,7 @@ struct GeneralSettingsView: View {
     @Environment(AppState.self) private var appState
     @AppStorage("collectionPath") private var collectionPath = ""
     @AppStorage("language") private var language = "en"
+    @State private var showingCollectionPicker = false
 
     private let languages = [
         ("en", "English"),
@@ -58,18 +59,21 @@ struct GeneralSettingsView: View {
         }
         .formStyle(.grouped)
         .padding()
+        .fileImporter(
+            isPresented: $showingCollectionPicker,
+            // swiftlint:disable:next force_unwrapping
+            allowedContentTypes: [.init(filenameExtension: "anki2")!],
+            allowsMultipleSelection: false
+        ) { result in
+            guard case let .success(urls) = result, let url = urls.first else {
+                return
+            }
+            collectionPath = url.path
+        }
     }
 
     private func chooseCollectionPath() {
-        let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-        // swiftlint:disable:next force_unwrapping
-        panel.allowedContentTypes = [.init(filenameExtension: "anki2")!]
-        if panel.runModal() == .OK {
-            collectionPath = panel.url?.path ?? ""
-        }
+        showingCollectionPicker = true
     }
 }
 

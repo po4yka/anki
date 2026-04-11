@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 struct ImportView: View {
     @Environment(AppState.self) private var appState
     @State private var importModel: ImportModel?
+    @State private var showingImporter = false
 
     var body: some View {
         VStack(spacing: 20) {
@@ -19,6 +20,21 @@ struct ImportView: View {
         .padding()
         .navigationTitle("Import")
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .fileImporter(
+            isPresented: $showingImporter,
+            // swiftlint:disable:next force_unwrapping
+            allowedContentTypes: [.init(filenameExtension: "apkg")!],
+            allowsMultipleSelection: false
+        ) { result in
+            guard let model = importModel,
+                  case let .success(urls) = result,
+                  let url = urls.first else {
+                return
+            }
+            Task {
+                await model.importPackage(path: url.path)
+            }
+        }
     }
 
     // swiftlint:disable:next function_body_length
@@ -112,18 +128,8 @@ struct ImportView: View {
     }
 
     private func selectAndImport(_ model: ImportModel) {
-        let panel = NSOpenPanel()
-        // swiftlint:disable:next force_unwrapping
-        panel.allowedContentTypes = [.init(filenameExtension: "apkg")!]
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.message = "Select an Anki package to import"
-
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-
-        Task {
-            await model.importPackage(path: url.path)
-        }
+        _ = model
+        showingImporter = true
     }
 }
 

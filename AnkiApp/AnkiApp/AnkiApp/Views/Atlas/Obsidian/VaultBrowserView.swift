@@ -1,5 +1,5 @@
-import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct VaultBrowserView: View {
     @Environment(AppState.self) private var appState
@@ -23,6 +23,7 @@ struct VaultBrowserView: View {
 
 private struct VaultBrowserContentView: View {
     @State var model: ObsidianModel
+    @State private var showingVaultPicker = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -61,19 +62,21 @@ private struct VaultBrowserContentView: View {
             }
         }
         .navigationTitle("Obsidian Vault")
-    }
-
-    private func selectVault() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.prompt = "Select Vault"
-
-        if panel.runModal() == .OK, let url = panel.url {
+        .fileImporter(
+            isPresented: $showingVaultPicker,
+            allowedContentTypes: [.folder],
+            allowsMultipleSelection: false
+        ) { result in
+            guard case let .success(urls) = result, let url = urls.first else {
+                return
+            }
             model.vaultPath = url
             Task { await model.scan() }
         }
+    }
+
+    private func selectVault() {
+        showingVaultPicker = true
     }
 }
 

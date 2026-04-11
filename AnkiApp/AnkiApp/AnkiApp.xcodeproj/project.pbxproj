@@ -11,6 +11,10 @@
 		0CFE7C132F824E17006E3286 /* SwiftProtobufPluginLibrary in Frameworks */ = {isa = PBXBuildFile; productRef = 0CFE7C122F824E17006E3286 /* SwiftProtobufPluginLibrary */; };
 		0CFE7C152F824E17006E3286 /* protoc in Frameworks */ = {isa = PBXBuildFile; productRef = 0CFE7C142F824E17006E3286 /* protoc */; };
 		0CFE7C172F824E18006E3286 /* protoc-gen-swift in Frameworks */ = {isa = PBXBuildFile; productRef = 0CFE7C162F824E17006E3286 /* protoc-gen-swift */; };
+		A1B2C3022F830001006E3286 /* SwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = 0CFE7C102F824E17006E3286 /* SwiftProtobuf */; };
+		A1B2C3032F830001006E3286 /* SwiftProtobufPluginLibrary in Frameworks */ = {isa = PBXBuildFile; productRef = 0CFE7C122F824E17006E3286 /* SwiftProtobufPluginLibrary */; };
+		A1B2C3042F830001006E3286 /* protoc in Frameworks */ = {isa = PBXBuildFile; productRef = 0CFE7C142F824E17006E3286 /* protoc */; };
+		A1B2C3052F830001006E3286 /* protoc-gen-swift in Frameworks */ = {isa = PBXBuildFile; productRef = 0CFE7C162F824E17006E3286 /* protoc-gen-swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,6 +38,7 @@
 		0CFE7BE32F8248B1006E3286 /* AnkiApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AnkiApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0CFE7BF22F8248B5006E3286 /* AnkiAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AnkiAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0CFE7BFC2F8248B5006E3286 /* AnkiAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AnkiAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1B2C3012F830001006E3286 /* AnkiIOSApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AnkiIOSApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -80,6 +85,17 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A1B2C3072F830001006E3286 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1B2C3052F830001006E3286 /* protoc-gen-swift in Frameworks */,
+				A1B2C3032F830001006E3286 /* SwiftProtobufPluginLibrary in Frameworks */,
+				A1B2C3022F830001006E3286 /* SwiftProtobuf in Frameworks */,
+				A1B2C3042F830001006E3286 /* protoc in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -97,6 +113,7 @@
 			isa = PBXGroup;
 			children = (
 				0CFE7BE32F8248B1006E3286 /* AnkiApp.app */,
+				A1B2C3012F830001006E3286 /* AnkiIOSApp.app */,
 				0CFE7BF22F8248B5006E3286 /* AnkiAppTests.xctest */,
 				0CFE7BFC2F8248B5006E3286 /* AnkiAppUITests.xctest */,
 			);
@@ -178,6 +195,32 @@
 			productReference = 0CFE7BFC2F8248B5006E3286 /* AnkiAppUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		A1B2C3092F830001006E3286 /* AnkiIOSApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1B2C30A2F830001006E3286 /* Build configuration list for PBXNativeTarget "AnkiIOSApp" */;
+			buildPhases = (
+				A1B2C3062F830001006E3286 /* Sources */,
+				A1B2C3072F830001006E3286 /* Frameworks */,
+				A1B2C3082F830001006E3286 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				0CFE7BE52F8248B1006E3286 /* AnkiApp */,
+			);
+			name = AnkiIOSApp;
+			packageProductDependencies = (
+				0CFE7C102F824E17006E3286 /* SwiftProtobuf */,
+				0CFE7C122F824E17006E3286 /* SwiftProtobufPluginLibrary */,
+				0CFE7C142F824E17006E3286 /* protoc */,
+				0CFE7C162F824E17006E3286 /* protoc-gen-swift */,
+			);
+			productName = AnkiIOSApp;
+			productReference = A1B2C3012F830001006E3286 /* AnkiIOSApp.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -199,6 +242,9 @@
 						CreatedOnToolsVersion = 26.4;
 						TestTargetID = 0CFE7BE22F8248B1006E3286;
 					};
+					A1B2C3092F830001006E3286 = {
+						CreatedOnToolsVersion = 26.4;
+					};
 				};
 			};
 			buildConfigurationList = 0CFE7BDE2F8248B1006E3286 /* Build configuration list for PBXProject "AnkiApp" */;
@@ -219,6 +265,7 @@
 			projectRoot = "";
 			targets = (
 				0CFE7BE22F8248B1006E3286 /* AnkiApp */,
+				A1B2C3092F830001006E3286 /* AnkiIOSApp */,
 				0CFE7BF12F8248B5006E3286 /* AnkiAppTests */,
 				0CFE7BFB2F8248B5006E3286 /* AnkiAppUITests */,
 			);
@@ -247,6 +294,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A1B2C3082F830001006E3286 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -265,6 +319,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		0CFE7BF82F8248B5006E3286 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1B2C3062F830001006E3286 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -422,18 +483,18 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-					LIBRARY_SEARCH_PATHS = (
-						"$(inherited)",
-						"$(SRCROOT)/../../target/debug",
-					);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../../target/debug",
+				);
 				MARKETING_VERSION = 1.0;
-					OTHER_LDFLAGS = (
-						"-lanki_bridge",
-						"-latlas_bridge",
-						"-lresolv",
-						"-framework",
-						SystemConfiguration,
-					);
+				OTHER_LDFLAGS = (
+					"-lanki_bridge",
+					"-latlas_bridge",
+					"-lresolv",
+					"-framework",
+					SystemConfiguration,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = po4yka.AnkiApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -464,18 +525,18 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-					LIBRARY_SEARCH_PATHS = (
-						"$(inherited)",
-						"$(SRCROOT)/../../target/release",
-					);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../../target/release",
+				);
 				MARKETING_VERSION = 1.0;
-					OTHER_LDFLAGS = (
-						"-lanki_bridge",
-						"-latlas_bridge",
-						"-lresolv",
-						"-framework",
-						SystemConfiguration,
-					);
+				OTHER_LDFLAGS = (
+					"-lanki_bridge",
+					"-latlas_bridge",
+					"-lresolv",
+					"-framework",
+					SystemConfiguration,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = po4yka.AnkiApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -486,6 +547,62 @@
 				SWIFT_OBJC_BRIDGING_HEADER = AnkiApp/Bridge/AnkiBridge.h;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		A1B2C30B2F830001006E3286 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconIOS;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = po4yka.AnkiIOSApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A1B2C30C2F830001006E3286 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconIOS;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = po4yka.AnkiIOSApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -600,6 +717,15 @@
 			buildConfigurations = (
 				0CFE7C0D2F8248B5006E3286 /* Debug */,
 				0CFE7C0E2F8248B5006E3286 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1B2C30A2F830001006E3286 /* Build configuration list for PBXNativeTarget "AnkiIOSApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1B2C30B2F830001006E3286 /* Debug */,
+				A1B2C30C2F830001006E3286 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

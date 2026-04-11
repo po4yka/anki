@@ -1,23 +1,57 @@
 import Foundation
 import Observation
+#if os(macOS)
+import AppKit
+#elseif os(iOS)
+import UIKit
+#endif
+
+enum AppSheet: String, Identifiable {
+    case addNote
+    case reviewer
+
+    var id: String {
+        rawValue
+    }
+}
+
+enum MobileTab: String, CaseIterable, Identifiable {
+    case decks = "Decks"
+    case browse = "Browse"
+    case stats = "Stats"
+    case sync = "Sync"
+    case more = "More"
+
+    var id: String {
+        rawValue
+    }
+
+    var systemImage: String {
+        switch self {
+            case .decks: "rectangle.stack"
+            case .browse: "magnifyingglass"
+            case .stats: "chart.bar"
+            case .sync: "arrow.triangle.2.circlepath"
+            case .more: "ellipsis.circle"
+        }
+    }
+}
 
 @Observable
 @MainActor
-final class AppState {
+final class SessionStore {
     var isCollectionOpen: Bool = false
     var collectionPath: String = ""
     var mediaFolderURL: URL?
-    var selectedSidebarItem: SidebarItem = .decks
     var error: AnkiError?
     var undoStatus: Anki_Collection_UndoStatus?
-    var isShowingAddNote = false
-    var isShowingReviewer = false
     var reviewPreferences = ReviewRuntimePreferences()
 
     let service: any AnkiServiceProtocol
     let ttsSettings = TTSSettings()
     let syncModel: SyncModel
     var atlasService: (any AtlasServiceProtocol)?
+
     var isAtlasAvailable: Bool {
         atlasService != nil
     }
@@ -28,16 +62,6 @@ final class AppState {
         self.service = service
         syncModel = SyncModel(service: service)
         self.atlasService = atlasService
-    }
-
-    convenience init() {
-        do {
-            let service = try AnkiService(langs: Self.preferredLanguages())
-            self.init(service: service)
-        } catch {
-            self.init(service: UnavailableAnkiService())
-            self.error = .message("Failed to initialize the Anki backend: \(error)")
-        }
     }
 
     func openCollection(path: String) async {
@@ -72,12 +96,7 @@ final class AppState {
     }
 
     func reinitializeAtlas() async {
-        let config = AtlasConfig.fromStoredSettings()
-        do {
-            atlasService = try AtlasService(config: config)
-        } catch {
-            atlasService = nil
-        }
+        atlasService = Self.makeAtlasService()
     }
 
     func closeCollection() async {
@@ -88,7 +107,6 @@ final class AppState {
             mediaFolderURL = nil
             undoStatus = nil
             atlasService = nil
-            isShowingReviewer = false
             reviewPreferences = ReviewRuntimePreferences()
             autoSyncTask?.cancel()
             autoSyncTask = nil
@@ -96,32 +114,6 @@ final class AppState {
             self.error = error
         } catch {
             self.error = .message("Failed to close collection: \(error.localizedDescription)")
-        }
-    }
-
-    func presentAddNote() {
-        guard isCollectionOpen else {
-            error = .message("Open a collection before adding notes.")
-            return
-        }
-        isShowingAddNote = true
-    }
-
-    func startReview(deckId: Int64? = nil) async {
-        guard isCollectionOpen else {
-            error = .message("Open a collection before starting review.")
-            return
-        }
-        do {
-            await refreshReviewPreferences()
-            if let deckId {
-                try await service.setCurrentDeck(deckId: deckId)
-            }
-            isShowingReviewer = true
-        } catch let error as AnkiError {
-            self.error = error
-        } catch {
-            self.error = .message("Failed to start review: \(error.localizedDescription)")
         }
     }
 
@@ -162,6 +154,216 @@ final class AppState {
             return
         }
         await syncModel.sync()
+    }
+
+    static func makeAtlasService() -> (any AtlasServiceProtocol)? {
+        #if os(macOS)
+        do {
+            return try AtlasService(config: AtlasConfig.fromStoredSettings())
+        } catch {
+            return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+}
+
+@Observable
+@MainActor
+final class NavigationStore {
+    var selectedSidebarItem: SidebarItem = .decks
+    var selectedMobileTab: MobileTab = .decks
+    var presentedSheet: AppSheet?
+    var isShowingPreferencesSheet = false
+}
+
+@Observable
+@MainActor
+final class AppState {
+    let session: SessionStore
+    let navigation = NavigationStore()
+
+    init(service: any AnkiServiceProtocol, atlasService: (any AtlasServiceProtocol)? = nil) {
+        session = SessionStore(service: service, atlasService: atlasService)
+    }
+
+    convenience init() {
+        let service = Self.makeService()
+        self.init(service: service, atlasService: SessionStore.makeAtlasService())
+        if service is UnavailableAnkiService {
+            session.error = .message("Failed to initialize the Anki backend.")
+        }
+    }
+
+    var isCollectionOpen: Bool {
+        session.isCollectionOpen
+    }
+
+    var collectionPath: String {
+        session.collectionPath
+    }
+
+    var mediaFolderURL: URL? {
+        session.mediaFolderURL
+    }
+
+    var error: AnkiError? {
+        get { session.error }
+        set { session.error = newValue }
+    }
+
+    var undoStatus: Anki_Collection_UndoStatus? {
+        session.undoStatus
+    }
+
+    var reviewPreferences: ReviewRuntimePreferences {
+        get { session.reviewPreferences }
+        set { session.reviewPreferences = newValue }
+    }
+
+    var service: any AnkiServiceProtocol {
+        session.service
+    }
+
+    var ttsSettings: TTSSettings {
+        session.ttsSettings
+    }
+
+    var syncModel: SyncModel {
+        session.syncModel
+    }
+
+    var atlasService: (any AtlasServiceProtocol)? {
+        get { session.atlasService }
+        set { session.atlasService = newValue }
+    }
+
+    var isAtlasAvailable: Bool {
+        session.isAtlasAvailable
+    }
+
+    var selectedSidebarItem: SidebarItem {
+        get { navigation.selectedSidebarItem }
+        set { navigation.selectedSidebarItem = newValue }
+    }
+
+    var selectedMobileTab: MobileTab {
+        get { navigation.selectedMobileTab }
+        set { navigation.selectedMobileTab = newValue }
+    }
+
+    var isShowingAddNote: Bool {
+        get { navigation.presentedSheet == .addNote }
+        set {
+            if newValue {
+                navigation.presentedSheet = .addNote
+            } else if navigation.presentedSheet == .addNote {
+                navigation.presentedSheet = nil
+            }
+        }
+    }
+
+    var isShowingReviewer: Bool {
+        get { navigation.presentedSheet == .reviewer }
+        set {
+            if newValue {
+                navigation.presentedSheet = .reviewer
+            } else if navigation.presentedSheet == .reviewer {
+                navigation.presentedSheet = nil
+            }
+        }
+    }
+
+    var isShowingPreferencesSheet: Bool {
+        get { navigation.isShowingPreferencesSheet }
+        set { navigation.isShowingPreferencesSheet = newValue }
+    }
+
+    func openCollection(path: String) async {
+        await session.openCollection(path: path)
+        if session.isCollectionOpen {
+            navigation.isShowingPreferencesSheet = false
+        }
+    }
+
+    func refreshUndoStatus() async {
+        await session.refreshUndoStatus()
+    }
+
+    func reinitializeAtlas() async {
+        await session.reinitializeAtlas()
+    }
+
+    func closeCollection() async {
+        await session.closeCollection()
+        navigation.presentedSheet = nil
+    }
+
+    func presentAddNote() {
+        guard isCollectionOpen else {
+            error = .message("Open a collection before adding notes.")
+            return
+        }
+        navigation.presentedSheet = .addNote
+    }
+
+    func startReview(deckId: Int64? = nil) async {
+        guard isCollectionOpen else {
+            error = .message("Open a collection before starting review.")
+            return
+        }
+        do {
+            await refreshReviewPreferences()
+            if let deckId {
+                try await service.setCurrentDeck(deckId: deckId)
+            }
+            navigation.presentedSheet = .reviewer
+        } catch let error as AnkiError {
+            self.error = error
+        } catch {
+            self.error = .message("Failed to start review: \(error.localizedDescription)")
+        }
+    }
+
+    func dismissPresentedSheet() {
+        navigation.presentedSheet = nil
+    }
+
+    func refreshReviewPreferences() async {
+        await session.refreshReviewPreferences()
+    }
+
+    func refreshSyncSchedule() {
+        session.refreshSyncSchedule()
+    }
+
+    func showPreferences() {
+        #if os(macOS)
+        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+        #else
+        navigation.isShowingPreferencesSheet = true
+        #endif
+    }
+
+    func openExternalURL(_ url: URL) {
+        #if os(macOS)
+        NSWorkspace.shared.open(url)
+        #elseif os(iOS)
+        UIApplication.shared.open(url)
+        #endif
+    }
+
+    private static func makeService() -> any AnkiServiceProtocol {
+        #if os(macOS)
+        do {
+            return try AnkiService(langs: preferredLanguages())
+        } catch {
+            return UnavailableAnkiService()
+        }
+        #else
+        return UnavailableAnkiService()
+        #endif
     }
 
     private static func preferredLanguages() -> [String] {

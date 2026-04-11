@@ -5,30 +5,26 @@ struct AnkiApp: App {
     @State private var appState = AppState()
     @AppStorage("appearance") private var appearance = "system"
 
+    @SceneBuilder
     var body: some Scene {
+        mainWindowScene
+
+        #if os(macOS)
+        Settings {
+            PreferencesView()
+                .environment(appState)
+                .preferredColorScheme(colorScheme)
+        }
+        #endif
+    }
+
+    private var mainWindowScene: some Scene {
         WindowGroup {
             ContentView()
                 .environment(appState)
                 .preferredColorScheme(colorScheme)
-                .sheet(isPresented: Binding(
-                    get: { appState.isShowingAddNote },
-                    set: { appState.isShowingAddNote = $0 }
-                )) {
-                    NavigationStack {
-                        NoteEditorView()
-                            .environment(appState)
-                    }
-                    .frame(minWidth: 500, minHeight: 400)
-                }
-                .sheet(isPresented: Binding(
-                    get: { appState.isShowingReviewer },
-                    set: { appState.isShowingReviewer = $0 }
-                )) {
-                    ReviewerView()
-                        .environment(appState)
-                        .frame(minWidth: 600, minHeight: 500)
-                }
         }
+        #if os(macOS)
         .commands {
             CommandGroup(replacing: .undoRedo) {
                 Button(appState.undoStatus?.undo.isEmpty == false
@@ -92,12 +88,7 @@ struct AnkiApp: App {
                 .keyboardShortcut("s", modifiers: [.command, .shift])
             }
         }
-
-        Settings {
-            PreferencesView()
-                .environment(appState)
-                .preferredColorScheme(colorScheme)
-        }
+        #endif
     }
 
     private var colorScheme: ColorScheme? {

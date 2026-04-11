@@ -20,7 +20,7 @@ struct DeckBrowserView: View {
                         Text("Open a collection from Preferences to get started.")
                     } actions: {
                         Button("Open Preferences") {
-                            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                            appState.showPreferences()
                         }
                         .buttonStyle(.borderedProminent)
                     }

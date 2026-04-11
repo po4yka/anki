@@ -11,7 +11,11 @@ struct AppearanceSettingsView: View {
                     Text("Light").tag("light")
                     Text("Dark").tag("dark")
                 }
+#if os(macOS)
                 .pickerStyle(.radioGroup)
+#else
+                .pickerStyle(.inline)
+#endif
             }
         }
         .formStyle(.grouped)

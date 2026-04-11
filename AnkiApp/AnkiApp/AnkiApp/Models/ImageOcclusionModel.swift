@@ -1,6 +1,11 @@
-import AppKit
 import Foundation
 import Observation
+import CoreGraphics
+#if os(macOS)
+import AppKit
+#elseif os(iOS)
+import UIKit
+#endif
 
 enum ShapeKind: String, CaseIterable {
     case rect
@@ -34,7 +39,7 @@ struct OcclusionShape: Identifiable {
 @Observable
 @MainActor
 final class ImageOcclusionModel {
-    var image: NSImage?
+    var image: PlatformImage?
     var imagePath: String = ""
     var imageName: String = ""
     var shapes: [OcclusionShape] = []
@@ -61,7 +66,7 @@ final class ImageOcclusionModel {
             let response = try await service.getImageForOcclusion(path: path)
             imagePath = path
             imageName = response.name
-            image = NSImage(data: response.data)
+            image = PlatformImage(data: response.data)
             shapes = []
             isSaved = false
             editingNoteId = nil
@@ -83,7 +88,7 @@ final class ImageOcclusionModel {
                 return
             }
             editingNoteId = noteId
-            image = NSImage(data: note.imageData)
+            image = PlatformImage(data: note.imageData)
             imageName = note.imageFileName
             header = note.header
             backExtra = note.backExtra

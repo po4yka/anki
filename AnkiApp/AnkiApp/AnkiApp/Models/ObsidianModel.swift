@@ -1,4 +1,3 @@
-import AppKit
 import Foundation
 import Observation
 
@@ -14,17 +13,6 @@ final class ObsidianModel {
 
     init(atlas: any AtlasServiceProtocol) {
         self.atlas = atlas
-    }
-
-    func selectVault() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.title = "Select Obsidian Vault"
-        if panel.runModal() == .OK {
-            vaultPath = panel.url
-        }
     }
 
     func scan() async {

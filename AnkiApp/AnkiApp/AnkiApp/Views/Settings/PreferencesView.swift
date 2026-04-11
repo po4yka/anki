@@ -185,6 +185,7 @@ struct ProfilesSettingsView: View {
     @State private var profileManager = ProfileManager()
     @State private var newProfileName = ""
     @State private var newProfilePath = ""
+    @State private var showingProfilePicker = false
 
     var body: some View {
         Form {
@@ -243,18 +244,21 @@ struct ProfilesSettingsView: View {
         }
         .formStyle(.grouped)
         .padding()
+        .fileImporter(
+            isPresented: $showingProfilePicker,
+            // swiftlint:disable:next force_unwrapping
+            allowedContentTypes: [.init(filenameExtension: "anki2")!],
+            allowsMultipleSelection: false
+        ) { result in
+            guard case let .success(urls) = result, let url = urls.first else {
+                return
+            }
+            newProfilePath = url.path
+        }
     }
 
     private func chooseProfilePath() {
-        let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-        // swiftlint:disable:next force_unwrapping
-        panel.allowedContentTypes = [.init(filenameExtension: "anki2")!]
-        if panel.runModal() == .OK {
-            newProfilePath = panel.url?.path ?? ""
-        }
+        showingProfilePicker = true
     }
 }
 

@@ -2,6 +2,7 @@ import AVFoundation
 import SwiftUI
 import WebKit
 
+#if os(macOS)
 struct CardWebView: NSViewRepresentable {
     let html: String
     let css: String
@@ -13,16 +14,52 @@ struct CardWebView: NSViewRepresentable {
     }
 
     func makeNSView(context: Context) -> WKWebView {
+        makeWebView(context: context)
+    }
+
+    func updateNSView(_ webView: WKWebView, context: Context) {
+        updateWebView(webView, context: context)
+    }
+}
+#else
+struct CardWebView: UIViewRepresentable {
+    let html: String
+    let css: String
+    let baseURL: URL?
+    var onPlayAudio: ((String) -> Void)?
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onPlayAudio: onPlayAudio)
+    }
+
+    func makeUIView(context: Context) -> WKWebView {
+        makeWebView(context: context)
+    }
+
+    func updateUIView(_ webView: WKWebView, context: Context) {
+        updateWebView(webView, context: context)
+    }
+}
+#endif
+
+private extension CardWebView {
+    func makeWebView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
         config.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
         let contentController = config.userContentController
         contentController.add(context.coordinator, name: "ankiPlay")
         let webView = WKWebView(frame: .zero, configuration: config)
+#if os(macOS)
         webView.setValue(false, forKey: "drawsBackground")
+#else
+        webView.isOpaque = false
+        webView.backgroundColor = .clear
+        webView.scrollView.backgroundColor = .clear
+#endif
         return webView
     }
 
-    func updateNSView(_ webView: WKWebView, context: Context) {
+    func updateWebView(_ webView: WKWebView, context: Context) {
         context.coordinator.onPlayAudio = onPlayAudio
         if context.coordinator.isLoaded, context.coordinator.lastCSS == css {
             let escaped = escapeForJS(html)
@@ -34,8 +71,10 @@ struct CardWebView: NSViewRepresentable {
             context.coordinator.isLoaded = true
         }
     }
+}
 
-    class Coordinator: NSObject, WKScriptMessageHandler {
+extension CardWebView {
+    final class Coordinator: NSObject, WKScriptMessageHandler {
         var onPlayAudio: ((String) -> Void)?
         var isLoaded = false
         var lastCSS = ""
@@ -51,8 +90,6 @@ struct CardWebView: NSViewRepresentable {
         }
     }
 }
-
-// MARK: - HTML Builder
 
 private func escapeForJS(_ text: String) -> String {
     text.replacingOccurrences(of: "\\", with: "\\\\")
@@ -101,7 +138,6 @@ private func reviewerScript() -> String {
             MathJax.typesetPromise([qa]);
         }
         bindAudioButtons();
-        // Re-run inline scripts (e.g. anki.imageOcclusion.setup())
         qa.querySelectorAll('script').forEach(function(old) {
             var s = document.createElement('script');
             s.textContent = old.textContent;

@@ -1,13 +1,46 @@
 import SwiftUI
 import WebKit
 
+#if os(macOS)
 struct RichFieldEditor: NSViewRepresentable {
     @Binding var html: String
     var onContentChange: ((String) -> Void)?
     var onCoordinatorReady: ((Coordinator) -> Void)?
 
-    // swiftlint:disable:next function_body_length
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
     func makeNSView(context: Context) -> WKWebView {
+        makeWebView(context: context)
+    }
+
+    func updateNSView(_ webView: WKWebView, context: Context) {
+        updateWebView(webView, context: context)
+    }
+}
+#else
+struct RichFieldEditor: UIViewRepresentable {
+    @Binding var html: String
+    var onContentChange: ((String) -> Void)?
+    var onCoordinatorReady: ((Coordinator) -> Void)?
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    func makeUIView(context: Context) -> WKWebView {
+        makeWebView(context: context)
+    }
+
+    func updateUIView(_ webView: WKWebView, context: Context) {
+        updateWebView(webView, context: context)
+    }
+}
+#endif
+
+private extension RichFieldEditor {
+    func makeWebView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
         let contentController = WKUserContentController()
         contentController.add(context.coordinator, name: "contentChanged")
@@ -87,7 +120,7 @@ struct RichFieldEditor: NSViewRepresentable {
         return webView
     }
 
-    func updateNSView(_ webView: WKWebView, context: Context) {
+    func updateWebView(_ webView: WKWebView, context: Context) {
         if context.coordinator.lastSetHTML != html {
             context.coordinator.lastSetHTML = html
             let escaped = html
@@ -97,11 +130,9 @@ struct RichFieldEditor: NSViewRepresentable {
             webView.evaluateJavaScript("setContent('\(escaped)')")
         }
     }
+}
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-
+extension RichFieldEditor {
     final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         let parent: RichFieldEditor
         weak var webView: WKWebView?

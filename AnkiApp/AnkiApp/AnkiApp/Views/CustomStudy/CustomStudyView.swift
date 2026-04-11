@@ -152,7 +152,9 @@ struct CustomStudyView: View {
                 }
             }
         ))
+#if os(macOS)
         .toggleStyle(.checkbox)
+#endif
         .labelsHidden()
     }
 }

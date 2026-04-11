@@ -15,7 +15,7 @@ struct StatisticsView: View {
                         Text("Open a collection from Preferences to view statistics.")
                     } actions: {
                         Button("Open Preferences") {
-                            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                            appState.showPreferences()
                         }
                         .buttonStyle(.borderedProminent)
                     }

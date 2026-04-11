@@ -18,8 +18,16 @@ struct CardPreviewView: View {
             }
         }
         .padding()
-        .background(Color(nsColor: .controlBackgroundColor))
+        .background(cardBackgroundColor)
         .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var cardBackgroundColor: Color {
+#if os(macOS)
+        Color(nsColor: .controlBackgroundColor)
+#else
+        Color(uiColor: .secondarySystemBackground)
+#endif
     }
 }
 

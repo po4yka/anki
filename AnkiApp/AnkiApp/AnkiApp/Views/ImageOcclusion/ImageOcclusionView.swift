@@ -6,6 +6,7 @@ struct ImageOcclusionView: View {
     @State private var model: ImageOcclusionModel?
     @State private var dragStart: CGPoint?
     @State private var currentDragRect: CGRect?
+    @State private var showingImagePicker = false
 
     var editNoteId: Int64?
 
@@ -24,6 +25,18 @@ struct ImageOcclusionView: View {
                 await newModel.loadExistingNote(noteId: noteId)
             }
         }
+        .fileImporter(
+            isPresented: $showingImagePicker,
+            allowedContentTypes: [.image],
+            allowsMultipleSelection: false
+        ) { result in
+            guard let model,
+                  case let .success(urls) = result,
+                  let url = urls.first else {
+                return
+            }
+            Task { await model.loadImage(path: url.path) }
+        }
     }
 
     private func contentView(model: ImageOcclusionModel) -> some View {
@@ -32,14 +45,25 @@ struct ImageOcclusionView: View {
             Divider()
 
             if let image = model.image {
+#if os(macOS)
                 HSplitView {
                     canvasView(model: model, image: image)
                         .frame(minWidth: 400)
                     IOSidePanel(model: model)
                         .frame(width: 260)
                 }
+#else
+                VStack(spacing: 0) {
+                    canvasView(model: model, image: image)
+                        .frame(minHeight: 320)
+                    Divider()
+                    IOSidePanel(model: model)
+                }
+#endif
             } else {
-                IOEmptyState(model: model)
+                IOEmptyState(openImagePicker: {
+                    showingImagePicker = true
+                })
             }
         }
         .navigationTitle("Image Occlusion")
@@ -48,12 +72,7 @@ struct ImageOcclusionView: View {
     private func toolbar(model: ImageOcclusionModel) -> some View {
         HStack {
             Button("Open Image") {
-                let panel = NSOpenPanel()
-                panel.allowedContentTypes = [.png, .jpeg, .tiff, .bmp, .gif]
-                panel.allowsMultipleSelection = false
-                if panel.runModal() == .OK, let url = panel.url {
-                    Task { await model.loadImage(path: url.path) }
-                }
+                showingImagePicker = true
             }
 
             if model.image != nil {
@@ -98,7 +117,7 @@ struct ImageOcclusionView: View {
     }
 
     // swiftlint:disable:next function_body_length
-    private func canvasView(model: ImageOcclusionModel, image: NSImage) -> some View {
+    private func canvasView(model: ImageOcclusionModel, image: PlatformImage) -> some View {
         GeometryReader { geo in
             let imageSize = image.size
             let scale = min(
@@ -111,8 +130,7 @@ struct ImageOcclusionView: View {
             let offsetY = (geo.size.height - scaledHeight) / 2
 
             ZStack(alignment: .topLeading) {
-                Image(nsImage: image)
-                    .resizable()
+                PlatformImageView(image: image)
                     .aspectRatio(contentMode: .fit)
                     .frame(width: scaledWidth, height: scaledHeight)
                     .position(x: geo.size.width / 2, y: geo.size.height / 2)
@@ -292,7 +310,7 @@ private struct IOSidePanel: View {
 // MARK: - Empty State
 
 private struct IOEmptyState: View {
-    let model: ImageOcclusionModel
+    let openImagePicker: () -> Void
 
     var body: some View {
         ContentUnavailableView {
@@ -301,12 +319,7 @@ private struct IOEmptyState: View {
             Text("Open an image to start creating occlusion cards.")
         } actions: {
             Button("Open Image") {
-                let panel = NSOpenPanel()
-                panel.allowedContentTypes = [.png, .jpeg, .tiff, .bmp, .gif]
-                panel.allowsMultipleSelection = false
-                if panel.runModal() == .OK, let url = panel.url {
-                    Task { await model.loadImage(path: url.path) }
-                }
+                openImagePicker()
             }
             .buttonStyle(.borderedProminent)
         }

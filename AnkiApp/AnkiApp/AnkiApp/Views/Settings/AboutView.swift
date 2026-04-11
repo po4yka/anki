@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 
 struct AboutView: View {
@@ -12,8 +11,7 @@ struct AboutView: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            Image(nsImage: NSApp.applicationIconImage)
-                .resizable()
+            AppIconView()
                 .frame(width: 80, height: 80)
 
             Text("Anki")
@@ -41,13 +39,10 @@ struct AboutView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            Button("View Source on GitHub") {
-                guard let url = URL(string: "https://github.com/ankitects/anki") else {
-                    return
-                }
-                NSWorkspace.shared.open(url)
+            if let sourceURL = URL(string: "https://github.com/ankitects/anki") {
+                Link("View Source on GitHub", destination: sourceURL)
+                    .buttonStyle(.plain)
             }
-            .buttonStyle(.link)
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)

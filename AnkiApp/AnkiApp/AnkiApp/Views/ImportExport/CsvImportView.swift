@@ -5,6 +5,7 @@ struct CsvImportView: View {
     @Environment(AppState.self) private var appState
     @State private var model: CsvImportModel?
     @State private var filePath: String?
+    @State private var showingImporter = false
 
     var body: some View {
         VStack(spacing: 20) {
@@ -20,6 +21,28 @@ struct CsvImportView: View {
         .padding()
         .navigationTitle("Import CSV")
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .fileImporter(
+            isPresented: $showingImporter,
+            // swiftlint:disable force_unwrapping
+            allowedContentTypes: [
+                .init(filenameExtension: "csv")!,
+                .init(filenameExtension: "tsv")!,
+                .init(filenameExtension: "txt")!
+            ],
+            // swiftlint:enable force_unwrapping
+            allowsMultipleSelection: false
+        ) { result in
+            guard let model,
+                  case let .success(urls) = result,
+                  let url = urls.first else {
+                return
+            }
+
+            filePath = url.path
+            Task {
+                await model.loadMetadata(path: url.path)
+            }
+        }
     }
 
     private func csvContent(_ model: CsvImportModel) -> some View {
@@ -157,24 +180,8 @@ struct CsvImportView: View {
     }
 
     private func selectFile(_ model: CsvImportModel) {
-        let panel = NSOpenPanel()
-        // swiftlint:disable force_unwrapping
-        panel.allowedContentTypes = [
-            .init(filenameExtension: "csv")!,
-            .init(filenameExtension: "tsv")!,
-            .init(filenameExtension: "txt")!
-        ]
-        // swiftlint:enable force_unwrapping
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.message = "Select a CSV file to import"
-
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-
-        filePath = url.path
-        Task {
-            await model.loadMetadata(path: url.path)
-        }
+        _ = model
+        showingImporter = true
     }
 }
 

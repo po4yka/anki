@@ -17,7 +17,7 @@ struct SyncView: View {
                     Text("Open a collection from Preferences to sync with AnkiWeb.")
                 } actions: {
                     Button("Open Preferences") {
-                        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                        appState.showPreferences()
                     }
                     .buttonStyle(.borderedProminent)
                 }

@@ -23,6 +23,7 @@ extension AnkiError: LocalizedError {
     }
 }
 
+#if os(macOS)
 class AnkiBackend {
     private let ptr: UnsafeMutableRawPointer
 
@@ -72,3 +73,4 @@ class AnkiBackend {
         anki_free(ptr)
     }
 }
+#endif

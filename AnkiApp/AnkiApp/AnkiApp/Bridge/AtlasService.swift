@@ -52,6 +52,7 @@ enum AtlasError: Error {
     case decodingFailed(Error)
 }
 
+#if os(macOS)
 actor AtlasService: AtlasServiceProtocol {
     private let handle: UnsafeMutableRawPointer
 
@@ -176,3 +177,70 @@ actor AtlasService: AtlasServiceProtocol {
         atlas_free(handle)
     }
 }
+#else
+actor AtlasService: AtlasServiceProtocol {
+    init(config _: AtlasConfig = AtlasConfig()) throws {
+        throw AtlasError.initFailed
+    }
+
+    func search(_ request: SearchRequest) async throws -> SearchResponse {
+        throw AtlasError.initFailed
+    }
+
+    func searchChunks(_ request: ChunkSearchRequest) async throws -> ChunkSearchResponse {
+        throw AtlasError.initFailed
+    }
+
+    func generatePreview(filePath: String) async throws -> GeneratePreview {
+        throw AtlasError.initFailed
+    }
+
+    func generatePreviewFromText(_ request: GeneratePreviewRequest) async throws -> GeneratePreview {
+        throw AtlasError.initFailed
+    }
+
+    func getTaxonomyTree(rootPath: String?) async throws -> [TaxonomyNode] {
+        throw AtlasError.initFailed
+    }
+
+    func getCoverage(topicPath: String, includeSubtree: Bool) async throws -> TopicCoverage? {
+        throw AtlasError.initFailed
+    }
+
+    func getGaps(topicPath: String, minCoverage: Int) async throws -> [TopicGap] {
+        throw AtlasError.initFailed
+    }
+
+    func getWeakNotes(topicPath: String) async throws -> [WeakNote] {
+        throw AtlasError.initFailed
+    }
+
+    func findDuplicates(threshold: Double) async throws -> FindDuplicatesResponse {
+        throw AtlasError.initFailed
+    }
+
+    func kgStatus() async throws -> KnowledgeGraphStatus {
+        throw AtlasError.initFailed
+    }
+
+    func refreshKnowledgeGraph(_ request: RefreshKnowledgeGraphRequest) async throws -> RefreshKnowledgeGraphResponse {
+        throw AtlasError.initFailed
+    }
+
+    func getNoteLinks(noteId: Int64, limit: Int) async throws -> NoteLinksResponse {
+        throw AtlasError.initFailed
+    }
+
+    func getTopicNeighborhood(
+        topicId: Int64,
+        maxHops: Int,
+        limitPerHop: Int
+    ) async throws -> TopicNeighborhoodResponse {
+        throw AtlasError.initFailed
+    }
+
+    func obsidianScan(_ request: ObsidianScanRequest) async throws -> ObsidianScanPreview {
+        throw AtlasError.initFailed
+    }
+}
+#endif

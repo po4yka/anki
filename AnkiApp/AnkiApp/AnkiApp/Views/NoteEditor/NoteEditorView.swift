@@ -8,6 +8,8 @@ struct NoteEditorView: View {
     @State private var showFieldWarning: Bool = false
     @State private var fieldWarningMessage: String = ""
     @State private var currentNoteId: Int64?
+    @State private var showingImagePicker = false
+    @State private var pendingImageCoordinator: RichFieldEditor.Coordinator?
 
     init(noteId: Int64? = nil) {
         _currentNoteId = State(initialValue: noteId)
@@ -106,6 +108,18 @@ struct NoteEditorView: View {
             get: { model?.error },
             set: { model?.error = $0 }
         ))
+        .fileImporter(
+            isPresented: $showingImagePicker,
+            allowedContentTypes: [.image],
+            allowsMultipleSelection: false
+        ) { result in
+            guard let model,
+                  case let .success(urls) = result,
+                  let url = urls.first else {
+                return
+            }
+            attachImage(from: url, coordinator: pendingImageCoordinator, model: model)
+        }
     }
 
     @ViewBuilder
@@ -135,11 +149,16 @@ struct NoteEditorView: View {
     }
 
     private func attachImage(coordinator: RichFieldEditor.Coordinator?, model: NoteEditorModel) {
-        let panel = NSOpenPanel()
-        panel.allowedContentTypes = [.image, .png, .jpeg, .gif, .webP]
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        guard panel.runModal() == .OK, let url = panel.url else { return }
+        pendingImageCoordinator = coordinator
+        _ = model
+        showingImagePicker = true
+    }
+
+    private func attachImage(
+        from url: URL,
+        coordinator: RichFieldEditor.Coordinator?,
+        model: NoteEditorModel
+    ) {
         Task {
             guard let data = try? Data(contentsOf: url) else { return }
             let filename = url.lastPathComponent
@@ -147,6 +166,7 @@ struct NoteEditorView: View {
                 let html = "<img src=\"\(actualName)\">"
                 coordinator?.insertHTML(html)
             }
+            pendingImageCoordinator = nil
         }
     }
 

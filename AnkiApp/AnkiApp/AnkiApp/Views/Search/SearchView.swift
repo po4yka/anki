@@ -29,108 +29,12 @@ struct SearchView: View {
                         Text("Open a collection from Preferences to search notes.")
                     } actions: {
                         Button("Open Preferences") {
-                            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                            appState.showPreferences()
                         }
                         .buttonStyle(.borderedProminent)
                     }
                 } else {
-                    HSplitView {
-                        // Saved searches sidebar
-                        SavedSearchesSidebar(
-                            model: model,
-                            showingSaveSearch: $showingSaveSearch,
-                            saveSearchName: $saveSearchName,
-                            renamingSearchId: $renamingSearchId,
-                            renameSearchText: $renameSearchText
-                        )
-                        .frame(minWidth: 160, maxWidth: 220)
-
-                        VStack(spacing: 0) {
-                            SearchBar(model: model)
-                                .padding()
-
-                            Divider()
-
-                            HStack {
-                                Picker("Mode", selection: Binding(
-                                    get: { model.searchMode },
-                                    set: { mode in
-                                        model.searchMode = mode
-                                        Task { await model.search() }
-                                    }
-                                )) {
-                                    ForEach(BrowserSearchMode.allCases, id: \.self) { mode in
-                                        Text(mode.rawValue).tag(mode)
-                                    }
-                                }
-                                .pickerStyle(.segmented)
-                                .frame(width: 200)
-
-                                Spacer()
-
-                                Text("\(model.resultIds.count) results")
-                                    .foregroundStyle(.secondary)
-                                    .font(.caption)
-
-                                if !model.selectedResultIds.isEmpty {
-                                    Text("\(model.selectedResultIds.count) selected")
-                                        .foregroundStyle(.blue)
-                                        .font(.caption)
-                                }
-                            }
-                            .padding(.horizontal)
-                            .padding(.vertical, 6)
-
-                            Divider()
-
-                            if model.resultIds.isEmpty, !model.isSearching {
-                                ContentUnavailableView(
-                                    "Search Notes",
-                                    systemImage: "magnifyingglass",
-                                    description: Text("Enter a query above and press Return to search.")
-                                )
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            } else {
-                                resultsTable(model: model)
-                            }
-                        }
-                    } // end HSplitView
-                    .navigationTitle("Browse")
-                    .toolbar {
-                        ToolbarItemGroup {
-                            Button {
-                                showingColumnPicker = true
-                            } label: {
-                                Label("Columns", systemImage: "gearshape")
-                            }
-                            .popover(isPresented: $showingColumnPicker) {
-                                ColumnPickerView(model: model)
-                            }
-
-                            Button {
-                                dueDateInput = ""
-                                showingSetDueDate = true
-                            } label: {
-                                Label("Set Due Date", systemImage: "calendar")
-                            }
-                            .disabled(model.selectedResultIds.isEmpty)
-
-                            Button {
-                                tagInput = ""
-                                showingAddTags = true
-                            } label: {
-                                Label("Add Tags", systemImage: "tag")
-                            }
-                            .disabled(model.selectedResultIds.isEmpty)
-
-                            Button(role: .destructive) {
-                                Task { await model.deleteSelected() }
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                            .disabled(model.selectedResultIds.isEmpty)
-                        }
-                    }
+                    searchContent(model: model)
                 }
             } else {
                 ProgressView("Loading...")
@@ -184,15 +88,154 @@ struct SearchView: View {
         }
     }
 
+    @ViewBuilder
+    private func searchContent(model: SearchModel) -> some View {
+        #if os(macOS)
+        HSplitView {
+            SavedSearchesSidebar(
+                model: model,
+                showingSaveSearch: $showingSaveSearch,
+                saveSearchName: $saveSearchName,
+                renamingSearchId: $renamingSearchId,
+                renameSearchText: $renameSearchText
+            )
+            .frame(minWidth: 160, maxWidth: 220)
+
+            VStack(spacing: 0) {
+                SearchBar(model: model)
+                    .padding()
+
+                Divider()
+
+                HStack {
+                    modePicker(model: model)
+                        .frame(width: 200)
+
+                    Spacer()
+
+                    Text("\(model.resultIds.count) results")
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+
+                    if !model.selectedResultIds.isEmpty {
+                        Text("\(model.selectedResultIds.count) selected")
+                            .foregroundStyle(.blue)
+                            .font(.caption)
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 6)
+
+                Divider()
+
+                if model.resultIds.isEmpty, !model.isSearching {
+                    ContentUnavailableView(
+                        "Search Notes",
+                        systemImage: "magnifyingglass",
+                        description: Text("Enter a query above and press Return to search.")
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    resultsTable(model: model)
+                }
+            }
+        }
+        .navigationTitle("Browse")
+        .toolbar {
+            ToolbarItemGroup {
+                Button {
+                    showingColumnPicker = true
+                } label: {
+                    Label("Columns", systemImage: "gearshape")
+                }
+                .popover(isPresented: $showingColumnPicker) {
+                    ColumnPickerView(model: model)
+                }
+
+                Button {
+                    dueDateInput = ""
+                    showingSetDueDate = true
+                } label: {
+                    Label("Set Due Date", systemImage: "calendar")
+                }
+                .disabled(model.selectedResultIds.isEmpty)
+
+                Button {
+                    tagInput = ""
+                    showingAddTags = true
+                } label: {
+                    Label("Add Tags", systemImage: "tag")
+                }
+                .disabled(model.selectedResultIds.isEmpty)
+
+                Button(role: .destructive) {
+                    Task { await model.deleteSelected() }
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+                .disabled(model.selectedResultIds.isEmpty)
+            }
+        }
+        #else
+        VStack(spacing: 12) {
+            SearchBar(model: model)
+
+            modePicker(model: model)
+                .pickerStyle(.segmented)
+
+            if model.isSearching {
+                ProgressView("Searching...")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if model.results.isEmpty {
+                ContentUnavailableView(
+                    "Search Notes",
+                    systemImage: "magnifyingglass",
+                    description: Text("Enter a query above and press Return to search.")
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List(model.results) { row in
+                    Button {
+                        Task {
+                            if let noteId = await model.noteID(for: row.id) {
+                                editingNoteId = noteId
+                            }
+                        }
+                    } label: {
+                        SearchResultRow(row: model.rows[row.id] ?? Anki_Search_BrowserRow())
+                    }
+                }
+                .listStyle(.plain)
+            }
+        }
+        .padding()
+        .navigationTitle("Browse")
+        #endif
+    }
+
+    private func modePicker(model: SearchModel) -> some View {
+        Picker("Mode", selection: Binding(
+            get: { model.searchMode },
+            set: { mode in
+                model.searchMode = mode
+                Task { await model.search() }
+            }
+        )) {
+            ForEach(BrowserSearchMode.allCases, id: \.self) { mode in
+                Text(mode.rawValue).tag(mode)
+            }
+        }
+    }
+
+    #if os(macOS)
     // Rendering the table and all batch actions together keeps the selection bindings local to the table.
     // swiftlint:disable function_body_length
-    @ViewBuilder
     private func resultsTable(model: SearchModel) -> some View {
         let selection = Binding<Set<Int64>>(
             get: { model.selectedResultIds },
             set: { model.selectedResultIds = $0 }
         )
-        Table(model.results, selection: selection) {
+        return Table(model.results, selection: selection) {
             TableColumn("Question") { (row: BrowserRowItem) in
                 Text(row.cell(at: 0)).lineLimit(1)
             }
@@ -256,6 +299,7 @@ struct SearchView: View {
         }
     }
     // swiftlint:enable function_body_length
+    #endif
 }
 
 private struct EditNoteItem: Identifiable {
@@ -291,12 +335,20 @@ private struct SearchBar: View {
             }
         }
         .padding(8)
-        .background(Color(.textBackgroundColor))
+        .background(searchBarBackground)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .overlay(
             RoundedRectangle(cornerRadius: 8)
                 .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
         )
+    }
+
+    private var searchBarBackground: Color {
+        #if os(macOS)
+        Color(nsColor: .textBackgroundColor)
+        #else
+        Color(uiColor: .secondarySystemBackground)
+        #endif
     }
 }
 
