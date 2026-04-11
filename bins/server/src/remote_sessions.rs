@@ -50,6 +50,8 @@ impl SessionManager {
     pub async fn create_pairing_code(
         &self,
         device_name: Option<String>,
+        account_id: &str,
+        account_display_name: &str,
     ) -> Result<PairingCodeResponse, AppError> {
         let code = Uuid::new_v4()
             .simple()
@@ -59,16 +61,11 @@ impl SessionManager {
             .collect::<String>()
             .to_uppercase();
         let expires_at = Utc::now() + chrono::TimeDelta::seconds(PAIRING_CODE_TTL);
-        let account_display_name = device_name
-            .clone()
-            .filter(|name| !name.is_empty())
-            .unwrap_or_else(|| "Anki Companion".to_string());
-
         self.store
             .insert_pairing(
                 &code,
-                "local-companion",
-                &account_display_name,
+                account_id,
+                account_display_name,
                 device_name.as_deref(),
                 expires_at,
             )

@@ -202,6 +202,14 @@ private struct IOSBackendOnboardingView: View {
             }
             .pickerStyle(.segmented)
 
+            if connectionStore.deploymentKind == .cloud {
+                SecureField("Cloud Pairing Secret", text: Bindable(connectionStore).cloudPairingKey)
+                    .textFieldStyle(.roundedBorder)
+                Text("Cloud deployments require the pairing secret to issue a new pairing code.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             HStack {
                 Button("Save Endpoint") {
                     Task { await appState.saveBackendEndpoint() }
@@ -217,6 +225,10 @@ private struct IOSBackendOnboardingView: View {
                     Task { await appState.requestBackendPairingCode() }
                 }
                 .buttonStyle(.bordered)
+                .disabled(
+                    connectionStore.deploymentKind == .cloud
+                        && connectionStore.cloudPairingKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                )
             }
 
             if connectionStore.deploymentKind == .companion {

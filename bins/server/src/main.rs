@@ -34,6 +34,9 @@ const BACKEND_ERROR_HEADER: &str = "x-anki-error";
 struct ServerState {
     surface: Option<SurfaceState>,
     sessions: Arc<SessionManager>,
+    deployment_kind: DeploymentKind,
+    pairing_api_key: Option<String>,
+    pairing_account: AccountResponse,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -50,7 +53,7 @@ struct CapabilitiesResponse {
     execution_mode: ExecutionMode,
 }
 
-#[derive(Clone, Copy, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 enum DeploymentKind {
     Companion,
@@ -165,6 +168,12 @@ async fn main() -> anyhow::Result<()> {
             },
             instance_id,
         )),
+        deployment_kind,
+        pairing_api_key: api.api_key.clone(),
+        pairing_account: AccountResponse {
+            account_id: api.account_id.clone(),
+            account_display_name: api.account_display_name.clone(),
+        },
     });
     start_cleanup_task(state.sessions.clone());
 
@@ -285,13 +294,37 @@ async fn require_auth(
     state.sessions.session_for_access_token(token).await
 }
 
+fn require_pairing_create_auth(state: &ServerState, headers: &HeaderMap) -> Result<(), AppError> {
+    if state.deployment_kind != DeploymentKind::Cloud {
+        return Ok(());
+    }
+
+    let expected_api_key = state.pairing_api_key.as_deref().ok_or_else(|| {
+        AppError::internal("Cloud deployment is missing the required pairing API key.")
+    })?;
+    let provided_token = bearer_token(headers)?;
+    if provided_token != expected_api_key {
+        return Err(AppError::unauthorized(
+            "Cloud pairing requires a valid pairing API key.",
+        ));
+    }
+
+    Ok(())
+}
+
 async fn handle_pair_create(
     State(state): State<SharedState>,
+    headers: HeaderMap,
     axum::Json(input): axum::Json<PairingCreateInput>,
 ) -> Result<axum::Json<PairingCodeResponse>, AppError> {
+    require_pairing_create_auth(&state, &headers)?;
     let response = state
         .sessions
-        .create_pairing_code(input.device_name)
+        .create_pairing_code(
+            input.device_name,
+            &state.pairing_account.account_id,
+            &state.pairing_account.account_display_name,
+        )
         .await?;
     Ok(axum::Json(response))
 }
@@ -730,7 +763,16 @@ mod tests {
         Some((pool, container))
     }
 
-    fn test_state(pool: PgPool, deployment_kind: DeploymentKind, instance_id: &str) -> SharedState {
+    fn test_state(
+        pool: PgPool,
+        deployment_kind: DeploymentKind,
+        instance_id: &str,
+        pairing_api_key: Option<&str>,
+    ) -> SharedState {
+        let (account_id, account_display_name) = match deployment_kind {
+            DeploymentKind::Companion => ("local-companion", "Anki Companion"),
+            DeploymentKind::Cloud => ("cloud-account", "Anki Cloud"),
+        };
         Arc::new(ServerState {
             surface: None,
             sessions: Arc::new(SessionManager::new(
@@ -743,21 +785,37 @@ mod tests {
                 },
                 instance_id.to_string(),
             )),
+            deployment_kind,
+            pairing_api_key: pairing_api_key.map(ToOwned::to_owned),
+            pairing_account: AccountResponse {
+                account_id: account_id.to_string(),
+                account_display_name: account_display_name.to_string(),
+            },
         })
     }
 
-    async fn pairing_code(app: Router) -> PairingCodeResponse {
-        let pair_response = app
-            .oneshot(
-                Request::builder()
-                    .method("POST")
-                    .uri("/api/auth/pair/create")
-                    .header(header::CONTENT_TYPE, "application/json")
-                    .body(Body::from(r#"{"device_name":"Test Device"}"#))
-                    .expect("pair request"),
-            )
-            .await
-            .expect("pair response");
+    async fn pairing_code(app: Router, pairing_api_key: Option<&str>) -> Response {
+        let mut builder = Request::builder()
+            .method("POST")
+            .uri("/api/auth/pair/create")
+            .header(header::CONTENT_TYPE, "application/json");
+        if let Some(pairing_api_key) = pairing_api_key {
+            builder = builder.header(header::AUTHORIZATION, format!("Bearer {pairing_api_key}"));
+        }
+        app.oneshot(
+            builder
+                .body(Body::from(r#"{"device_name":"Test Device"}"#))
+                .expect("pair request"),
+        )
+        .await
+        .expect("pair response")
+    }
+
+    async fn successful_pairing_code(
+        app: Router,
+        pairing_api_key: Option<&str>,
+    ) -> PairingCodeResponse {
+        let pair_response = pairing_code(app, pairing_api_key).await;
         assert_eq!(pair_response.status(), StatusCode::OK);
         let pair_body = to_bytes(pair_response.into_body(), usize::MAX)
             .await
@@ -766,7 +824,7 @@ mod tests {
     }
 
     async fn auth_session(app: Router) -> AuthSessionResponse {
-        let pairing = pairing_code(app.clone()).await;
+        let pairing = successful_pairing_code(app.clone(), None).await;
         let exchange_payload = serde_json::to_vec(&serde_json::json!({
             "pairing_code": pairing.pairing_code
         }))
@@ -798,9 +856,15 @@ mod tests {
             pool.clone(),
             DeploymentKind::Companion,
             "instance-a",
+            None,
         ));
-        let pairing = pairing_code(app1).await;
-        let app2 = build_app(test_state(pool, DeploymentKind::Companion, "instance-b"));
+        let pairing = successful_pairing_code(app1, None).await;
+        let app2 = build_app(test_state(
+            pool,
+            DeploymentKind::Companion,
+            "instance-b",
+            None,
+        ));
 
         let exchange_payload = serde_json::to_vec(&serde_json::json!({
             "pairing_code": pairing.pairing_code
@@ -858,9 +922,15 @@ mod tests {
             pool.clone(),
             DeploymentKind::Companion,
             "instance-a",
+            None,
         ));
         let auth = auth_session(app1).await;
-        let app2 = build_app(test_state(pool, DeploymentKind::Companion, "instance-b"));
+        let app2 = build_app(test_state(
+            pool,
+            DeploymentKind::Companion,
+            "instance-b",
+            None,
+        ));
 
         let refresh_payload = serde_json::to_vec(&serde_json::json!({
             "refresh_token": auth.refresh_token
@@ -889,12 +959,14 @@ mod tests {
             pool.clone(),
             DeploymentKind::Companion,
             "instance-a",
+            None,
         ));
         let auth = auth_session(app1).await;
         let app2 = build_app(test_state(
             pool.clone(),
             DeploymentKind::Companion,
             "instance-b",
+            None,
         ));
 
         let logout_payload = serde_json::to_vec(&serde_json::json!({
@@ -918,7 +990,12 @@ mod tests {
             .expect("logout response");
         assert_eq!(logout.status(), StatusCode::NO_CONTENT);
 
-        let app3 = build_app(test_state(pool, DeploymentKind::Companion, "instance-c"));
+        let app3 = build_app(test_state(
+            pool,
+            DeploymentKind::Companion,
+            "instance-c",
+            None,
+        ));
         let me = app3
             .clone()
             .oneshot(
@@ -963,6 +1040,7 @@ mod tests {
             pool.clone(),
             DeploymentKind::Companion,
             "instance-a",
+            None,
         ));
         let auth = auth_session(app.clone()).await;
 
@@ -1081,6 +1159,7 @@ mod tests {
             pool.clone(),
             DeploymentKind::Companion,
             "instance-a",
+            None,
         ));
         let auth = auth_session(app1.clone()).await;
 
@@ -1111,7 +1190,12 @@ mod tests {
         let backend_session: BackendSessionInitResponse =
             serde_json::from_slice(&init_body).expect("backend init json");
 
-        let app2 = build_app(test_state(pool, DeploymentKind::Companion, "instance-b"));
+        let app2 = build_app(test_state(
+            pool,
+            DeploymentKind::Companion,
+            "instance-b",
+            None,
+        ));
         let rpc_response = app2
             .oneshot(
                 Request::builder()
@@ -1136,8 +1220,35 @@ mod tests {
         let Some((pool, _container)) = setup_pool().await else {
             return;
         };
-        let app = build_app(test_state(pool, DeploymentKind::Cloud, "instance-cloud"));
-        let auth = auth_session(app.clone()).await;
+        let app = build_app(test_state(
+            pool,
+            DeploymentKind::Cloud,
+            "instance-cloud",
+            Some("cloud-admin-key"),
+        ));
+        let pairing = successful_pairing_code(app.clone(), Some("cloud-admin-key")).await;
+        let exchange_payload = serde_json::to_vec(&serde_json::json!({
+            "pairing_code": pairing.pairing_code
+        }))
+        .expect("pairing exchange json");
+        let exchange = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/auth/pair/exchange")
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(exchange_payload))
+                    .expect("exchange request"),
+            )
+            .await
+            .expect("exchange response");
+        assert_eq!(exchange.status(), StatusCode::OK);
+        let exchange_body = to_bytes(exchange.into_body(), usize::MAX)
+            .await
+            .expect("exchange body");
+        let auth: AuthSessionResponse =
+            serde_json::from_slice(&exchange_body).expect("auth session json");
 
         let response = app
             .oneshot(
@@ -1163,5 +1274,47 @@ mod tests {
             capabilities.deployment_kind,
             DeploymentKind::Cloud
         ));
+    }
+
+    #[tokio::test]
+    async fn cloud_pairing_requires_api_key_and_uses_cloud_account() {
+        let Some((pool, _container)) = setup_pool().await else {
+            return;
+        };
+        let app = build_app(test_state(
+            pool,
+            DeploymentKind::Cloud,
+            "instance-cloud",
+            Some("cloud-admin-key"),
+        ));
+
+        let unauthorized_pair = pairing_code(app.clone(), None).await;
+        assert_eq!(unauthorized_pair.status(), StatusCode::UNAUTHORIZED);
+
+        let pairing = successful_pairing_code(app.clone(), Some("cloud-admin-key")).await;
+        let exchange_payload = serde_json::to_vec(&serde_json::json!({
+            "pairing_code": pairing.pairing_code
+        }))
+        .expect("pairing exchange json");
+        let exchange_response = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/auth/pair/exchange")
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(exchange_payload))
+                    .expect("exchange request"),
+            )
+            .await
+            .expect("exchange response");
+        assert_eq!(exchange_response.status(), StatusCode::OK);
+
+        let exchange_body = to_bytes(exchange_response.into_body(), usize::MAX)
+            .await
+            .expect("exchange body");
+        let auth: AuthSessionResponse =
+            serde_json::from_slice(&exchange_body).expect("auth session json");
+        assert_eq!(auth.account_id, "cloud-account");
+        assert_eq!(auth.account_display_name, "Anki Cloud");
     }
 }

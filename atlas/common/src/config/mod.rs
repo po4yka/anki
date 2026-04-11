@@ -46,6 +46,8 @@ pub struct Settings {
     pub debug: bool,
     pub deployment_kind: ApiDeploymentKind,
     pub instance_id: Option<String>,
+    pub account_id: String,
+    pub account_display_name: String,
     pub anki_collection_path: Option<String>,
     pub anki_media_root: Option<String>,
 }
@@ -54,6 +56,10 @@ impl Settings {
     /// Load settings from environment variables and optional `.env` file.
     /// Validates all fields after loading.
     pub fn load() -> Result<Self, ConfigError> {
+        let deployment_kind =
+            env_or("ANKIATLAS_DEPLOYMENT_KIND", "companion").parse_enum("deployment_kind")?;
+        let default_account_id = default_account_id(deployment_kind);
+        let default_account_display_name = default_account_display_name(deployment_kind);
         let settings = Self {
             postgres_url: env_or(
                 "ANKIATLAS_POSTGRES_URL",
@@ -84,11 +90,18 @@ impl Settings {
                 .map_err(|e| ConfigError(format!("invalid api_port: {e}")))?,
             api_key: env::var("ANKIATLAS_API_KEY").ok().filter(|s| !s.is_empty()),
             debug: env_or("ANKIATLAS_DEBUG", "false").parse_bool("debug")?,
-            deployment_kind: env_or("ANKIATLAS_DEPLOYMENT_KIND", "companion")
-                .parse_enum("deployment_kind")?,
+            deployment_kind,
             instance_id: env::var("ANKIATLAS_INSTANCE_ID")
                 .ok()
                 .filter(|s| !s.is_empty()),
+            account_id: env::var("ANKIATLAS_ACCOUNT_ID")
+                .ok()
+                .filter(|s| !s.is_empty())
+                .unwrap_or_else(|| default_account_id.to_string()),
+            account_display_name: env::var("ANKIATLAS_ACCOUNT_DISPLAY_NAME")
+                .ok()
+                .filter(|s| !s.is_empty())
+                .unwrap_or_else(|| default_account_display_name.to_string()),
             anki_collection_path: env::var("ANKIATLAS_ANKI_COLLECTION_PATH")
                 .ok()
                 .filter(|s| !s.is_empty()),
@@ -164,6 +177,12 @@ impl Settings {
             ));
         }
 
+        if self.deployment_kind == ApiDeploymentKind::Cloud && self.api_key.is_none() {
+            return Err(ConfigError(
+                "api_key must be set when deployment_kind=cloud".to_string(),
+            ));
+        }
+
         Ok(())
     }
 
@@ -193,6 +212,8 @@ impl Settings {
             debug: self.debug,
             deployment_kind: self.deployment_kind,
             instance_id: self.instance_id.clone(),
+            account_id: self.account_id.clone(),
+            account_display_name: self.account_display_name.clone(),
         }
     }
 
@@ -218,6 +239,20 @@ impl Settings {
 
 fn env_or(key: &str, default: &str) -> String {
     env::var(key).unwrap_or_else(|_| default.to_string())
+}
+
+fn default_account_id(deployment_kind: ApiDeploymentKind) -> &'static str {
+    match deployment_kind {
+        ApiDeploymentKind::Companion => "local-companion",
+        ApiDeploymentKind::Cloud => "cloud-account",
+    }
+}
+
+fn default_account_display_name(deployment_kind: ApiDeploymentKind) -> &'static str {
+    match deployment_kind {
+        ApiDeploymentKind::Companion => "Anki Companion",
+        ApiDeploymentKind::Cloud => "Anki Cloud",
+    }
 }
 
 trait ParseHelper {

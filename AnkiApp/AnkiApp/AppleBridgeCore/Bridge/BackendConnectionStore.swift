@@ -11,6 +11,7 @@ public final class BackendConnectionStore {
 
     public var endpointURLString: String
     public var deploymentKind: BackendDeploymentKind
+    public var cloudPairingKey: String
     public var pairingCode: String = ""
     public var issuedPairingCode: PairingCodeResponse?
     public var connectionState: BackendConnectionState = .disconnected
@@ -44,6 +45,7 @@ public final class BackendConnectionStore {
         localRuntimeProbe: @escaping @Sendable () async -> LocalRuntimeStatus = {
             .unavailable(message: "Local iOS bridge support is not configured for this build.")
         },
+        initialCloudPairingKey: String? = nil,
         defaults: UserDefaults = .standard
     ) {
         self.sessionProvider = sessionProvider
@@ -60,6 +62,7 @@ public final class BackendConnectionStore {
             endpointURLString = "http://127.0.0.1:8080/"
             deploymentKind = .companion
         }
+        cloudPairingKey = initialCloudPairingKey ?? KeychainHelper.loadRemoteCloudPairingKey() ?? ""
 
         if let rawPolicy = defaults.string(forKey: Self.executionPolicyDefaultsKey),
            let decodedPolicy = ExecutionPolicy(rawValue: rawPolicy) {
@@ -154,6 +157,7 @@ public final class BackendConnectionStore {
         var successMessage: String?
         do {
             _ = try await persistConfiguredEndpoint()
+            await sessionProvider.updateCloudPairingKey(cloudPairingKey)
             lastErrorMessage = nil
             successMessage = "Saved backend endpoint."
         } catch {
@@ -262,6 +266,7 @@ public final class BackendConnectionStore {
         connectionState = .connecting
         do {
             _ = try await persistConfiguredEndpoint()
+            await sessionProvider.updateCloudPairingKey(cloudPairingKey)
             issuedPairingCode = try await sessionProvider.issuePairingCode(deviceName: nil)
             if pairingCode.isEmpty {
                 pairingCode = issuedPairingCode?.pairingCode ?? ""

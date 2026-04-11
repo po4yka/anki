@@ -59,6 +59,8 @@ fn settings_load_returns_defaults_when_no_env_vars() {
             assert!(!settings.debug);
             assert_eq!(settings.deployment_kind, ApiDeploymentKind::Companion);
             assert!(settings.instance_id.is_none());
+            assert_eq!(settings.account_id, "local-companion");
+            assert_eq!(settings.account_display_name, "Anki Companion");
 
             // Anki source
             assert!(settings.anki_collection_path.is_none());
@@ -82,6 +84,8 @@ fn settings_load_reads_ankiatlas_prefixed_env_vars() {
             ("ANKIATLAS_API_KEY", Some("secret-key-123")),
             ("ANKIATLAS_DEPLOYMENT_KIND", Some("cloud")),
             ("ANKIATLAS_INSTANCE_ID", Some("instance-123")),
+            ("ANKIATLAS_ACCOUNT_ID", Some("anki-cloud-prod")),
+            ("ANKIATLAS_ACCOUNT_DISPLAY_NAME", Some("Anki Cloud Prod")),
             (
                 "ANKIATLAS_ANKI_COLLECTION_PATH",
                 Some("/path/to/collection.anki2"),
@@ -101,6 +105,8 @@ fn settings_load_reads_ankiatlas_prefixed_env_vars() {
             assert_eq!(settings.api_key, Some("secret-key-123".to_string()));
             assert_eq!(settings.deployment_kind, ApiDeploymentKind::Cloud);
             assert_eq!(settings.instance_id.as_deref(), Some("instance-123"));
+            assert_eq!(settings.account_id, "anki-cloud-prod");
+            assert_eq!(settings.account_display_name, "Anki Cloud Prod");
             assert_eq!(
                 settings.anki_collection_path,
                 Some("/path/to/collection.anki2".to_string())
@@ -135,6 +141,23 @@ fn validate_accepts_postgres_scheme() {
         || {
             let settings = Settings::load().expect("postgres:// should be accepted");
             assert!(settings.postgres_url.starts_with("postgres"));
+        },
+    );
+}
+
+#[test]
+fn validate_rejects_cloud_deployment_without_api_key() {
+    temp_env::with_vars(
+        vec![
+            ("ANKIATLAS_DEPLOYMENT_KIND", Some("cloud")),
+            ("ANKIATLAS_API_KEY", None),
+        ],
+        || {
+            let result = Settings::load();
+            assert!(
+                result.is_err(),
+                "Cloud deployment should require an API key"
+            );
         },
     );
 }
@@ -339,6 +362,8 @@ fn settings_projection_methods_return_narrow_runtime_contracts() {
         assert_eq!(api.port, 8000);
         assert_eq!(api.deployment_kind, ApiDeploymentKind::Companion);
         assert!(api.instance_id.is_none());
+        assert_eq!(api.account_id, "local-companion");
+        assert_eq!(api.account_display_name, "Anki Companion");
 
         let embedding = settings.embedding();
         assert_eq!(embedding.provider, EmbeddingProviderKind::OpenAi);

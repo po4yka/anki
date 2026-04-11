@@ -28,4 +28,6 @@ pub struct ApiSettings {
     pub debug: bool,
     pub deployment_kind: ApiDeploymentKind,
     pub instance_id: Option<String>,
+    pub account_id: String,
+    pub account_display_name: String,
 }

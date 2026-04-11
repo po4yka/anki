@@ -11,6 +11,9 @@ public struct RemoteSessionPersistence: Sendable {
     public var saveRemoteCollectionJSON: @Sendable (String) -> Void
     public var loadRemoteCollectionJSON: @Sendable () -> String?
     public var deleteRemoteCollection: @Sendable () -> Void
+    public var saveCloudPairingKey: @Sendable (String) -> Void
+    public var loadCloudPairingKey: @Sendable () -> String?
+    public var deleteCloudPairingKey: @Sendable () -> Void
 
     public init(
         saveEndpoint: @escaping @Sendable (BackendEndpoint) -> Void,
@@ -20,7 +23,10 @@ public struct RemoteSessionPersistence: Sendable {
         deleteAuthSession: @escaping @Sendable () -> Void,
         saveRemoteCollectionJSON: @escaping @Sendable (String) -> Void,
         loadRemoteCollectionJSON: @escaping @Sendable () -> String?,
-        deleteRemoteCollection: @escaping @Sendable () -> Void
+        deleteRemoteCollection: @escaping @Sendable () -> Void,
+        saveCloudPairingKey: @escaping @Sendable (String) -> Void,
+        loadCloudPairingKey: @escaping @Sendable () -> String?,
+        deleteCloudPairingKey: @escaping @Sendable () -> Void
     ) {
         self.saveEndpoint = saveEndpoint
         self.loadEndpoint = loadEndpoint
@@ -30,6 +36,9 @@ public struct RemoteSessionPersistence: Sendable {
         self.saveRemoteCollectionJSON = saveRemoteCollectionJSON
         self.loadRemoteCollectionJSON = loadRemoteCollectionJSON
         self.deleteRemoteCollection = deleteRemoteCollection
+        self.saveCloudPairingKey = saveCloudPairingKey
+        self.loadCloudPairingKey = loadCloudPairingKey
+        self.deleteCloudPairingKey = deleteCloudPairingKey
     }
 
     public static let live = RemoteSessionPersistence(
@@ -62,6 +71,15 @@ public struct RemoteSessionPersistence: Sendable {
         },
         deleteRemoteCollection: {
             UserDefaults.standard.removeObject(forKey: "remoteBackendCollectionState")
+        },
+        saveCloudPairingKey: { key in
+            KeychainHelper.saveRemoteCloudPairingKey(key)
+        },
+        loadCloudPairingKey: {
+            KeychainHelper.loadRemoteCloudPairingKey()
+        },
+        deleteCloudPairingKey: {
+            KeychainHelper.deleteRemoteCloudPairingKey()
         }
     )
 }
@@ -77,6 +95,8 @@ public protocol RemoteSessionProviding: Sendable {
 
 public protocol RemoteSessionManaging: RemoteSessionProviding {
     func updateEndpoint(_ endpoint: BackendEndpoint) async
+    func updateCloudPairingKey(_ key: String?) async
+    func currentCloudPairingKey() async -> String?
     func currentAuthSession() async -> RemoteAuthSession?
     func currentCapabilities() async -> BackendCapabilities?
     func currentRemoteCollectionState() async -> RemoteCollectionState?
@@ -111,6 +131,7 @@ public actor RemoteSessionProvider: RemoteSessionManaging {
     private var authSession: RemoteAuthSession?
     private var backendSessionID: String?
     private var remoteCollectionState: RemoteCollectionState?
+    private var cloudPairingKey: String?
 
     public init(
         session: URLSession = .shared,
@@ -123,6 +144,7 @@ public actor RemoteSessionProvider: RemoteSessionManaging {
         storedEndpoint = persistence.loadEndpoint()
         authSession = Self.loadAuthSession(using: persistence)
         remoteCollectionState = Self.loadRemoteCollectionState(using: persistence)
+        cloudPairingKey = persistence.loadCloudPairingKey()
     }
 
     public func endpoint() async throws -> BackendEndpoint {
@@ -136,6 +158,21 @@ public actor RemoteSessionProvider: RemoteSessionManaging {
         storedEndpoint = endpoint
         persistence.saveEndpoint(endpoint)
         backendSessionID = nil
+    }
+
+    public func updateCloudPairingKey(_ key: String?) async {
+        let trimmed = key?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalized = trimmed?.isEmpty == false ? trimmed : nil
+        cloudPairingKey = normalized
+        if let normalized {
+            persistence.saveCloudPairingKey(normalized)
+        } else {
+            persistence.deleteCloudPairingKey()
+        }
+    }
+
+    public func currentCloudPairingKey() async -> String? {
+        cloudPairingKey
     }
 
     public func currentAuthSession() async -> RemoteAuthSession? {
@@ -155,6 +192,12 @@ public actor RemoteSessionProvider: RemoteSessionManaging {
         var request = URLRequest(url: endpoint.baseURL.appendingPathComponent("api/auth/pair/create"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if endpoint.deploymentKind == .cloud {
+            guard let cloudPairingKey, !cloudPairingKey.isEmpty else {
+                throw AnkiError.message("Enter the cloud pairing secret before requesting a pairing code.")
+            }
+            request.setValue("Bearer \(cloudPairingKey)", forHTTPHeaderField: "Authorization")
+        }
         request.httpBody = try JSONEncoder().encode(PairingCreateRequest(deviceName: deviceName))
         let (data, response) = try await session.data(for: request)
         try validateJSON(response: response, data: data)

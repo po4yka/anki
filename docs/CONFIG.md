@@ -50,8 +50,12 @@ Configuration is loaded via `atlas/common/src/config/mod.rs` and validated to en
 |----------|---------|------|-------------|
 | `ANKIATLAS_API_HOST` | `0.0.0.0` | string | HTTP server bind address |
 | `ANKIATLAS_API_PORT` | `8000` | u16 | HTTP server bind port |
-| `ANKIATLAS_API_KEY` | (unset) | string | Optional API authentication key; if set, requests must include `Authorization: Bearer <key>` |
+| `ANKIATLAS_API_KEY` | (unset) | string | Required when `ANKIATLAS_DEPLOYMENT_KIND=cloud`; used as the cloud pairing bootstrap secret for issuing new pairing codes |
 | `ANKIATLAS_DEBUG` | `false` | bool | Enable debug logging and verbose error responses |
+| `ANKIATLAS_DEPLOYMENT_KIND` | `companion` | enum | `companion` for desktop-hosted pairing, `cloud` for remotely hosted deployment behavior |
+| `ANKIATLAS_INSTANCE_ID` | (generated UUID) | string | Optional stable instance identifier for backend-lease ownership |
+| `ANKIATLAS_ACCOUNT_ID` | `local-companion` / `cloud-account` | string | Account identifier returned to paired clients |
+| `ANKIATLAS_ACCOUNT_DISPLAY_NAME` | `Anki Companion` / `Anki Cloud` | string | Account display name returned to paired clients |
 
 ### Anki Collection
 
@@ -162,7 +166,10 @@ ANKIATLAS_EMBEDDING_PROVIDER=google
 ANKIATLAS_EMBEDDING_MODEL=gemini-embedding-2-preview
 ANKIATLAS_EMBEDDING_DIMENSION=768
 ANKIATLAS_API_PORT=443
-ANKIATLAS_API_KEY=${API_KEY}
+ANKIATLAS_DEPLOYMENT_KIND=cloud
+ANKIATLAS_API_KEY=${PAIRING_BOOTSTRAP_SECRET}
+ANKIATLAS_ACCOUNT_ID=anki-cloud-prod
+ANKIATLAS_ACCOUNT_DISPLAY_NAME=Anki Cloud Prod
 ANKIATLAS_DEBUG=false
 ```
 

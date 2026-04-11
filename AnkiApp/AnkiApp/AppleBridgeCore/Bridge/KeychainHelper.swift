@@ -10,6 +10,7 @@ public enum KeychainHelper {
     private static let embeddingApiKeyAccount = "embedding_api_key"
     private static let postgresUrlAccount = "postgres_url"
     private static let remoteAuthSessionAccount = "auth_session"
+    private static let remoteCloudPairingKeyAccount = "cloud_pairing_key"
 
     // MARK: - Sync Auth
 
@@ -89,6 +90,24 @@ public enum KeychainHelper {
 
     public static func deleteRemoteAuthSession() {
         delete(account: remoteAuthSessionAccount, service: remoteService)
+    }
+
+    // MARK: - Remote Cloud Pairing Key
+
+    public static func saveRemoteCloudPairingKey(_ key: String) {
+        if key.isEmpty {
+            delete(account: remoteCloudPairingKeyAccount, service: remoteService)
+        } else {
+            saveString(key, account: remoteCloudPairingKeyAccount, service: remoteService)
+        }
+    }
+
+    public static func loadRemoteCloudPairingKey() -> String? {
+        loadString(account: remoteCloudPairingKeyAccount, service: remoteService)
+    }
+
+    public static func deleteRemoteCloudPairingKey() {
+        delete(account: remoteCloudPairingKeyAccount, service: remoteService)
     }
 
     // MARK: - Private Helpers

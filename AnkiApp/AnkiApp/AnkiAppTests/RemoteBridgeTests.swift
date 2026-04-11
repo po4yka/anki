@@ -122,6 +122,43 @@ struct RemoteBridgeTests {
     // swiftlint:enable function_body_length
 
     @Test
+    func sessionProviderUsesCloudPairingSecretForCloudPairCreate() async throws {
+        try await withRemoteSessionProvider(
+            preferredLanguages: ["en"],
+            deploymentKind: .cloud
+        ) { _, _, provider, persistence in
+            RemoteBridgeURLProtocol.install { request in
+                guard request.url?.path == "/api/auth/pair/create" else {
+                    throw RemoteBridgeTestError.unexpectedRequest(request.url?.absoluteString ?? "<nil>")
+                }
+                return try jsonResponse(
+                    for: request,
+                    body: [
+                        "pairing_code": "PAIR9999",
+                        "pairing_url": "ankiapp://pair?code=PAIR9999",
+                        "expires_at": iso8601(Date(timeIntervalSinceNow: 300))
+                    ]
+                )
+            }
+
+            await provider.updateCloudPairingKey("cloud-secret-1")
+            let response = try await provider.issuePairingCode(deviceName: "iPhone")
+            #expect(response.pairingCode == "PAIR9999")
+            #expect(await provider.currentCloudPairingKey() == "cloud-secret-1")
+
+            let request = try #require(RemoteBridgeURLProtocol.requests(matchingPath: "/api/auth/pair/create").first)
+            #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer cloud-secret-1")
+
+            let restoredProvider = RemoteSessionProvider(
+                session: makeRemoteBridgeURLSession(),
+                preferredLanguages: ["en"],
+                persistence: persistence
+            )
+            #expect(await restoredProvider.currentCloudPairingKey() == "cloud-secret-1")
+        }
+    }
+
+    @Test
     func remoteTransportEncodesRpcRequestsAndDecodesResponses() async throws {
         RemoteBridgeURLProtocol.reset()
         defer { RemoteBridgeURLProtocol.reset() }

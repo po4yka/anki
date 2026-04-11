@@ -50,6 +50,8 @@ fn settings_for_container(host: &str, port: u16) -> common::config::Settings {
         debug: false,
         deployment_kind: common::config::ApiDeploymentKind::Companion,
         instance_id: None,
+        account_id: "local-companion".to_string(),
+        account_display_name: "Anki Companion".to_string(),
         anki_collection_path: None,
         anki_media_root: None,
     }

@@ -172,6 +172,7 @@ actor StubRemoteSessionManager: RemoteSessionManaging {
     var exchangedSessionValue: RemoteAuthSession
     var refreshedCapabilitiesValue: BackendCapabilities
     var currentRemoteCollectionStateValue: RemoteCollectionState?
+    var currentCloudPairingKeyValue: String?
     private(set) var endpointUpdates: [BackendEndpoint] = []
     private(set) var signOutCallCount = 0
 
@@ -241,6 +242,14 @@ actor StubRemoteSessionManager: RemoteSessionManaging {
     func updateEndpoint(_ endpoint: BackendEndpoint) async {
         endpointValue = endpoint
         endpointUpdates.append(endpoint)
+    }
+
+    func updateCloudPairingKey(_ key: String?) async {
+        currentCloudPairingKeyValue = key
+    }
+
+    func currentCloudPairingKey() async -> String? {
+        currentCloudPairingKeyValue
     }
 
     func currentAuthSession() async -> RemoteAuthSession? {
@@ -329,6 +338,7 @@ final class RemoteSessionPersistenceBox: @unchecked Sendable {
     private var endpoint: BackendEndpoint?
     private var authSessionJSON: String?
     private var remoteCollectionJSON: String?
+    private var cloudPairingKey: String?
 
     func saveEndpoint(_ endpoint: BackendEndpoint) {
         lock.lock()
@@ -377,6 +387,24 @@ final class RemoteSessionPersistenceBox: @unchecked Sendable {
         remoteCollectionJSON = nil
         lock.unlock()
     }
+
+    func saveCloudPairingKey(_ key: String) {
+        lock.lock()
+        cloudPairingKey = key
+        lock.unlock()
+    }
+
+    func loadCloudPairingKey() -> String? {
+        lock.lock()
+        defer { lock.unlock() }
+        return cloudPairingKey
+    }
+
+    func deleteCloudPairingKey() {
+        lock.lock()
+        cloudPairingKey = nil
+        lock.unlock()
+    }
 }
 
 func makeInMemoryRemoteSessionPersistence() -> RemoteSessionPersistence {
@@ -389,7 +417,10 @@ func makeInMemoryRemoteSessionPersistence() -> RemoteSessionPersistence {
         deleteAuthSession: { box.deleteAuthSession() },
         saveRemoteCollectionJSON: { json in box.saveRemoteCollectionJSON(json) },
         loadRemoteCollectionJSON: { box.loadRemoteCollectionJSON() },
-        deleteRemoteCollection: { box.deleteRemoteCollection() }
+        deleteRemoteCollection: { box.deleteRemoteCollection() },
+        saveCloudPairingKey: { key in box.saveCloudPairingKey(key) },
+        loadCloudPairingKey: { box.loadCloudPairingKey() },
+        deleteCloudPairingKey: { box.deleteCloudPairingKey() }
     )
 }
 
@@ -405,6 +436,7 @@ func clearRemoteBridgeArtifacts() {
     UserDefaults.standard.removeObject(forKey: "remoteBackendCollectionState")
     UserDefaults.standard.removeObject(forKey: "remoteBackendExecutionPolicy")
     KeychainHelper.deleteRemoteAuthSession()
+    KeychainHelper.deleteRemoteCloudPairingKey()
 }
 
 func requestBodyData(from request: URLRequest) -> Data {

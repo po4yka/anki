@@ -380,7 +380,7 @@ The RemoteAtlasService handles JSON serialization automatically.
 **API Server:**
 - `ANKIATLAS_API_HOST` — bind address (default: `0.0.0.0`)
 - `ANKIATLAS_API_PORT` — bind port (default: `8000`)
-- `ANKIATLAS_API_KEY` — optional API authentication key
+- `ANKIATLAS_API_KEY` — cloud pairing bootstrap secret; required when `ANKIATLAS_DEPLOYMENT_KIND=cloud`
 
 **Logging:**
 - `ANKIATLAS_DEBUG` — enable debug logging (default: `false`)
